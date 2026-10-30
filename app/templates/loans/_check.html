@@ -1,0 +1,7 @@
+{% if problems %}
+<div class="flash flash-error" role="alert"><strong>Indisponible :</strong><ul>{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul></div>
+{% elif warnings %}
+<div class="flash flash-warning"><ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
+{% elif checked %}
+<div class="flash flash-success">Tout le matériel est disponible sur cette période.</div>
+{% endif %}

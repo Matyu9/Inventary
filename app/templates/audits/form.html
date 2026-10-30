@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "partials/_form.html" import field %}
+{% block title %}Nouvel inventaire{% endblock %}
+{% block content %}
+<article class="narrow wide">
+  <h1>Nouvel inventaire</h1>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {{ field(form.name, placeholder="ex. Inventaire de rentrée 2026") }}
+    <div class="grid">
+      <div>{{ field(form.locations, size=8) }}</div>
+      <div>{{ field(form.categories, size=8) }}</div>
+    </div>
+    <small class="muted">Astuce : Ctrl/Cmd + clic pour sélectionner plusieurs éléments.</small>
+    <button type="submit">Ouvrir l'inventaire</button>
+  </form>
+</article>
+{% endblock %}

@@ -1,0 +1,8 @@
+<div id="audit-progress" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% set done = progress.found + progress.lent | length %}
+  <progress value="{{ progress.found }}" max="{{ progress.expected or 1 }}"></progress>
+  <p><strong>{{ progress.found }}</strong> trouvé(s) sur {{ progress.expected }} attendu(s)
+    · {{ progress.remaining | length }} restant(s)
+    {% if progress.lent %}· {{ progress.lent | length }} prêté(s){% endif %}
+    {% if progress.unexpected %}· <span class="error">{{ progress.unexpected | length }} inattendu(s)</span>{% endif %}</p>
+</div>

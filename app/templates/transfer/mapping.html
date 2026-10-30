@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Import — {{ filename }}{% endblock %}
+{% block content %}
+<h1>Importer « {{ filename }} »</h1>
+<p class="muted">{{ rows | length }} ligne(s) détectée(s). Vérifiez l'association des colonnes, faites un essai, puis importez.</p>
+
+{% if result %}
+  {% if result.errors %}
+  <div class="flash flash-error" role="alert">
+    <strong>{{ result.errors | length }} ligne(s) en erreur</strong> — rien n'a été importé. Corrigez le fichier ou les options, puis réessayez.
+    <ul>{% for n, msg in result.errors[:50] %}<li>Ligne {{ n }} : {{ msg }}</li>{% endfor %}</ul>
+    {% if result.errors | length > 50 %}<p>… et {{ result.errors | length - 50 }} autres.</p>{% endif %}
+  </div>
+  {% else %}
+  <div class="flash flash-success">Essai réussi : {{ result.created }} objet(s) seront créés et {{ result.updated }} mis à jour.</div>
+  {% endif %}
+{% endif %}
+
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="mapping-grid">
+    {% for key, (label, _) in fields.items() %}
+    <label>{{ label }}
+      <select name="map_{{ key }}">
+        <option value="">— ignorer —</option>
+        {% for h in header %}<option value="{{ loop.index0 }}" {{ "selected" if mapping.get(key) == loop.index0 }}>{{ h or "(colonne " ~ loop.index ~ ")" }}</option>{% endfor %}
+      </select>
+    </label>
+    {% endfor %}
+  </div>
+  <label>Catégorie par défaut (si la colonne est vide)
+    <select name="default_category">
+      <option value="">— aucune : ligne en erreur —</option>
+      {% for c in categories %}<option value="{{ c.id }}" {{ "selected" if options.default_category == c.id }}>{{ c.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label><input type="checkbox" name="create_missing" value="1" {{ "checked" if options.create_missing }}> Créer les catégories et lieux inconnus</label>
+  <label><input type="checkbox" name="update_existing" value="1" {{ "checked" if options.update_existing }}> Mettre à jour les objets dont le code existe déjà</label>
+
+  <h2>Aperçu</h2>
+  <div class="overflow-auto"><table class="striped small-table">
+    <thead><tr>{% for h in header %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for row in preview %}<tr>{% for c in row %}<td>{{ c }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+  </table></div>
+
+  <div class="actions">
+    <button type="submit" name="dry_run" value="1" class="secondary">Faire un essai</button>
+    <button type="submit" name="confirm" value="1" {{ "disabled" if not result or result.errors }}>Importer</button>
+    <a href="{{ url_for('transfer.index') }}">Annuler</a>
+  </div>
+</form>
+{% endblock %}

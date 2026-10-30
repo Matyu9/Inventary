@@ -1,0 +1,11 @@
+{% macro tree(nodes, counts) %}
+<ul class="tree">
+  {% for loc in nodes %}
+  <li>
+    <a href="{{ url_for('locations.detail', location_id=loc.id) }}">{{ loc.name }}</a>
+    <small class="muted">({{ counts.get(loc.id, 0) }})</small>
+    {% if loc.children %}{{ tree(loc.children, counts) }}{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endmacro %}

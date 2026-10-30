@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% from "partials/_loan_rows.html" import loan_table %}
+{% block title %}Mes prêts{% endblock %}
+{% block content %}
+<h1>Mes prêts</h1>
+{{ loan_table(as_borrower, "Vous n'avez jamais emprunté de matériel.") }}
+{% if current_user.role != "emprunteur" %}
+<h2>Prêts dont je suis garant</h2>
+{{ loan_table(as_guarantor, "Aucun prêt en cours dont vous êtes garant.") }}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ audit.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="muted crumbs"><a href="{{ url_for('audits.index') }}">Inventaires</a> › en cours</p>
+    <h1>{{ audit.name }}</h1>
+    <small class="muted">{{ audit.locations | map(attribute="path") | join(", ") or "Tous lieux" }} · {{ audit.categories | map(attribute="name") | join(", ") or "toutes catégories" }}</small>
+  </div>
+  {% if can(current_user, "audit.manage") %}
+  <form method="post" action="{{ url_for('audits.delete', audit_id=audit.id) }}" onsubmit="return confirm('Supprimer cet inventaire et tous ses scans ?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="contrast outline">Supprimer</button>
+  </form>
+  {% endif %}
+</div>
+
+{% with oob = false %}{% include "audits/_progress.html" %}{% endwith %}
+
+<article id="audit-scanner" data-scan-url="{{ url_for('audits.add_scan', audit_id=audit.id) }}">
+  <form id="audit-scan-form" method="post" action="{{ url_for('audits.add_scan', audit_id=audit.id) }}"
+        hx-post="{{ url_for('audits.add_scan', audit_id=audit.id) }}" hx-target="#scan-feedback" hx-swap="afterbegin"
+        hx-on::after-request="if (event.detail.successful) { this.code.value = ''; this.code.focus(); }">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="location_id">Lieu où je scanne (facultatif)</label>
+    <select id="location_id" name="location_id">
+      <option value="0">— non précisé —</option>
+      {% for id, path in locations %}<option value="{{ id }}">{{ path }}</option>{% endfor %}
+    </select>
+    <fieldset role="group">
+      <input name="code" placeholder="Code ({{ code_prefix }}-0042) ou lecture d'une douchette" aria-label="Code" autocomplete="off" autofocus required>
+      <button type="submit">Valider</button>
+    </fieldset>
+  </form>
+  <div id="scan-reader"></div>
+  <button type="button" id="audit-camera" class="secondary">Scanner avec la caméra</button>
+  <p id="scan-status" class="muted" aria-live="polite"></p>
+  <div id="scan-feedback" aria-live="polite"></div>
+</article>
+
+<div class="grid">
+  <section>
+    <h2>Restent à trouver ({{ progress.remaining | length }})</h2>
+    {% if progress.remaining %}
+    <ul class="compact">{% for i in progress.remaining[:200] %}<li>{{ i.code }} {{ i.name }} <small class="muted">{{ i.location.path if i.location else "" }}</small></li>{% endfor %}</ul>
+    {% if progress.remaining | length > 200 %}<p class="muted">… et {{ progress.remaining | length - 200 }} autres.</p>{% endif %}
+    {% else %}<p class="muted">Tout a été trouvé 🎉</p>{% endif %}
+    {% if progress.lent %}<h3>Prêtés (absents normalement)</h3>
+    <ul class="compact">{% for i in progress.lent %}<li>{{ i.code }} {{ i.name }}</li>{% endfor %}</ul>{% endif %}
+  </section>
+  <section>
+    <h2>Scannés ({{ audit.scans | length }})</h2>
+    <ul class="compact">{% for s in audit.scans | sort(attribute="scanned_at", reverse=true) %}
+      <li><span class="badge {{ 'overdue' if s.result == 'inattendu' else 'status-en_cours' }}">{{ labels[s.result] }}</span>
+        {{ s.item.code }} {{ s.item.name }}
+        <form method="post" action="{{ url_for('audits.delete_scan', audit_id=audit.id, scan_id=s.id) }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="link-button small" aria-label="Annuler ce scan">✕</button>
+        </form></li>
+    {% else %}<li class="muted">Aucun scan pour l'instant.</li>{% endfor %}</ul>
+  </section>
+</div>
+
+{% if can(current_user, "audit.manage") %}
+<article>
+  <form method="post" action="{{ url_for('audits.close', audit_id=audit.id) }}" onsubmit="return confirm('Clôturer ? Les objets non scannés seront déclarés manquants.')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label><input type="checkbox" name="apply_locations" value="1"> Mettre à jour le lieu des objets trouvés ailleurs que prévu</label>
+    <button type="submit">Clôturer l'inventaire</button>
+  </form>
+</article>
+{% endif %}
+<script src="{{ url_for('static', filename='vendor/html5-qrcode.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/audit_scan.js') }}"></script>
+{% endblock %}

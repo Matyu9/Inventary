@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Accès refusé{% endblock %}
+{% block content %}
+<article class="narrow"><h1>Accès refusé</h1><p>Vous n'avez pas les droits nécessaires pour cette action.</p>
+<a href="{{ url_for('dashboard.index') }}">Retour au tableau de bord</a></article>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}{{ item.code }} — {{ item.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="muted crumbs"><a href="{{ url_for('items.index') }}">Inventaire</a> › {{ item.category.name }}</p>
+    <h1>{{ item.name }} <small class="muted">{{ item.code }}</small></h1>
+    <span class="badge item-status">{{ item.status | capitalize }}</span>
+    {% for t in item.tags %}<a class="tag" href="{{ url_for('items.index', tag=t.id) }}">{{ t.name }}</a>{% endfor %}
+  </div>
+  <div class="actions">
+    {% if can(current_user, "loan.request") and item.status not in ("réformé",) %}<a href="{{ url_for('loans.create', item_id=item.id) if not item.kit else url_for('loans.create', kit_id=item.kit.id) }}" role="button">Prêter / réserver</a>{% endif %}
+    {% if can(current_user, "item.edit") %}<a href="{{ url_for('items.edit', item_id=item.id) }}" role="button" class="secondary">Modifier</a>{% endif %}
+    {% if can(current_user, "item.delete") %}
+    <form method="post" action="{{ url_for('items.retire', item_id=item.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="secondary outline">{{ "Réintégrer" if item.status == "réformé" else "Réformer" }}</button>
+    </form>
+    <form method="post" action="{{ url_for('items.delete', item_id=item.id) }}" onsubmit="return confirm('Supprimer définitivement {{ item.code }} ?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="contrast outline">Supprimer</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="detail-grid">
+  <section>
+    {% if item.photos %}
+    <div class="gallery">
+      {% for p in item.photos %}
+      <figure>
+        <a href="{{ url_for('items.uploaded_file', filename=p.filename) }}" target="_blank"><img src="{{ url_for('items.uploaded_file', filename=p.thumbnail) }}" alt="{{ p.caption or item.name }}"></a>
+        {% if p.caption %}<figcaption>{{ p.caption }}</figcaption>{% endif %}
+        {% if can(current_user, "item.edit") %}
+        <form method="post" action="{{ url_for('items.delete_photo', photo_id=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="link-button small">Retirer</button>
+        </form>
+        {% endif %}
+      </figure>
+      {% endfor %}
+    </div>
+    {% else %}{% from "partials/_icons.html" import icon %}<div class="no-photo">{{ icon("image", 28) }}<span>Pas encore de photo</span></div>{% endif %}
+    {% if can(current_user, "item.edit") %}
+    <form method="post" action="{{ url_for('items.add_photo', item_id=item.id) }}" enctype="multipart/form-data" class="photo-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="file" name="photos" accept="image/*" multiple aria-label="Photos">
+      <input type="text" name="caption" placeholder="Légende (facultatif)" aria-label="Légende">
+      <button type="submit" class="secondary">Ajouter</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section>
+    <dl class="props">
+      <dt>Catégorie</dt><dd>{{ item.category.name }}</dd>
+      {% if item.brand %}<dt>Marque</dt><dd>{{ item.brand }}</dd>{% endif %}
+      {% if item.model %}<dt>Modèle</dt><dd>{{ item.model }}</dd>{% endif %}
+      {% if item.serial_number %}<dt>N° de série</dt><dd>{{ item.serial_number }}</dd>{% endif %}
+      {% if item.is_quantity %}
+        <dt>Stock</dt><dd>{{ item.quantity }} {{ item.unit or "" }}{% if item.is_low_stock %} <span class="badge overdue">stock bas</span>{% endif %}</dd>
+        {% if item.low_stock_threshold is not none %}<dt>Seuil d'alerte</dt><dd>{{ item.low_stock_threshold }}</dd>{% endif %}
+      {% else %}
+        <dt>État</dt><dd>{{ item.condition }}</dd>
+      {% endif %}
+      <dt>Lieu</dt><dd>{% if item.location %}<a href="{{ url_for('locations.detail', location_id=item.location.id) }}">{{ item.location.path }}</a>{% else %}—{% endif %}</dd>
+      {% if item.kit %}<dt>Kit</dt><dd><a href="{{ url_for('kits.detail', kit_id=item.kit.id) }}">{{ item.kit.name }}</a></dd>{% endif %}
+      {% for f, v in custom %}<dt>{{ f.label }}</dt><dd>{{ v }}</dd>{% endfor %}
+      {% if item.purchase_date %}<dt>Achat</dt><dd>{{ item.purchase_date | date_fr }}{% if item.purchase_price is not none %} — {{ item.purchase_price | euros }}{% endif %}</dd>{% endif %}
+      {% if item.estimated_value is not none %}<dt>Valeur estimée</dt><dd>{{ item.estimated_value | euros }}</dd>{% endif %}
+    </dl>
+    {% if item.description %}<p class="description">{{ item.description }}</p>{% endif %}
+    <div class="qr-block">
+      <img src="{{ url_for('scan.item_qr', item_id=item.id) }}" alt="QR code de {{ item.code }}" width="96" height="96">
+      <div>
+        <a href="{{ url_for('scan.labels', ids=item.id) }}" target="_blank">Imprimer l'étiquette</a><br>
+        <a href="{{ url_for('scan.item_qr', item_id=item.id) }}" download="{{ item.code }}.svg">Télécharger le QR (SVG)</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+{% if item.is_quantity %}
+<section id="stock">
+  <h2>Stock</h2>
+  {% if can(current_user, "stock.move") %}
+  <form method="post" action="{{ url_for('consumables.move', item_id=item.id) }}" class="grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <select name="reason" aria-label="Motif">{% for key, (label, _) in stock_reasons().items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select>
+    <input type="number" name="amount" min="0" required placeholder="Quantité" aria-label="Quantité">
+    <input name="comment" placeholder="Commentaire (facultatif)" aria-label="Commentaire" maxlength="255">
+    <button type="submit">Enregistrer</button>
+  </form>
+  {% endif %}
+  {% set moves = stock_movements(item) %}
+  {% if moves %}
+  <ul class="timeline">{% for m in moves %}<li><small class="muted">{{ m.created_at | datetime_fr }}{% if m.user %} · {{ m.user.full_name }}{% endif %}</small><br>
+    <strong>{{ "%+d" % m.delta }}</strong> — {{ stock_reasons()[m.reason][0] if m.reason in stock_reasons() else m.reason }}{% if m.comment %} : {{ m.comment }}{% endif %}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Aucun mouvement de stock.</p>{% endif %}
+</section>
+{% endif %}
+
+<section id="loans">
+  <h2>Prêts</h2>
+  {% from "partials/_loan_rows.html" import loan_table %}
+  {{ loan_table(item_loans(item), "Cet objet n'a jamais été prêté.", show_items=false) }}
+</section>
+
+{% if not item.is_quantity %}
+<section id="entretiens">
+  <h2>Entretiens</h2>
+  {% if item.maintenances %}
+  <div class="overflow-auto"><table class="striped">
+    <thead><tr><th>Date</th><th>Type</th><th>Prestataire</th><th>Coût</th><th>Prochain</th><th></th></tr></thead>
+    <tbody>{% for m in item.maintenances %}
+    <tr><td>{{ m.date | date_fr }}</td><td>{{ m.kind | capitalize }}{% if m.description %}<br><small class="muted">{{ m.description }}</small>{% endif %}</td>
+        <td>{{ m.provider or "—" }}</td><td>{{ m.cost | euros if m.cost is not none else "—" }}</td><td>{{ m.next_due | date_fr if m.next_due else "—" }}</td>
+        <td>{% if can(current_user, "maintenance.delete", m) %}<form method="post" action="{{ url_for('maintenance.delete', maintenance_id=m.id) }}" onsubmit="return confirm('Supprimer cet entretien ?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="link-button small">Supprimer</button></form>{% endif %}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted">Aucun entretien enregistré.</p>{% endif %}
+  {% if can(current_user, "maintenance.edit") %}
+  {% set mf = maintenance_form() %}
+  <details>
+    <summary>Enregistrer un entretien</summary>
+    <form method="post" action="{{ url_for('maintenance.add', item_id=item.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid">
+        <label>{{ mf.date.label.text }} {{ mf.date() }}</label>
+        <label>{{ mf.kind.label.text }} {{ mf.kind() }}</label>
+        <label>{{ mf.provider.label.text }} {{ mf.provider() }}</label>
+      </div>
+      <div class="grid">
+        <label>{{ mf.cost.label.text }} {{ mf.cost(inputmode="decimal") }}</label>
+        <label>{{ mf.next_due.label.text }} {{ mf.next_due() }}</label>
+        <label>{{ mf.status.label.text }} {{ mf.status() }}</label>
+      </div>
+      <label>{{ mf.description.label.text }} {{ mf.description(rows=2) }}</label>
+      <button type="submit">Enregistrer</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% endif %}
+
+<section id="rappels">
+  <h2>Rappels</h2>
+  {% set reminders = item_reminders(item) %}
+  {% if reminders %}
+  <ul class="timeline">{% for r in reminders %}
+    <li><small class="muted">{{ r.due_date | date_fr }}{{ " · envoyé" if r.sent }}{% if r.recipients %} · {{ r.recipients | map(attribute="full_name") | join(", ") }}{% endif %}</small><br>{{ r.message }}
+      {% if can(current_user, "reminder.edit") %}<form method="post" action="{{ url_for('maintenance.delete_reminder', reminder_id=r.id) }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="link-button small">Supprimer</button></form>{% endif %}</li>
+  {% endfor %}</ul>
+  {% else %}<p class="muted">Aucun rappel (garantie, contrôle, assurance…).</p>{% endif %}
+  {% if can(current_user, "reminder.edit") %}
+  {% set rf = reminder_form() %}
+  <details>
+    <summary>Ajouter un rappel</summary>
+    <form method="post" action="{{ url_for('maintenance.add_reminder', item_id=item.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid">
+        <label>{{ rf.due_date.label.text }} {{ rf.due_date() }}</label>
+        <label>{{ rf.message.label.text }} {{ rf.message(placeholder="ex. Fin de garantie") }}</label>
+      </div>
+      <label>{{ rf.recipients.label.text }} {{ rf.recipients(size=4) }}</label>
+      <button type="submit">Ajouter</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+
+<section id="notes">
+  <h2>Notes</h2>
+  {% include "items/_notes.html" %}
+</section>
+
+<section>
+  <h2>Historique</h2>
+  {% if activities %}
+  <ul class="timeline">
+    {% for a in activities %}
+    <li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user %} · {{ a.user.full_name }}{% endif %}</small><br>
+      {{ a.message }}
+      {% if a.changes %}<ul class="changes">{% for k, v in a.changes.items() %}<li><strong>{{ k }}</strong> : {{ v[0] if v[0] not in (none, "") else "—" }} → {{ v[1] if v[1] not in (none, "") else "—" }}</li>{% endfor %}</ul>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">Aucun historique.</p>{% endif %}
+</section>
+{% endblock %}

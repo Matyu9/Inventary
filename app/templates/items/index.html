@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Inventaire{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Inventaire</h1>
+  {% if can(current_user, "item.edit") %}<a href="{{ url_for('items.create') }}" role="button">+ Nouvel objet</a>{% endif %}
+</div>
+
+<form id="filters" class="filters" method="get" action="{{ url_for('items.index') }}"
+      hx-get="{{ url_for('items.index') }}" hx-target="#item-results" hx-push-url="true"
+      hx-trigger="input changed delay:300ms from:input[name=q], change from:select">
+  <input type="search" name="q" value="{{ args.q }}" placeholder="Rechercher (code, nom, n° de série, champs…)" aria-label="Recherche">
+  <select name="category" aria-label="Catégorie">
+    <option value="">Toutes catégories</option>
+    {% for c in categories %}<option value="{{ c.id }}" {{ "selected" if args.category == c.id|string }}>{{ c.name }}</option>{% endfor %}
+  </select>
+  <select name="location" aria-label="Lieu">
+    <option value="">Tous lieux</option>
+    {% for id, path in locations %}<option value="{{ id }}" {{ "selected" if args.location == id|string }}>{{ path }}</option>{% endfor %}
+  </select>
+  <select name="status" aria-label="Statut">
+    <option value="">Tous statuts</option>
+    {% for s in statuses %}<option value="{{ s }}" {{ "selected" if args.status == s }}>{{ s|capitalize }}</option>{% endfor %}
+  </select>
+  <select name="condition" aria-label="État">
+    <option value="">Tous états</option>
+    {% for c in conditions %}<option value="{{ c }}" {{ "selected" if args.condition == c }}>{{ c|capitalize }}</option>{% endfor %}
+  </select>
+  {% if tags %}
+  <select name="tag" aria-label="Tag">
+    <option value="">Tous tags</option>
+    {% for t in tags %}<option value="{{ t.id }}" {{ "selected" if args.tag == t.id|string }}>{{ t.name }}</option>{% endfor %}
+  </select>
+  {% endif %}
+  <noscript><button type="submit">Filtrer</button></noscript>
+</form>
+
+<form method="post" action="{{ url_for('items.bulk') }}" id="bulk-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div id="item-results">{% include "items/_results.html" %}</div>
+  {% if can(current_user, "item.edit") %}
+  <fieldset class="bulk">
+    <select name="action" aria-label="Action groupée">
+      <option value="move">Déplacer vers…</option>
+      <option value="tag">Ajouter le tag…</option>
+    </select>
+    <select name="location_id" aria-label="Lieu cible">
+      <option value="0">— aucun lieu —</option>
+      {% for id, path in locations %}<option value="{{ id }}">{{ path }}</option>{% endfor %}
+    </select>
+    <input name="tag" placeholder="tag" aria-label="Tag à ajouter">
+    <button type="submit" class="secondary">Appliquer à la sélection</button>
+  </fieldset>
+  {% endif %}
+  {% if can(current_user, "label.print") %}
+  <div class="actions">
+    <button type="submit" class="outline" formaction="{{ url_for('scan.labels') }}" formmethod="get" formtarget="_blank"
+            formnovalidate name="selection" value="1">Étiquettes de la sélection</button>
+    <a href="{{ url_for('scan.labels', **args) }}" target="_blank" role="button" class="outline secondary">Étiquettes de tous les résultats</a>
+  </div>
+  {% endif %}
+</form>
+{% endblock %}

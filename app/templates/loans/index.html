@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "partials/_loan_rows.html" import loan_table %}
+{% block title %}Prêts{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Prêts</h1>
+  {% if can(current_user, "loan.request") %}<a href="{{ url_for('loans.create') }}" role="button">+ Nouvelle demande</a>{% endif %}
+</div>
+<nav class="tabs">
+  {% for key, (label, _) in views.items() %}
+  <a href="{{ url_for('loans.index', vue=key, type=loan_type or None, q=q or None) }}" {% if key == view %}aria-current="page"{% endif %}>
+    {{ label }}{% if counts.get(key) %} <span class="count">{{ counts[key] }}</span>{% endif %}</a>
+  {% endfor %}
+</nav>
+<form method="get" class="filters">
+  <input type="hidden" name="vue" value="{{ view }}">
+  <input type="search" name="q" value="{{ q }}" placeholder="Emprunteur, garant ou motif" aria-label="Recherche">
+  <select name="type" aria-label="Type" onchange="this.form.submit()">
+    <option value="">Gardes et réservations</option>
+    <option value="garde" {{ "selected" if loan_type == "garde" }}>Gardes</option>
+    <option value="reservation" {{ "selected" if loan_type == "reservation" }}>Réservations</option>
+  </select>
+</form>
+{{ loan_table(loans, "Aucun prêt dans cette vue.") }}
+{% endblock %}

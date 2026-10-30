@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<h1>Notifications</h1>
+{% if notifications %}
+<ul class="notifications">
+  {% for n in notifications %}
+  <li class="{{ 'unread' if n.id in unread_ids }}">
+    <small class="muted">{{ n.created_at | datetime_fr }}</small><br>
+    {% if n.link %}<a href="{{ n.link }}">{{ n.message }}</a>{% else %}{{ n.message }}{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}<p class="muted">Aucune notification.</p>{% endif %}
+{% endblock %}

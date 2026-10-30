@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "partials/_form.html" import field %}
+{% block title %}{{ "Modifier " ~ user.full_name if user else "Nouvelle personne" }}{% endblock %}
+{% block content %}
+<article class="narrow wide">
+  <h1>{{ "Modifier " ~ user.full_name if user else ("Nouvelle personne" if admin else "Nouvelle fiche emprunteur") }}</h1>
+  {% if not admin %}<p class="muted">La fiche permet de prêter du matériel à cette personne. Un administrateur pourra ensuite lui ouvrir un accès.</p>{% endif %}
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="grid"><div>{{ field(form.first_name) }}</div><div>{{ field(form.last_name) }}</div></div>
+    <div class="grid"><div>{{ field(form.email) }}</div><div>{{ field(form.phone) }}</div></div>
+    <div class="grid"><div>{{ field(form.section) }}</div><div>{{ field(form.member_status) }}</div></div>
+    {% if admin %}
+    {{ field(form.role) }}
+    <label>{{ form.active() }} {{ form.active.label.text }}</label>
+    {% if form.active.errors %}<small class="error">{{ form.active.errors | join(" ") }}</small>{% endif %}
+    {% endif %}
+    <button type="submit">Enregistrer</button>
+  </form>
+  {% if user and admin and user.email %}
+  <hr>
+  <form method="post" action="{{ url_for('users.reset_password', user_id=user.id) }}" onsubmit="return confirm('Générer un nouveau mot de passe provisoire ?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="secondary outline">Générer un mot de passe provisoire</button>
+  </form>
+  {% endif %}
+</article>
+{% endblock %}

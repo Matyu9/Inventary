@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Prêt n°{{ loan.id }}{% endblock %}
+{% block content %}
+{% macro post_button(endpoint, label, cls="", confirm=none) %}
+<form method="post" action="{{ url_for(endpoint, loan_id=loan.id) }}" {% if confirm %}onsubmit="return confirm('{{ confirm }}')"{% endif %}>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="{{ cls }}">{{ label }}</button>
+</form>
+{% endmacro %}
+<div class="page-head">
+  <div>
+    <p class="muted crumbs">{% if can(current_user, "loan.list_all") %}<a href="{{ url_for('loans.index') }}">Prêts</a>{% else %}<a href="{{ url_for('loans.mine') }}">Mes prêts</a>{% endif %} › n°{{ loan.id }}</p>
+    <h1>{{ loan.type_label }} n°{{ loan.id }}{% if loan.title %} — {{ loan.title }}{% endif %}</h1>
+    <span class="badge status-{{ loan.status }}{% if loan.is_overdue %} overdue{% endif %}">{{ loan.status_label }}</span>
+  </div>
+  <div class="actions">
+    {% if loan.status == "demande" and can(current_user, "loan.validate") %}
+      {{ post_button("loans.validate", "Valider") }}
+    {% endif %}
+    {% if loan.status == "valide" and can(current_user, "loan.checkout", loan) %}
+      {{ post_button("loans.checkout", "Remettre le matériel") }}
+    {% endif %}
+    {% if loan.status in ("demande", "valide") and can(current_user, "loan.cancel", loan) %}
+      {{ post_button("loans.cancel", "Annuler", "secondary outline", "Annuler ce prêt ?") }}
+    {% endif %}
+  </div>
+</div>
+
+{% if problems %}
+<div class="flash flash-error" role="alert"><strong>Conflit :</strong><ul>{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul></div>
+{% endif %}
+
+<div class="detail-grid">
+  <section>
+    <dl class="props">
+      <dt>Emprunteur</dt><dd>{{ loan.borrower.full_name }}{% if loan.borrower.section %} <small class="muted">({{ loan.borrower.section }})</small>{% endif %}
+        {% if can(current_user, "loan.list_all") and loan.borrower.phone %}<br><a href="tel:{{ loan.borrower.phone }}">{{ loan.borrower.phone }}</a>{% endif %}</dd>
+      <dt>Garant</dt><dd>{{ loan.guarantor.full_name if loan.guarantor else "—" }}</dd>
+      <dt>Demandé par</dt><dd>{{ loan.requested_by.full_name }}<small class="muted meta">le {{ loan.created_at | datetime_fr }}</small></dd>
+      {% if loan.validated_by %}<dt>{{ "Refusé" if loan.status == "refuse" else "Validé" }} par</dt><dd>{{ loan.validated_by.full_name }}<small class="muted meta">le {{ loan.validated_at | datetime_fr }}</small></dd>{% endif %}
+      {% if loan.refusal_reason %}<dt>Motif du refus</dt><dd>{{ loan.refusal_reason }}</dd>{% endif %}
+      <dt>Début</dt><dd>{{ loan.start | datetime_fr }}</dd>
+      <dt>Fin</dt><dd>{{ loan.end | datetime_fr if loan.end else "Sans date de fin" }}</dd>
+      {% if loan.checked_out_at %}<dt>Remis le</dt><dd>{{ loan.checked_out_at | datetime_fr }}</dd>{% endif %}
+      {% if loan.returned_at %}<dt>Rendu le</dt><dd>{{ loan.returned_at | datetime_fr }}</dd>{% endif %}
+      {% if loan.deposit_amount is not none %}<dt>Caution</dt><dd>{{ loan.deposit_amount | euros }} — {{ "rendue" if loan.deposit_returned else "non rendue" }}</dd>{% endif %}
+    </dl>
+    {% if loan.comment %}<p class="description">{{ loan.comment }}</p>{% endif %}
+
+    {% if loan.status in ("demande", "valide", "en_cours") and can(current_user, "loan.validate") %}
+    <div class="loan-admin">
+    {% if loan.status == "demande" %}
+    <form method="post" action="{{ url_for('loans.refuse', loan_id=loan.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <fieldset role="group">
+        <input name="reason" placeholder="Motif du refus (facultatif)" aria-label="Motif du refus" maxlength="255">
+        <button type="submit" class="contrast outline">Refuser</button>
+      </fieldset>
+    </form>
+    {% endif %}
+    <form method="post" action="{{ url_for('loans.change_end', loan_id=loan.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="end">Modifier la date de fin</label>
+      <fieldset role="group">
+        <input type="datetime-local" id="end" name="end" value="{{ loan.end.strftime('%Y-%m-%dT%H:%M') if loan.end else '' }}">
+        <button type="submit" class="secondary">Enregistrer</button>
+      </fieldset>
+    </form>
+    </div>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Matériel</h2>
+    {% set can_return = loan.status == "en_cours" and can(current_user, "loan.checkout", loan) %}
+    {% if can_return %}<form method="post" action="{{ url_for('loans.checkin', loan_id=loan.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+    <ul class="loan-lines">
+      {% for line in loan.lines %}
+      <li>
+        <div>
+          {% if can_return and not line.returned_at %}<input type="checkbox" name="line_ids" value="{{ line.id }}" id="line-{{ line.id }}" aria-label="Rendu">{% endif %}
+          {% if line.kit %}
+            <strong>Kit {{ line.kit.name }}</strong>
+            <ul>{% for item, _ in line_items(line) %}<li>{% if can(current_user, "inventory.view") %}<a href="{{ url_for('items.detail', item_id=item.id) }}">{{ item.code }}</a>{% else %}{{ item.code }}{% endif %} {{ item.name }}</li>{% endfor %}</ul>
+          {% else %}
+            {% if can(current_user, "inventory.view") %}<a href="{{ url_for('items.detail', item_id=line.item.id) }}">{{ line.item.code }}</a>{% else %}{{ line.item.code }}{% endif %}
+            {{ line.item.name }}{% if line.item.is_quantity %} × {{ line.quantity }} {{ line.item.unit or "" }}{% endif %}
+          {% endif %}
+        </div>
+        <small class="muted">
+          {% if line.condition_out %}État au départ : {{ line.condition_out }}.{% endif %}
+          {% if line.returned_at %}Rendu le {{ line.returned_at | datetime_fr }}{% if line.condition_in %} ({{ line.condition_in }}){% endif %}.{% endif %}
+        </small>
+        {% if can_return and not line.returned_at and not (line.item and line.item.is_quantity) %}
+        <select name="condition_{{ line.id }}" aria-label="État au retour">
+          <option value="">État au retour : inchangé</option>
+          {% for c in conditions %}<option value="{{ c }}">{{ c | capitalize }}</option>{% endfor %}
+        </select>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% if can_return %}
+      {% if loan.deposit_amount is not none and not loan.deposit_returned %}<label><input type="checkbox" name="deposit_returned" value="1"> Caution rendue</label>{% endif %}
+      <button type="submit">Enregistrer le retour des éléments cochés</button>
+    </form>{% endif %}
+  </section>
+</div>
+
+{% if activities %}
+<section>
+  <h2>Historique</h2>
+  <ul class="timeline">
+    {% for a in activities %}
+    <li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user %} · {{ a.user.full_name }}{% endif %}</small><br>{{ a.message }}
+      {% if a.changes %}<ul class="changes">{% for k, v in a.changes.items() %}<li>{{ v[0] or "—" }} → {{ v[1] or "—" }}</li>{% endfor %}</ul>{% endif %}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

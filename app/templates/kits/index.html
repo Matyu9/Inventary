@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Kits{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Kits</h1>
+  {% if can(current_user, "item.edit") %}<a href="{{ url_for('kits.create') }}" role="button">+ Nouveau kit</a>{% endif %}
+</div>
+<p class="muted">Un kit regroupe des objets toujours prêtés ensemble (batterie complète, sono de concert, saxophone + bec + étui…).</p>
+{% if kits %}
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Kit</th><th>Objets</th><th>Lieu</th><th>Statut</th></tr></thead>
+  <tbody>{% for k in kits %}
+  <tr>
+    <td><a href="{{ url_for('kits.detail', kit_id=k.id) }}">{{ k.name }}</a></td>
+    <td>{{ k.items | length }}</td>
+    <td>{{ k.location.path if k.location else "—" }}</td>
+    <td><span class="badge item-status">{{ kit_status(k) | capitalize }}</span></td>
+  </tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">Aucun kit pour l'instant.</p>{% endif %}
+{% endblock %}

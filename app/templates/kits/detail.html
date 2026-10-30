@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "partials/_loan_rows.html" import loan_table %}
+{% block title %}{{ kit.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="muted crumbs"><a href="{{ url_for('kits.index') }}">Kits</a> › KIT-{{ "%03d" % kit.id }}</p>
+    <h1>{{ kit.name }}</h1>
+    <span class="badge item-status">{{ status | capitalize }}</span>
+  </div>
+  <div class="actions">
+    {% if can(current_user, "loan.request") and kit.items %}<a href="{{ url_for('loans.create', kit_id=kit.id) }}" role="button">Prêter / réserver</a>{% endif %}
+    {% if can(current_user, "item.edit") %}<a href="{{ url_for('kits.edit', kit_id=kit.id) }}" role="button" class="secondary">Modifier</a>{% endif %}
+    {% if can(current_user, "item.delete") %}
+    <form method="post" action="{{ url_for('kits.delete', kit_id=kit.id) }}" onsubmit="return confirm('Supprimer ce kit ? Les objets restent dans l\'inventaire.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="contrast outline">Supprimer</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="detail-grid">
+  <section>
+    <h2>Contenu ({{ kit.items | length }})</h2>
+    {% if locked %}<p class="flash flash-info">Prêt n°{{ locked.id }} en cours : la composition est verrouillée.</p>{% endif %}
+    {% if kit.items %}
+    <ul class="loan-lines">
+      {% for i in kit.items %}
+      <li>
+        <a href="{{ url_for('items.detail', item_id=i.id) }}">{{ i.code }}</a> {{ i.name }}
+        <span class="badge item-status">{{ i.status | capitalize }}</span> <small class="muted">{{ i.condition }}</small>
+        {% if can(current_user, "item.edit") and not locked %}
+        <form method="post" action="{{ url_for('kits.remove_item', kit_id=kit.id, item_id=i.id) }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="link-button small">Retirer</button>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">Ce kit est vide.</p>{% endif %}
+    {% if can(current_user, "item.edit") and not locked %}
+    <input type="search" name="q" placeholder="Ajouter un objet (code ou nom)" aria-label="Ajouter un objet" autocomplete="off"
+           hx-get="{{ url_for('kits.candidates', kit_id=kit.id) }}" hx-trigger="input changed delay:250ms" hx-target="#kit-candidates">
+    <div id="kit-candidates"></div>
+    {% endif %}
+  </section>
+  <section>
+    <dl class="props">
+      <dt>Lieu</dt><dd>{{ kit.location.path if kit.location else "—" }}</dd>
+    </dl>
+    {% if kit.description %}<p class="description">{{ kit.description }}</p>{% endif %}
+    <div class="qr-block">
+      <img src="{{ url_for('scan.kit_qr', kit_id=kit.id) }}" alt="QR code du kit" width="96" height="96">
+      <div><a href="{{ url_for('scan.labels', kit_ids=kit.id) }}" target="_blank">Imprimer l'étiquette du kit</a><br>
+        {% if kit.items %}<a href="{{ url_for('scan.labels', kit_ids=kit.id, ids=kit.items | map(attribute='id') | list) }}" target="_blank">Étiquettes du kit et de ses objets</a>{% endif %}</div>
+    </div>
+  </section>
+</div>
+
+<section>
+  <h2>Prêts</h2>
+  {{ loan_table(kit_loans(kit), "Ce kit n'a jamais été prêté.", show_items=false) }}
+</section>
+
+{% if activities %}
+<section>
+  <h2>Historique</h2>
+  <ul class="timeline">{% for a in activities %}<li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user %} · {{ a.user.full_name }}{% endif %}</small><br>{{ a.message }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

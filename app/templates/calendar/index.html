@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Calendrier{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Calendrier des prêts</h1>
+  {% if can(current_user, "loan.request") %}<a href="{{ url_for('loans.create') }}" role="button">+ Nouvelle demande</a>{% endif %}
+</div>
+<p class="legend">
+  <span style="--c:#d08a0b">Demandé</span><span style="--c:#2f6fd0">Validé</span><span style="--c:#2e8b4e">En cours</span>
+  <span style="--c:#c0392b">En retard</span><span style="--c:#8c8c8c">Rendu</span>{% if can(current_user, "inventory.view") %}<span style="--c:#7b5ea7">Entretien</span>{% endif %}
+</p>
+<div id="calendar" data-events-url="{{ url_for('calendar.events') }}"></div>
+
+<details class="ical">
+  <summary>S'abonner depuis Google Agenda, Outlook ou Apple Calendrier</summary>
+  <p>Ajoutez ce lien comme « calendrier par URL ». Il est personnel : ne le partagez pas.</p>
+  <fieldset role="group">
+    <input readonly value="{{ feed_url }}" aria-label="Lien d'abonnement" onclick="this.select()">
+    <button type="button" class="secondary" onclick="navigator.clipboard && navigator.clipboard.writeText('{{ feed_url }}')">Copier</button>
+  </fieldset>
+  <form method="post" action="{{ url_for('calendar.reset_token') }}" onsubmit="return confirm('L\'ancien lien cessera de fonctionner. Continuer ?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="link-button small">Générer un nouveau lien</button>
+  </form>
+</details>
+<script src="{{ url_for('static', filename='vendor/fullcalendar.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/fullcalendar-fr.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}

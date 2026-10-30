@@ -1,0 +1,10 @@
+{% if error %}
+<div class="flash flash-error" role="alert">{{ error }}</div>
+{% endif %}
+{% for item, result, already in results %}
+<div class="flash {{ 'flash-warning' if already or result == 'inattendu' else 'flash-success' }}">
+  <strong>{{ item.code }}</strong> {{ item.name }} —
+  {% if already %}déjà scanné{% elif result == "inattendu" %}inattendu : hors du périmètre de cet inventaire{% if item.location %} (enregistré : {{ item.location.path }}){% endif %}{% else %}trouvé ✓{% endif %}
+</div>
+{% endfor %}
+{% with oob = true %}{% include "audits/_progress.html" %}{% endwith %}

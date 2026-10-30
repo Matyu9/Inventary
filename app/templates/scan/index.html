@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Scanner{% endblock %}
+{% block content %}
+<article class="narrow scan-page">
+  <h1>Scanner un QR code</h1>
+  <div id="scanner" data-lookup-url="{{ url_for('scan.lookup') }}">
+    <div id="scan-reader"></div>
+    <p id="scan-status" class="muted" aria-live="polite"></p>
+    <button type="button" id="scan-start">Activer la caméra</button>
+    <label class="file-button" role="button" tabindex="0">
+      Prendre une photo du QR
+      <input type="file" id="scan-file" accept="image/*" capture="environment" hidden>
+    </label>
+  </div>
+  <hr>
+  <form method="get" action="{{ url_for('scan.lookup') }}">
+    <label for="code">Ou saisir le code inscrit sur l'étiquette</label>
+    <fieldset role="group">
+      <input id="code" name="code" placeholder="ex. {{ code_prefix }}-0042" autocapitalize="characters" autocomplete="off" required>
+      <button type="submit">Ouvrir</button>
+    </fieldset>
+  </form>
+</article>
+<script src="{{ url_for('static', filename='vendor/html5-qrcode.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/scan.js') }}"></script>
+{% endblock %}

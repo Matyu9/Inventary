@@ -1,0 +1,131 @@
+{% from "partials/_icons.html" import icon %}
+{%- macro navlink(endpoint, label, icon_name, prefixes=none) -%}
+  {%- set active = request.endpoint and (request.endpoint == endpoint or (prefixes and request.endpoint.split(".")[0] in prefixes)) -%}
+  <a href="{{ url_for(endpoint) }}" class="nav-link{{ ' active' if active }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name) }}<span>{{ label }}</span></a>
+{%- endmacro -%}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Inventaire{% endblock %} · {{ asso_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/pico.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="{{ url_for('static', filename='vendor/htmx.min.js') }}" defer></script>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="theme-color" content="#8b1e3f">
+  <link rel="manifest" href="{{ url_for('scan.manifest') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}' class="{{ 'app' if current_user.is_authenticated else 'guest' }}">
+{% if current_user.is_authenticated %}
+  {% set staff = can(current_user, "inventory.view") %}
+  <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+    <a href="{{ url_for('dashboard.index') }}" class="brand">
+      <span class="brand-mark">{{ icon("music", 18) }}</span>
+      <span class="brand-text"><strong>{{ asso_name }}</strong><small>Inventaire</small></span>
+    </a>
+    <nav>
+      <p class="nav-title">Au quotidien</p>
+      {{ navlink("dashboard.index", "Tableau de bord", "home") }}
+      {% if can(current_user, "loan.list_all") %}{{ navlink("loans.index", "Prêts", "swap") }}{% endif %}
+      {{ navlink("loans.mine", "Mes prêts", "user-check") }}
+      {{ navlink("calendar.index", "Calendrier", "calendar", ["calendar"]) }}
+      {% if can(current_user, "scan") %}{{ navlink("scan.index", "Scanner", "scan") }}{% endif %}
+      {% if staff %}
+      <p class="nav-title">Matériel</p>
+      {{ navlink("items.index", "Inventaire", "package", ["items", "maintenance"]) }}
+      {{ navlink("kits.index", "Kits", "layers", ["kits"]) }}
+      {{ navlink("consumables.index", "Consommables", "droplet", ["consumables"]) }}
+      {{ navlink("locations.index", "Lieux", "map-pin", ["locations"]) }}
+      {{ navlink("referentiel.categories", "Catégories", "tag") }}
+      <p class="nav-title">Suivi</p>
+      {% if can(current_user, "audit.scan") %}{{ navlink("audits.index", "Inventaires", "clipboard", ["audits"]) }}{% endif %}
+      {% if can(current_user, "report.view") %}{{ navlink("reports.index", "Rapports", "chart", ["reports"]) }}{% endif %}
+      {% if can(current_user, "export") %}{{ navlink("transfer.index", "Import / export", "transfer", ["transfer"]) }}{% endif %}
+      {% endif %}
+      {% if can(current_user, "borrower.create") or can(current_user, "settings.manage") %}
+      <p class="nav-title">Administration</p>
+      {% if can(current_user, "borrower.create") %}{{ navlink("users.index", "Personnes", "users", ["users"]) }}{% endif %}
+      {% if can(current_user, "customfield.manage") %}{{ navlink("referentiel.custom_fields", "Champs perso", "sliders") }}{% endif %}
+      {% if can(current_user, "settings.manage") %}{{ navlink("settings.index", "Paramètres", "settings", ["settings"]) }}{% endif %}
+      {% endif %}
+    </nav>
+    <div class="sidebar-user">
+      <span class="avatar" aria-hidden="true">{{ current_user.first_name[:1] }}{{ current_user.last_name[:1] }}</span>
+      <span class="who"><strong>{{ current_user.full_name }}</strong><small>{{ current_user.role_label }}</small></span>
+    </div>
+  </aside>
+  <div class="scrim" data-close-nav hidden></div>
+
+  <div class="main-col">
+    <header class="topbar">
+      <button type="button" class="icon-button nav-toggle" data-open-nav aria-label="Ouvrir le menu" aria-controls="sidebar">{{ icon("menu") }}</button>
+      <a href="{{ url_for('dashboard.index') }}" class="topbar-brand">{{ asso_name }}</a>
+      {% if staff %}
+      <form class="global-search" method="get" action="{{ url_for('items.index') }}" role="search">
+        {{ icon("search", 18) }}
+        <input type="search" name="q" placeholder="Rechercher un objet, un code, un n° de série…" aria-label="Rechercher dans l'inventaire">
+      </form>
+      {% else %}<span class="spacer"></span>{% endif %}
+      {% set unread = unread_notifications() %}
+      <a href="{{ url_for('users.notifications') }}" class="icon-button bell" aria-label="Notifications{{ ' (' ~ unread ~ ' non lues)' if unread }}">{{ icon("bell") }}{% if unread %}<span class="bell-count">{{ unread }}</span>{% endif %}</a>
+      <details class="dropdown user-menu">
+        <summary aria-label="Mon compte"><span class="avatar small">{{ current_user.first_name[:1] }}{{ current_user.last_name[:1] }}</span></summary>
+        <ul dir="rtl">
+          <li><small>{{ current_user.full_name }} · {{ current_user.role_label }}</small></li>
+          {% if current_user.password_hash %}<li><a href="{{ url_for('auth.password') }}">Mot de passe</a></li>{% endif %}
+          {% if can(current_user, "settings.manage") %}<li><a href="{{ url_for('settings.index') }}">Paramètres</a></li>{% endif %}
+          <li>
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="link-button">Déconnexion</button>
+            </form>
+          </li>
+        </ul>
+      </details>
+    </header>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <nav class="tabbar" aria-label="Navigation rapide">
+    <a href="{{ url_for('dashboard.index') }}" class="{{ 'active' if request.endpoint == 'dashboard.index' }}">{{ icon("home") }}<span>Accueil</span></a>
+    {% if can(current_user, "loan.list_all") %}
+    <a href="{{ url_for('loans.index') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('loans.') }}">{{ icon("swap") }}<span>Prêts</span></a>
+    {% else %}
+    <a href="{{ url_for('loans.mine') }}" class="{{ 'active' if request.endpoint == 'loans.mine' }}">{{ icon("user-check") }}<span>Mes prêts</span></a>
+    {% endif %}
+    {% if can(current_user, "scan") %}
+    <a href="{{ url_for('scan.index') }}" class="tab-scan" aria-label="Scanner">{{ icon("scan", 26) }}</a>
+    {% else %}
+    <a href="{{ url_for('calendar.index') }}" class="{{ 'active' if request.endpoint == 'calendar.index' }}">{{ icon("calendar") }}<span>Agenda</span></a>
+    {% endif %}
+    {% if staff %}
+    <a href="{{ url_for('items.index') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('items.') }}">{{ icon("package") }}<span>Matériel</span></a>
+    {% else %}
+    <a href="{{ url_for('users.notifications') }}">{{ icon("bell") }}<span>Alertes</span></a>
+    {% endif %}
+    <button type="button" data-open-nav aria-controls="sidebar">{{ icon("menu") }}<span>Menu</span></button>
+  </nav>
+{% else %}
+  <main class="guest-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}" role="alert">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block guest %}{{ self.content() }}{% endblock %}
+  </main>
+{% endif %}
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</body>
+</html>

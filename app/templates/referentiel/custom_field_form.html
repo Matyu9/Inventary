@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "partials/_form.html" import field %}
+{% block title %}{{ "Modifier le champ" if cf else "Nouveau champ" }}{% endblock %}
+{% block content %}
+<article class="narrow">
+  <h1>{{ "Modifier le champ" if cf else "Nouveau champ" }}</h1>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {{ field(form.label, placeholder="ex. Tonalité") }}
+    {{ field(form.type) }}
+    {{ field(form.options, rows=4, placeholder="Sib\nMib\nUt") }}
+    {{ field(form.categories, size=6) }}
+    {{ field(form.position, inputmode="numeric") }}
+    <label>{{ form.required() }} {{ form.required.label.text }}</label>
+    <button type="submit">Enregistrer</button>
+  </form>
+</article>
+{% endblock %}

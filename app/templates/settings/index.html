@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Paramètres{% endblock %}
+{% block content %}
+<h1>Paramètres</h1>
+<p class="muted">Ces réglages se modifient dans le fichier <code>.env</code> du serveur, puis en redémarrant l'appli.</p>
+<dl class="props">
+  <dt>Nom de l'association</dt><dd>{{ cfg.ASSO_NAME }}</dd>
+  <dt>Adresse publique (QR, emails)</dt><dd><code>{{ cfg.BASE_URL }}</code></dd>
+  <dt>Préfixe des codes</dt><dd>{{ cfg.ITEM_CODE_PREFIX }}</dd>
+  <dt>Emails</dt><dd>{% if smtp %}Activés via {{ cfg.SMTP_HOST }}:{{ cfg.SMTP_PORT }}{% else %}Désactivés : les notifications restent dans l'appli.{% endif %}</dd>
+</dl>
+<div class="actions">
+  <form method="post" action="{{ url_for('settings.test_email') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="secondary" {{ "disabled" if not smtp }}>M'envoyer un email de test</button>
+  </form>
+  <form method="post" action="{{ url_for('settings.run_reminders') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="secondary outline">Lancer les rappels maintenant</button>
+  </form>
+</div>
+{% endblock %}

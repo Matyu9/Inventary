@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "partials/_loan_rows.html" import loan_table %}
+{% block title %}Mes prêts{% endblock %}
+{% block content %}
+<div class="hello">
+  <h1>Bonjour {{ current_user.first_name }}</h1>
+  <p>Le matériel que {{ asso_name }} vous prête.</p>
+</div>
+<section class="card">
+  <h2>Mes prêts en cours</h2>
+  {{ loan_table(loans, "Vous n'avez aucun prêt en cours.") }}
+</section>
+{% endblock %}

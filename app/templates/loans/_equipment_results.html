@@ -1,0 +1,22 @@
+{% if q %}
+<ul class="picker-results">
+  {% for i in items %}
+  <li>
+    <span><strong>{{ i.code }}</strong> {{ i.name }}
+      {% if i.is_quantity %}<small class="muted">· {{ i.quantity }} {{ i.unit or "" }} en stock</small>{% endif %}
+      {% if i.kit %}<small class="muted">· dans le kit {{ i.kit.name }}</small>{% endif %}
+      {% if i.status != "disponible" %}<span class="badge item-status">{{ i.status | capitalize }}</span>{% endif %}</span>
+    <button type="button" class="outline small" data-add-line data-kind="item" data-id="{{ i.id }}"
+            data-label="{{ i.code }} — {{ i.name }}" data-quantity="{{ 'true' if i.is_quantity else 'false' }}">Ajouter</button>
+  </li>
+  {% endfor %}
+  {% for k in kits %}
+  <li>
+    <span><strong>Kit</strong> {{ k.name }} <small class="muted">· {{ k.items | length }} objet(s)</small></span>
+    <button type="button" class="outline small" data-add-line data-kind="kit" data-id="{{ k.id }}"
+            data-label="Kit {{ k.name }}" data-quantity="false">Ajouter</button>
+  </li>
+  {% endfor %}
+  {% if not items and not kits %}<li class="muted">Aucun résultat pour « {{ q }} ».</li>{% endif %}
+</ul>
+{% endif %}

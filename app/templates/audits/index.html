@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Inventaires{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Inventaires physiques</h1>
+  {% if can(current_user, "audit.manage") %}<a href="{{ url_for('audits.create') }}" role="button">+ Nouvel inventaire</a>{% endif %}
+</div>
+<p class="muted">Scannez tout ce qui est présent : l'appli signale ce qui manque et ce qui n'est pas à sa place.</p>
+{% if audits %}
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Inventaire</th><th>Périmètre</th><th>Ouvert</th><th>Scans</th><th>Statut</th></tr></thead>
+  <tbody>{% for a in audits %}
+  <tr>
+    <td><a href="{{ url_for('audits.detail', audit_id=a.id) }}">{{ a.name }}</a></td>
+    <td><small>{{ a.locations | map(attribute="name") | join(", ") or "Tous lieux" }} · {{ a.categories | map(attribute="name") | join(", ") or "toutes catégories" }}</small></td>
+    <td>{{ a.opened_at | date_fr }}<br><small class="muted">{{ a.opened_by.full_name }}</small></td>
+    <td>{{ a.scans | selectattr("scanned_by_id") | list | length }}</td>
+    <td><span class="badge {{ 'status-en_cours' if a.status == 'ouvert' else '' }}">{{ "En cours" if a.status == "ouvert" else "Clôturé le " ~ (a.closed_at | date_fr) }}</span></td>
+  </tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">Aucun inventaire réalisé.</p>{% endif %}
+{% endblock %}

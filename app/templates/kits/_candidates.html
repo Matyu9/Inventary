@@ -1,0 +1,16 @@
+{% if q %}
+<ul class="picker-results">
+  {% for i in items %}
+  <li>
+    <span><strong>{{ i.code }}</strong> {{ i.name }}{% if i.status != "disponible" %} <span class="badge item-status">{{ i.status | capitalize }}</span>{% endif %}</span>
+    <form method="post" action="{{ url_for('kits.add_item', kit_id=kit.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="item_id" value="{{ i.id }}">
+      <button type="submit" class="outline small">Ajouter</button>
+    </form>
+  </li>
+  {% else %}
+  <li class="muted">Aucun objet libre ne correspond à « {{ q }} ».</li>
+  {% endfor %}
+</ul>
+{% endif %}

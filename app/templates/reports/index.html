@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Rapports{% endblock %}
+{% macro bars(rows) %}
+{% set top = rows | map(attribute="value") | max %}
+<ol class="hbars">
+  {% for r in rows %}
+  <li>
+    <span class="hbar-label">{{ r.label }}</span>
+    <span class="hbar-track"><span class="hbar" style="width: {{ bar_width(r.value, top) }}%" title="{{ r.label }} : {{ r.text }}"></span></span>
+    <span class="hbar-value">{{ r.text }}</span>
+  </li>
+  {% endfor %}
+</ol>
+{% endmacro %}
+{% block content %}
+<div class="page-head">
+  <h1>Rapports</h1>
+  <button type="button" class="outline" onclick="window.print()">Imprimer / PDF</button>
+</div>
+<form method="get" class="period">
+  <label>Du <input type="date" name="debut" value="{{ start.isoformat() }}"></label>
+  <label>au <input type="date" name="fin" value="{{ end.isoformat() }}"></label>
+  <button type="submit" class="secondary">Appliquer</button>
+</form>
+
+<section class="stats">
+  <article class="stat"><span class="stat-value">{{ kpis["items"] }}</span><span class="stat-label">Objets au parc</span></article>
+  <article class="stat"><span class="stat-value">{{ kpis["value"] | euros }}</span><span class="stat-label">Valeur estimée</span></article>
+  <article class="stat"><span class="stat-value">{{ kpis["active_loans"] }}</span><span class="stat-label">Prêts en cours</span></article>
+  <article class="stat"><span class="stat-value">{{ kpis["loans_period"] }}</span><span class="stat-label">Prêts sur la période</span></article>
+  <article class="stat"><span class="stat-value">{{ compliance.rate ~ " %" if compliance.rate is not none else "—" }}</span><span class="stat-label">Retours à l'heure</span></article>
+</section>
+
+<section class="report">
+  <div class="report-head"><h2>Valeur du parc par catégorie</h2><a href="{{ url_for('reports.export', name='valeur') }}">CSV</a></div>
+  <p class="muted">Valeur estimée, ou à défaut prix d'achat. Utile pour l'assurance et l'AG.</p>
+  {% if values %}
+  {{ bars(value_bars) }}
+  <details><summary>Tableau</summary>
+  <table class="striped"><thead><tr><th>Catégorie</th><th>Objets</th><th>Valeur</th><th>Sans valeur renseignée</th></tr></thead>
+    <tbody>{% for r in values %}<tr><td>{{ r.category.name }}</td><td>{{ r.count }}</td><td>{{ r.value | euros }}</td><td>{{ r.unvalued }}</td></tr>{% endfor %}</tbody></table>
+  </details>
+  {% else %}<p class="muted">Aucun objet.</p>{% endif %}
+</section>
+
+<section class="report">
+  <div class="report-head"><h2>Objets les plus prêtés</h2><a href="{{ url_for('reports.export', name='utilisation', debut=start, fin=end) }}">CSV</a></div>
+  {% if usage %}
+  {{ bars(usage_bars) }}
+  {% else %}<p class="muted">Aucun prêt sorti sur la période.</p>{% endif %}
+</section>
+
+<section class="report">
+  <div class="report-head"><h2>Retours</h2></div>
+  {% if compliance.total %}
+  <p>{{ compliance.on_time }} prêt(s) rendu(s) à l'heure sur {{ compliance.total }} (marge de 24 h).</p>
+  {% if compliance.late %}
+  <table class="striped"><thead><tr><th>Prêt</th><th>Emprunteur</th><th>Retour prévu</th><th>Rendu le</th></tr></thead>
+    <tbody>{% for l in compliance.late %}<tr><td><a href="{{ url_for('loans.detail', loan_id=l.id) }}">n°{{ l.id }}</a></td><td>{{ l.borrower.full_name }}</td><td>{{ l.end | date_fr }}</td><td>{{ l.returned_at | date_fr }}</td></tr>{% endfor %}</tbody></table>
+  {% endif %}
+  {% else %}<p class="muted">Aucun prêt daté rendu sur la période.</p>{% endif %}
+</section>
+
+<section class="report">
+  <div class="report-head"><h2>Gardes en cours par personne</h2><a href="{{ url_for('reports.export', name='gardes') }}">CSV</a></div>
+  {% if custody %}
+  <table class="striped"><thead><tr><th>Emprunteur</th><th>Matériel</th><th>Depuis</th><th>Garant</th></tr></thead>
+    <tbody>{% for borrower, loans in custody %}{% for l in loans %}
+    <tr><td>{% if loop.first %}{{ borrower.full_name }}{% if borrower.section %} <small class="muted">({{ borrower.section }})</small>{% endif %}{% endif %}</td>
+        <td><a href="{{ url_for('loans.detail', loan_id=l.id) }}">{% for line in l.lines %}{{ line.kit.name if line.kit else line.item.code ~ " " ~ line.item.name }}{{ ", " if not loop.last }}{% endfor %}</a></td>
+        <td>{{ l.start | date_fr }}</td><td>{{ l.guarantor.full_name if l.guarantor else "—" }}</td></tr>
+    {% endfor %}{% endfor %}</tbody></table>
+  {% else %}<p class="muted">Aucune garde en cours.</p>{% endif %}
+</section>
+
+<section class="report">
+  <div class="report-head"><h2>Coûts d'entretien par catégorie</h2><a href="{{ url_for('reports.export', name='entretiens', debut=start, fin=end) }}">CSV</a></div>
+  {% if costs %}
+  {{ bars(cost_bars) }}
+  {% else %}<p class="muted">Aucun entretien sur la période.</p>{% endif %}
+</section>
+
+<section class="report">
+  <div class="report-head"><h2>Objets jamais sortis sur la période ({{ idle | length }})</h2><a href="{{ url_for('reports.export', name='inactifs', debut=start, fin=end) }}">CSV</a></div>
+  {% if idle %}
+  <ul class="compact columns">{% for i in idle %}<li><a href="{{ url_for('items.detail', item_id=i.id) }}">{{ i.code }}</a> {{ i.name }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Tout le matériel a servi.</p>{% endif %}
+</section>
+{% endblock %}

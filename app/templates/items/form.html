@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "partials/_form.html" import field %}
+{% block title %}{{ "Modifier " ~ item.code if item else "Nouvel objet" }}{% endblock %}
+{% block content %}
+<h1>{{ "Modifier " ~ item.code ~ " — " ~ item.name if item else "Nouvel objet" }}</h1>
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <div class="grid">
+    <div>{{ field(form.name) }}</div>
+    <div>{{ field(form.category_id, **{"hx-get": url_for('items.custom_fields_partial'), "hx-target": "#custom-fields",
+          "hx-vals": '{"item_id": "' ~ (item.id if item else '') ~ '"}', "hx-trigger": "change"}) }}</div>
+  </div>
+  <div class="grid">
+    <div>{{ field(form.brand) }}</div>
+    <div>{{ field(form.model) }}</div>
+    <div>{{ field(form.serial_number) }}</div>
+  </div>
+  <div class="grid">
+    <div>{{ field(form.condition) }}</div>
+    <div>{% if item and item.status not in ("disponible", "en entretien") %}{{ field(form.status, disabled=true) }}{% else %}{{ field(form.status) }}{% endif %}</div>
+    <div>{{ field(form.location_id) }}</div>
+  </div>
+  {{ field(form.tags, list="tag-list", placeholder="ex. étude, prêt élève") }}
+  {{ field(form.description, rows=3) }}
+
+  <fieldset id="custom-fields">{% include "items/_custom_fields.html" %}</fieldset>
+
+  <details {{ "open" if form.purchase_date.data or form.purchase_price.data or form.estimated_value.data }}>
+    <summary>Achat et valeur</summary>
+    <div class="grid">
+      <div>{{ field(form.purchase_date) }}</div>
+      <div>{{ field(form.purchase_price, inputmode="decimal") }}</div>
+      <div>{{ field(form.estimated_value, inputmode="decimal") }}</div>
+    </div>
+  </details>
+
+  <details {{ "open" if form.tracking.data == "quantite" }}>
+    <summary>Suivi en quantité (consommables)</summary>
+    <div class="grid">
+      <div>{{ field(form.tracking) }}</div>
+      {% if not item %}<div>{{ field(form.quantity, inputmode="numeric") }}</div>{% endif %}
+      <div>{{ field(form.unit, placeholder="ex. boîte, flacon") }}</div>
+      <div>{{ field(form.low_stock_threshold, inputmode="numeric") }}</div>
+      <div>{{ field(form.consumption_mode) }}</div>
+    </div>
+  </details>
+
+  <div class="actions">
+    <button type="submit">Enregistrer</button>
+    <a href="{{ url_for('items.detail', item_id=item.id) if item else url_for('items.index') }}" role="button" class="secondary outline">Annuler</a>
+  </div>
+</form>
+<datalist id="tag-list">{% for t in tag_names() %}<option value="{{ t }}">{% endfor %}</datalist>
+{% endblock %}

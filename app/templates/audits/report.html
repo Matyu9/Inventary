@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ audit.name }} — rapport{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="muted crumbs"><a href="{{ url_for('audits.index') }}">Inventaires</a> › rapport</p>
+    <h1>{{ audit.name }}</h1>
+    <small class="muted">Ouvert le {{ audit.opened_at | date_fr }} par {{ audit.opened_by.full_name }} · clôturé le {{ audit.closed_at | date_fr }}</small>
+  </div>
+  <div class="actions">
+    <a href="{{ url_for('audits.export', audit_id=audit.id) }}" role="button" class="secondary">Exporter (CSV)</a>
+    <button type="button" class="outline" onclick="window.print()">Imprimer</button>
+  </div>
+</div>
+<section class="stats">
+  {% for key, label in labels.items() %}
+  <article class="stat"><span class="stat-value">{{ groups[key] | length }}</span><span class="stat-label">{{ label }}</span></article>
+  {% endfor %}
+</section>
+{% for key in ("manquant", "inattendu", "trouve", "prete") %}
+  {% if groups[key] %}
+  <h2>{{ labels[key] }} ({{ groups[key] | length }})</h2>
+  <div class="overflow-auto"><table class="striped">
+    <thead><tr><th>Code</th><th>Désignation</th><th>Lieu enregistré</th>{% if key in ("trouve", "inattendu") %}<th>Lieu constaté</th><th>Par</th>{% endif %}</tr></thead>
+    <tbody>{% for s in groups[key] %}
+    <tr><td><a href="{{ url_for('items.detail', item_id=s.item.id) }}">{{ s.item.code }}</a></td><td>{{ s.item.name }}</td>
+        <td>{{ s.item.location.path if s.item.location else "—" }}</td>
+        {% if key in ("trouve", "inattendu") %}<td>{{ s.location.path if s.location else "—" }}</td><td>{{ s.scanned_by.full_name if s.scanned_by else "" }}</td>{% endif %}</tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,24 @@
+{% macro loan_table(loans, empty="Rien à afficher.", show_items=true) %}
+{% if loans %}
+<div class="overflow-auto">
+<table class="striped responsive">
+  <thead><tr><th>N°</th><th>Type</th><th>Emprunteur</th>{% if show_items %}<th>Matériel</th>{% endif %}<th>Garant</th><th>Période</th><th>Statut</th></tr></thead>
+  <tbody>
+  {% for loan in loans %}
+    <tr>
+      <td data-label="Prêt"><a href="{{ url_for('loans.detail', loan_id=loan.id) }}">n°{{ loan.id }}</a></td>
+      <td data-label="Type"><span>{{ loan.type_label }}{% if loan.title %}<br><small class="muted">{{ loan.title }}</small>{% endif %}</span></td>
+      <td data-label="Emprunteur">{{ loan.borrower.full_name }}</td>
+      {% if show_items %}<td data-label="Matériel"><small>{% for line in loan.lines[:3] %}{{ line.kit.name if line.kit else line.item.code ~ " " ~ line.item.name }}{% if line.quantity > 1 %} ×{{ line.quantity }}{% endif %}{{ ", " if not loop.last }}{% endfor %}{% if loan.lines|length > 3 %} +{{ loan.lines|length - 3 }}{% endif %}</small></td>{% endif %}
+      <td data-label="Garant">{{ loan.guarantor.full_name if loan.guarantor else "—" }}</td>
+      <td data-label="Période">{{ loan.start | date_fr }}{% if loan.end %} → {{ loan.end | date_fr }}{% endif %}</td>
+      <td data-label="Statut"><span class="badge status-{{ loan.status }}{% if loan.is_overdue %} overdue{% endif %}">{{ loan.status_label }}</span></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">{{ empty }}</p>
+{% endif %}
+{% endmacro %}

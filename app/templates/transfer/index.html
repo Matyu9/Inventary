@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Import / export{% endblock %}
+{% block content %}
+<h1>Import / export</h1>
+<div class="grid">
+  <article>
+    <h2>Exporter l'inventaire</h2>
+    <p>Tous les objets, avec leurs champs personnalisés. Pour exporter une sélection, filtrez d'abord l'<a href="{{ url_for('items.index') }}">inventaire</a>.</p>
+    <div class="actions">
+      <a href="{{ url_for('transfer.export', fmt='xlsx') }}" role="button">Excel (.xlsx)</a>
+      <a href="{{ url_for('transfer.export', fmt='csv') }}" role="button" class="secondary">CSV</a>
+    </div>
+  </article>
+  {% if can(current_user, "import") %}
+  <article>
+    <h2>Importer depuis un tableur</h2>
+    <p>Fichier .xlsx ou .csv, une ligne par objet, avec une ligne d'en-têtes. Vous pourrez associer les colonnes et faire un essai avant d'importer.</p>
+    <form method="post" action="{{ url_for('transfer.upload') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="file" name="file" accept=".xlsx,.csv" required aria-label="Fichier">
+      <button type="submit">Continuer</button>
+    </form>
+    <details><summary>Colonnes reconnues</summary>
+      <ul class="compact">{% for key, (label, synonyms) in fields.items() %}<li><strong>{{ label }}</strong> <small class="muted">{{ synonyms[:4] | join(", ") }}</small></li>{% endfor %}</ul>
+      <p class="muted">Si une colonne « Code » correspond à un objet existant, il est mis à jour.</p>
+    </details>
+  </article>
+  {% endif %}
+</div>
+{% endblock %}

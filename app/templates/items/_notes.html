@@ -1,0 +1,27 @@
+<div id="notes-list">
+  {% if can(current_user, "note.add") %}
+  <form method="post" action="{{ url_for('items.add_note', item_id=item.id) }}"
+        hx-post="{{ url_for('items.add_note', item_id=item.id) }}" hx-target="#notes-list" hx-swap="outerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset role="group">
+      <input name="text" placeholder="Ajouter une note…" aria-label="Note" required>
+      <button type="submit">Ajouter</button>
+    </fieldset>
+  </form>
+  {% endif %}
+  {% for n in item.notes %}
+  <article class="note">
+    <small class="muted">{{ n.author.full_name }} · {{ n.created_at | datetime_fr }}</small>
+    <p>{{ n.text }}</p>
+    {% if can(current_user, "note.delete", n) %}
+    <form method="post" action="{{ url_for('items.delete_note', note_id=n.id) }}"
+          hx-post="{{ url_for('items.delete_note', note_id=n.id) }}" hx-target="#notes-list" hx-swap="outerHTML">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="link-button small">Supprimer</button>
+    </form>
+    {% endif %}
+  </article>
+  {% else %}
+  <p class="muted">Aucune note.</p>
+  {% endfor %}
+</div>

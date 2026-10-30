@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "partials/_form.html" import field %}
+{% block title %}Modifier la catégorie{% endblock %}
+{% block content %}
+<article class="narrow">
+  <h1>Modifier « {{ category.name }} »</h1>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {{ field(form.name) }}
+    {{ field(form.type) }}
+    {{ field(form.color, type="color", oninput="this.form.no_color.checked = false") }}
+    <label>{{ form.no_color() }} {{ form.no_color.label.text }}</label>
+    <button type="submit">Enregistrer</button>
+  </form>
+</article>
+{% endblock %}

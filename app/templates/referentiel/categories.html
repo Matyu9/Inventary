@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "partials/_form.html" import field %}
+{% block title %}Catégories{% endblock %}
+{% block content %}
+<h1>Catégories</h1>
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Nom</th><th>Type</th><th>Objets</th><th></th></tr></thead>
+  <tbody>
+  {% for c in categories %}
+  <tr>
+    <td>{% if c.color %}<span class="swatch" style="background: {{ c.color }}"></span>{% endif %}
+      <a href="{{ url_for('items.index', category=c.id) }}">{{ c.name }}</a></td>
+    <td>{{ labels[c.type] }}</td>
+    <td>{{ counts.get(c.id, 0) }}</td>
+    <td class="actions">
+      {% if can(current_user, "item.edit") %}<a href="{{ url_for('referentiel.edit_category', category_id=c.id) }}">Modifier</a>{% endif %}
+      {% if can(current_user, "item.delete") and not counts.get(c.id) %}
+      <form method="post" action="{{ url_for('referentiel.delete_category', category_id=c.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="link-button">Supprimer</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+{% if can(current_user, "item.edit") %}
+<h2>Nouvelle catégorie</h2>
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <div class="grid">
+    <div>{{ field(form.name) }}</div>
+    <div>{{ field(form.type) }}</div>
+    <div>
+      {{ field(form.color, type="color", oninput="this.form.no_color.checked = false") }}
+      <label>{{ form.no_color() }} {{ form.no_color.label.text }}</label>
+    </div>
+  </div>
+  <button type="submit">Ajouter</button>
+</form>
+{% endif %}
+{% endblock %}

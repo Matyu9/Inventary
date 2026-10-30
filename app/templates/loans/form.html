@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "partials/_form.html" import field %}
+{% block title %}Nouvelle demande de prêt{% endblock %}
+{% block content %}
+<h1>Nouvelle demande de prêt</h1>
+<form method="post" id="loan-form" novalidate
+      hx-post="{{ url_for('loans.check') }}" hx-target="#availability" hx-trigger="change, lines-changed">
+  {{ form.hidden_tag() }}
+  <fieldset>
+    <legend>{{ form.type.label.text }}</legend>
+    {% for sub in form.type %}<label>{{ sub() }} {{ sub.label.text }}</label>{% endfor %}
+  </fieldset>
+
+  <div class="grid">
+    <div>
+      {{ field(form.borrower_id) }}
+      {% if can(current_user, "borrower.create") %}<small><a href="{{ url_for('users.create', retour='pret') }}">+ Nouvelle fiche emprunteur</a></small>{% endif %}
+    </div>
+    <div>{{ field(form.guarantor_id) }}</div>
+  </div>
+  {{ field(form.title, placeholder="ex. Concert de la Sainte-Cécile, année 2026-2027…") }}
+  <div class="grid">
+    <div>{{ field(form.start) }}</div>
+    <div>{{ field(form.end) }}<small class="muted">Facultative pour une garde.</small></div>
+  </div>
+
+  <h2>Matériel</h2>
+  <div id="selected-lines">
+    {% for row in rows %}
+      {% if row.item %}
+      <div class="line" data-line="item-{{ row.item.id }}">
+        <input type="hidden" name="item_ids" value="{{ row.item.id }}">
+        <span>{{ row.item.code }} — {{ row.item.name }}</span>
+        {% if row.item.is_quantity %}<input type="number" name="qty_{{ row.item.id }}" value="{{ row.qty }}" min="1" class="qty" aria-label="Quantité">{% endif %}
+        <button type="button" class="link-button" data-remove-line>Retirer</button>
+      </div>
+      {% else %}
+      <div class="line" data-line="kit-{{ row.kit.id }}">
+        <input type="hidden" name="kit_ids" value="{{ row.kit.id }}">
+        <span>Kit {{ row.kit.name }}</span>
+        <button type="button" class="link-button" data-remove-line>Retirer</button>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <p id="no-lines" class="muted" {% if rows %}hidden{% endif %}>Aucun matériel ajouté.</p>
+  <input type="search" name="q" placeholder="Rechercher un objet ou un kit (code, nom, n° de série)" aria-label="Rechercher du matériel"
+         hx-get="{{ url_for('loans.search_equipment') }}" hx-trigger="input changed delay:250ms" hx-target="#equipment-results" autocomplete="off">
+  <div id="equipment-results"></div>
+  <div id="availability" aria-live="polite"></div>
+
+  <details>
+    <summary>Caution et commentaire</summary>
+    {{ field(form.deposit_amount, inputmode="decimal") }}
+    {{ field(form.comment, rows=3) }}
+  </details>
+  {% if current_user.is_admin %}<label>{{ form.auto_validate() }} {{ form.auto_validate.label.text }}</label>{% endif %}
+
+  <div class="actions">
+    <button type="submit">Envoyer la demande</button>
+    <a href="{{ url_for('loans.index') if can(current_user, 'loan.list_all') else url_for('loans.mine') }}" role="button" class="secondary outline">Annuler</a>
+  </div>
+</form>
+<template id="line-template">
+  <div class="line"><input type="hidden"><span></span><button type="button" class="link-button" data-remove-line>Retirer</button></div>
+</template>
+<script src="{{ url_for('static', filename='js/loan_form.js') }}"></script>
+{% endblock %}

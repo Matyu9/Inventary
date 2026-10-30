@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "partials/_form.html" import field %}
+{% block title %}{{ "Modifier le lieu" if location else "Nouveau lieu" }}{% endblock %}
+{% block content %}
+<article class="narrow">
+  <h1>{{ "Modifier « " ~ location.name ~ " »" if location else "Nouveau lieu" }}</h1>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {{ field(form.name, placeholder="ex. Armoire des bois") }}
+    {{ field(form.parent_id) }}
+    {{ field(form.description, rows=3) }}
+    <button type="submit">Enregistrer</button>
+  </form>
+</article>
+{% endblock %}

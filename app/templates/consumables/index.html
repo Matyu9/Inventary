@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Consommables{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Consommables et stocks</h1>
+  {% if can(current_user, "item.edit") %}<a href="{{ url_for('items.create') }}" role="button">+ Nouvel article</a>{% endif %}
+</div>
+{% if items %}
+<div class="overflow-auto"><table class="striped responsive">
+  <thead><tr><th>Article</th><th>Stock</th><th>Seuil</th><th>Mode</th>{% if can(current_user, "stock.move") %}<th>Mouvement rapide</th>{% endif %}</tr></thead>
+  <tbody>{% for i in items %}
+  <tr>
+    <td data-label="Article"><span><a href="{{ url_for('items.detail', item_id=i.id) }}">{{ i.name }}</a> <small class="muted">{{ i.code }}</small></span></td>
+    <td data-label="Stock"><span><strong>{{ i.quantity }}</strong> {{ i.unit or "" }}{% if i.is_low_stock %} <span class="badge overdue">stock bas</span>{% endif %}</span></td>
+    <td data-label="Seuil">{{ i.low_stock_threshold if i.low_stock_threshold is not none else "—" }}</td>
+    <td data-label="Mode">{{ {"consomme": "Distribué", "retournable": "Retournable"}.get(i.consumption_mode, "—") }}</td>
+    {% if can(current_user, "stock.move") %}
+    <td data-label="">
+      <form method="post" action="{{ url_for('consumables.move', item_id=i.id) }}" class="quick-move">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="list">
+        <select name="reason" aria-label="Motif">{% for key, (label, _) in reasons.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select>
+        <input type="number" name="amount" min="0" required aria-label="Quantité" placeholder="Qté">
+        <button type="submit" class="small">OK</button>
+      </form>
+    </td>
+    {% endif %}
+  </tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}
+<p class="muted">Aucun article suivi en quantité. Créez un objet dans une catégorie « Consommable » (anches, huile, cordes…).</p>
+{% endif %}
+
+{% if movements %}
+<h2>Derniers mouvements</h2>
+<div class="overflow-auto"><table class="striped responsive">
+  <thead><tr><th>Date</th><th>Article</th><th>Mouvement</th><th>Motif</th><th>Par</th></tr></thead>
+  <tbody>{% for m in movements %}
+  <tr><td data-label="Date">{{ m.created_at | datetime_fr }}</td><td data-label="Article">{{ m.item.name }}</td><td data-label="Mouvement">{{ "%+d" % m.delta }}</td>
+      <td data-label="Motif"><span>{{ reasons[m.reason][0] if m.reason in reasons else m.reason }}{% if m.comment %}<br><small class="muted">{{ m.comment }}</small>{% endif %}</span></td>
+      <td data-label="Par">{{ m.user.full_name if m.user else "—" }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

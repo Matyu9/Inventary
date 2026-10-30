@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Personnes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Personnes</h1>
+  <a href="{{ url_for('users.create') }}" role="button">+ {{ "Nouvelle personne" if can(current_user, "user.manage") else "Nouvelle fiche emprunteur" }}</a>
+</div>
+<form method="get" class="filters">
+  <input type="search" name="q" value="{{ q }}" placeholder="Nom, email, pupitre…" aria-label="Recherche">
+  <select name="role" aria-label="Rôle" onchange="this.form.submit()">
+    <option value="">Tous les rôles</option>
+    {% for key, label in labels.items() %}<option value="{{ key }}" {{ "selected" if role == key }}>{{ label }}</option>{% endfor %}
+  </select>
+</form>
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Nom</th><th>Rôle</th><th>Pupitre / classe</th><th>Contact</th><th>Accès</th><th>Prêts actifs</th><th></th></tr></thead>
+  <tbody>
+  {% for u in users %}
+  <tr>
+    <td>{{ u.last_name | upper }} {{ u.first_name }}{% if u.member_status %} <small class="muted">({{ u.member_status }})</small>{% endif %}</td>
+    <td>{{ labels[u.role] }}</td>
+    <td>{{ u.section or "—" }}</td>
+    <td><small>{{ u.email or "" }}{% if u.phone %}<br>{{ u.phone }}{% endif %}</small></td>
+    <td>{{ "✓" if u.active else "—" }}</td>
+    <td>{{ active_loans.get(u.id, 0) }}</td>
+    <td class="actions">
+      {% if can(current_user, "loan.request") %}<a href="{{ url_for('loans.create', borrower_id=u.id) }}">Prêter</a>{% endif %}
+      {% if can(current_user, "user.manage") %}<a href="{{ url_for('users.edit', user_id=u.id) }}">Modifier</a>{% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="muted">Personne ne correspond.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

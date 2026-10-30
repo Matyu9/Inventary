@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% from "locations/_tree.html" import tree %}
+{% block title %}Lieux{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Lieux</h1>
+  {% if can(current_user, "item.edit") %}<a href="{{ url_for('locations.create') }}" role="button">+ Nouveau lieu</a>{% endif %}
+</div>
+{% if roots %}{{ tree(roots, counts) }}{% else %}<p class="muted">Aucun lieu défini.</p>{% endif %}
+{% if unplaced %}<p class="muted">{{ unplaced }} objet(s) sans lieu.</p>{% endif %}
+{% endblock %}

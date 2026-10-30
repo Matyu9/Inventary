@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Champs personnalisés{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Champs personnalisés</h1>
+  <a href="{{ url_for('referentiel.create_custom_field') }}" role="button">+ Nouveau champ</a>
+</div>
+<p class="muted">Ajoutez des informations propres à certaines catégories, par exemple la tonalité (Sib, Mib…) pour les cuivres.</p>
+{% if fields %}
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Libellé</th><th>Type</th><th>Catégories</th><th>Obligatoire</th><th></th></tr></thead>
+  <tbody>{% for f in fields %}
+  <tr>
+    <td>{{ f.label }}</td>
+    <td>{{ labels[f.type] }}{% if f.options %}<br><small class="muted">{{ f.options | join(", ") }}</small>{% endif %}</td>
+    <td>{{ f.categories | map(attribute="name") | join(", ") or "Toutes" }}</td>
+    <td>{{ "Oui" if f.required else "Non" }}</td>
+    <td class="actions">
+      <a href="{{ url_for('referentiel.edit_custom_field', field_id=f.id) }}">Modifier</a>
+      <form method="post" action="{{ url_for('referentiel.delete_custom_field', field_id=f.id) }}" onsubmit="return confirm('Supprimer ce champ et toutes ses valeurs ?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="link-button">Supprimer</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">Aucun champ personnalisé.</p>{% endif %}
+{% endblock %}

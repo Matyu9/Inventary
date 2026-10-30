@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "partials/_loan_rows.html" import loan_table %}
+{% from "partials/_icons.html" import icon %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+<div class="hello">
+  <h1>Bonjour {{ current_user.first_name }}</h1>
+  <p>Voici l'état du matériel de {{ asso_name }}.</p>
+</div>
+
+<div class="quick-actions">
+  {% if can(current_user, "loan.request") %}<a href="{{ url_for('loans.create') }}" role="button">{{ icon("plus", 18) }} Demande de prêt</a>{% endif %}
+  {% if can(current_user, "scan") %}<a href="{{ url_for('scan.index') }}" role="button" class="secondary">{{ icon("scan", 18) }} Scanner</a>{% endif %}
+  {% if can(current_user, "item.edit") %}<a href="{{ url_for('items.create') }}" role="button" class="secondary">{{ icon("package", 18) }} Nouvel objet</a>{% endif %}
+</div>
+
+<section class="stats">
+  {% set stat_icons = {"disponible": "check", "en garde": "user-check", "sorti": "swap", "en entretien": "wrench", "réformé": "x"} %}
+  {% for s in statuses %}
+  <a href="{{ url_for('items.index', status=s) }}" class="stat card">{{ icon(stat_icons.get(s, "package"), 20) }}<span class="stat-value">{{ counts.get(s, 0) }}</span><span class="stat-label">{{ s | capitalize }}</span></a>
+  {% endfor %}
+</section>
+
+<div class="dash-grid">
+  {% if can(current_user, "loan.validate") %}
+  <section class="card span-2">
+    <h2>{{ icon("clock", 18) }} Demandes à valider <span class="count">{{ pending | length }}</span></h2>
+    {{ loan_table(pending, "Aucune demande en attente.") }}
+  </section>
+  {% endif %}
+
+  <section class="card span-2">
+    <h2>{{ icon("alert", 18) }} Prêts en retard <span class="count">{{ overdue | length }}</span></h2>
+    {{ loan_table(overdue, "Aucun retard, bravo.") }}
+  </section>
+
+  <section class="card span-2">
+    <h2>{{ icon("calendar", 18) }} Sorties des 7 prochains jours <span class="count">{{ upcoming | length }}</span></h2>
+    {{ loan_table(upcoming, "Aucune sortie prévue.") }}
+  </section>
+
+  <section class="card">
+    <h2>{{ icon("wrench", 18) }} Entretiens à prévoir</h2>
+    {% if maintenances %}
+    <ul class="compact">{% for m in maintenances %}<li><strong>{{ m.next_due | date_fr }}</strong> — <a href="{{ url_for('items.detail', item_id=m.item.id) }}">{{ m.item.code }} {{ m.item.name }}</a> ({{ m.kind }})</li>{% endfor %}</ul>
+    {% else %}<p class="empty">Rien dans les 30 prochains jours.</p>{% endif %}
+  </section>
+  <section class="card">
+    <h2>{{ icon("droplet", 18) }} Stocks bas</h2>
+    {% if low_stock %}
+    <ul class="compact">{% for i in low_stock %}<li><a href="{{ url_for('items.detail', item_id=i.id) }}">{{ i.name }}</a> : {{ i.stock_label }} <small class="muted">(seuil {{ i.low_stock_threshold }})</small></li>{% endfor %}</ul>
+    {% else %}<p class="empty">Tous les stocks sont suffisants.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

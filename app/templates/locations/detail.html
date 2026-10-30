@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "locations/_tree.html" import tree %}
+{% block title %}{{ location.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="muted crumbs"><a href="{{ url_for('locations.index') }}">Lieux</a> › {{ location.path }}</p>
+    <h1>{{ location.name }}</h1>
+  </div>
+  <div class="actions">
+    {% if can(current_user, "item.edit") %}
+    <a href="{{ url_for('locations.edit', location_id=location.id) }}" role="button">Modifier</a>
+    <a href="{{ url_for('locations.create', parent_id=location.id) }}" role="button" class="secondary">+ Sous-lieu</a>
+    <a href="{{ url_for('items.create', location_id=location.id) }}" role="button" class="secondary">+ Objet ici</a>
+    {% endif %}
+    {% if can(current_user, "item.delete") %}
+    <form method="post" action="{{ url_for('locations.delete', location_id=location.id) }}" onsubmit="return confirm('Supprimer ce lieu ?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="contrast outline">Supprimer</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% if location.description %}<p>{{ location.description }}</p>{% endif %}
+{% if location.children %}<h2>Sous-lieux</h2>{{ tree(location.children, counts) }}{% endif %}
+
+<h2>Contenu ({{ items | length }} objet{{ "s" if items|length > 1 }})</h2>
+{% if items %}
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Code</th><th>Désignation</th><th>Emplacement</th><th>Statut</th></tr></thead>
+  <tbody>{% for i in items %}
+    <tr><td><a href="{{ url_for('items.detail', item_id=i.id) }}">{{ i.code }}</a></td><td>{{ i.name }}</td>
+        <td>{{ i.location.path }}</td><td><span class="badge item-status">{{ i.status | capitalize }}</span></td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">Ce lieu est vide.</p>{% endif %}
+{% if kits %}<h2>Kits</h2><ul>{% for k in kits %}<li>{{ k.name }}</li>{% endfor %}</ul>{% endif %}
+{% endblock %}

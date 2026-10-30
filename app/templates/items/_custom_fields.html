@@ -1,0 +1,19 @@
+{% for f in fields %}
+  {% set name = "cf_" ~ f.id %}{% set value = values.get(f.id) %}{% set err = errors.get(f.id) %}
+  {% if f.type == "booleen" %}
+  <label><input type="checkbox" name="{{ name }}" value="1" {{ "checked" if value in ("1", "on") }}> {{ f.label }}</label>
+  {% else %}
+  <label for="{{ name }}">{{ f.label }}{% if f.required %} *{% endif %}</label>
+  {% if f.type == "liste" %}
+  <select id="{{ name }}" name="{{ name }}" {% if err %}aria-invalid="true"{% endif %}>
+    <option value="">—</option>
+    {% for o in f.options or [] %}<option {{ "selected" if value == o }}>{{ o }}</option>{% endfor %}
+  </select>
+  {% else %}
+  <input id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
+         type="{{ {'nombre': 'text', 'date': 'date'}.get(f.type, 'text') }}"
+         {% if f.type == "nombre" %}inputmode="decimal"{% endif %} {% if err %}aria-invalid="true"{% endif %}>
+  {% endif %}
+  {% if err %}<small class="error">{{ err }}</small>{% endif %}
+  {% endif %}
+{% endfor %}

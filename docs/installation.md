@@ -59,7 +59,7 @@ Deux services démarrent :
 
 | Service | Rôle |
 |---|---|
-| `app` | L'application (Gunicorn, 2 workers), sur `127.0.0.1:8000` uniquement. Applique les migrations de la base à chaque démarrage. |
+| `app` | L'application (Gunicorn, 2 workers), sur `127.0.0.1:8000` uniquement (réglable avec `BIND_ADDR`). Applique les migrations de la base à chaque démarrage. |
 | `scheduler` | Lance les [rappels automatiques](#rappels-automatiques) toutes les 15 minutes. |
 
 > L'appli **refuse de démarrer** si `SECRET_KEY` est vide ou vaut encore `change-moi`, la valeur du modèle. C'est voulu : cette clé signe les cookies de session, et une clé connue de tous permettrait de fabriquer une session administrateur.
@@ -97,6 +97,20 @@ server {
     }
 }
 ```
+
+**Proxy sur une autre machine** (Nginx Proxy Manager sur un autre serveur, par exemple) : il ne peut pas joindre `127.0.0.1`. Publiez le port sur l'IP privée par laquelle le proxy joint ce serveur, et n'autorisez que lui au pare-feu :
+
+```ini
+BIND_ADDR=10.30.0.2
+```
+
+```sh
+docker compose up -d
+# Docker contourne les règles INPUT d'ufw : filtrez dans la chaîne DOCKER-USER
+sudo iptables -I DOCKER-USER -i <interface> -p tcp --dport 8000 ! -s <ip-du-proxy> -j DROP
+```
+
+Dans le proxy, l'hôte cible est `http://10.30.0.2:8000`.
 
 Dans `.env` :
 

@@ -24,6 +24,7 @@ La page **Paramètres** de l'appli (admins) affiche les principales valeurs en c
 | `DATA_DIR` | `/data` dans Docker, `./data` sinon | Dossier des données : la base `inventaire.db` et les photos (`uploads/`). C'est lui qu'il faut sauvegarder. |
 | `DATABASE_URL` | `sqlite:///<DATA_DIR>/inventaire.db` | URL SQLAlchemy de la base. **Seul SQLite est pris en charge** : l'appli utilise des fonctions propres à SQLite (recherche sans accents, verrouillage des écritures). |
 | `TRUST_PROXY` | `0` | `1` derrière un reverse proxy qui ajoute les en-têtes `X-Forwarded-For`, `-Proto` et `-Host`. Laissez `0` sinon : ces en-têtes pourraient être falsifiés. |
+| `BIND_ADDR` | `127.0.0.1` | Docker uniquement : adresse du serveur sur laquelle le port 8000 est publié. Gardez `127.0.0.1` si le reverse proxy tourne sur la même machine. S'il est sur une autre machine, mettez l'IP **privée** par laquelle il joint ce serveur (par exemple `10.30.0.2`), et filtrez le port 8000 au pare-feu pour n'accepter que le proxy. |
 | `TZ` | `Europe/Paris` | Fuseau horaire du conteneur. Les dates sont enregistrées et affichées dans l'heure locale du serveur. |
 
 ## Emails (facultatif)

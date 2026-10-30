@@ -4,8 +4,9 @@ services:
     image: pupitre
     env_file: .env
     ports:
-      # Écoute en local uniquement : exposez l'appli via un reverse proxy HTTPS.
-      - "127.0.0.1:8000:8000"
+      # Écoute en local par défaut : exposez l'appli via un reverse proxy HTTPS.
+      # BIND_ADDR (dans .env) : IP privée du serveur si le proxy est sur une autre machine.
+      - "${BIND_ADDR:-127.0.0.1}:8000:8000"
     volumes:
       - ./data:/data
     restart: unless-stopped

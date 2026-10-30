@@ -58,7 +58,7 @@ docker compose exec app flask seed           # catégories et lieu par défaut
 docker compose exec app flask create-admin   # premier administrateur
 ```
 
-L'appli écoute sur `127.0.0.1:8000`. Toutes les étapes, dont le reverse proxy, les sauvegardes et les mises à jour, sont dans le [guide d'installation](docs/installation.md).
+L'appli écoute sur `127.0.0.1:8000` (`BIND_ADDR` pour un proxy sur une autre machine). Toutes les étapes, dont le reverse proxy, les sauvegardes et les mises à jour, sont dans le [guide d'installation](docs/installation.md).
 
 Pour essayer en local avec des données fictives, voir [Développement](docs/developpement.md#essayer-avec-des-données-de-démo).
 

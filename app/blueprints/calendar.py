@@ -28,8 +28,9 @@ def _parse(value, default):
 
 
 def loans_between(user, start, end, statuses=SHOWN):
+    # Un prêt en cours reste affiché tant que le matériel n'est pas rendu, même après sa date de fin.
     query = db.select(Loan).where(Loan.status.in_(statuses), Loan.start < end,
-                                  or_(Loan.end.is_(None), Loan.end > start))
+                                  or_(Loan.end.is_(None), Loan.end > start, Loan.status == LoanStatus.EN_COURS))
     if not can(user, "loan.list_all"):
         query = query.where(Loan.borrower_id == user.id)
     return db.session.scalars(query.order_by(Loan.start)).all()
@@ -57,14 +58,15 @@ def events():
     end = _parse(request.args.get("end"), datetime.now() + timedelta(days=62))
     if end <= start or end - start > timedelta(days=400):
         abort(400)
-    data = []
+    data, now = [], datetime.now()
     for loan in loans_between(current_user, start, end):
         status = "retard" if loan.is_overdue else loan.status
         data.append({
             "id": f"loan-{loan.id}",
             "title": loan_title(loan),
             "start": loan.start.isoformat(),
-            "end": (loan.end or max(end, loan.start) + OPEN_END_DISPLAY).isoformat(),
+            "end": (max(loan.end, now) if loan.is_overdue else
+                    loan.end or max(end, loan.start) + OPEN_END_DISPLAY).isoformat(),
             "url": url_for("loans.detail", loan_id=loan.id),
             "color": COLORS[status],
             "extendedProps": {"status": loan.status_label, "openEnded": loan.end is None},

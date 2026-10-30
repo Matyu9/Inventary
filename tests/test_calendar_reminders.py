@@ -323,6 +323,18 @@ def test_events_overdue_color(client, as_role, users, gear):
     assert client.get("/calendrier/evenements").get_json()[0]["color"] == "#c0392b"
 
 
+def test_events_overdue_still_shown_after_planned_end(client, as_role, users, gear):
+    """Pas rendu : le prêt reste visible dans les mois suivants, jusqu'à aujourd'hui."""
+    now = datetime.now()
+    late = loan(users, gear["sax"], LoanStatus.EN_COURS, now - timedelta(days=90), now - timedelta(days=60))
+    loan(users, gear["flute"], LoanStatus.RENDU, now - timedelta(days=90), now - timedelta(days=60))
+    as_role(P)
+    window = {"start": (now - timedelta(days=7)).isoformat(), "end": (now + timedelta(days=7)).isoformat()}
+    events = client.get("/calendrier/evenements", query_string=window).get_json()
+    assert [e["id"] for e in events] == [f"loan-{late.id}"]
+    assert events[0]["end"] >= (now - timedelta(minutes=1)).isoformat()
+
+
 @pytest.mark.parametrize("params", [{"start": "2030-01-10", "end": "2030-01-01"},
                                     {"start": "2030-01-01", "end": "2032-01-01"}])
 def test_events_bad_range(client, as_role, params):

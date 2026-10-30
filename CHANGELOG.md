@@ -4,6 +4,23 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ## Non publié
 
+### Ajouté
+
+- **Déconnecter tout le monde** (Paramètres, admin) : ferme toutes les sessions sauf la sienne, y compris celles ouvertes avec « Rester connecté ». La page affiche aussi le nombre de sessions ouvertes.
+- **Pages d'erreur** soignées (400, 403, 404, 405, 413, 429, 500), avec un message en français et un lien de retour. Une page expirée (CSRF) l'explique clairement. La page 500 donne une référence à retrouver dans les logs et n'affiche aucun détail technique.
+- Une action HTMX refusée ou impossible affiche un bandeau au lieu d'échouer sans rien montrer.
+
+### Sécurité
+
+- **Sessions révocables** : la déconnexion invalide le cookie de l'appareil, même copié ailleurs. Un changement de mot de passe déconnecte les autres appareils. La réinitialisation par un admin et la désactivation déconnectent tous les appareils. Chacun devra se reconnecter une fois après la mise à jour.
+- L'export CSV d'un inventaire physique neutralise les formules (nom d'objet commençant par `=`, `+`, `-` ou `@`), comme les autres exports.
+
+### Corrigé
+
+- Un identifiant, un numéro de page ou une date hors limites renvoie une page 404 au lieu d'une erreur 500. Les rapports acceptent n'importe quelle période.
+- Les mouvements de stock sont plafonnés à 1 000 000.
+- Les tags que plus aucun objet ne porte sont supprimés et disparaissent du filtre.
+
 ## 0.1.0 — 2026-10-30
 
 Première version.

@@ -196,6 +196,7 @@ def _save_item(form, item=None):
     new_tags = sorted(t.name for t in item.tags)
     if old_tags != new_tags and not creating:
         changes["tags"] = [", ".join(old_tags), ", ".join(new_tags)]
+        svc.prune_tags()
 
     db.session.flush()
     changes.update(svc.apply_custom_values(item, {k: v for k, v in custom_values.items()
@@ -300,6 +301,7 @@ def delete(item_id):
         delete_photo_files(photo)
     code = item.code
     db.session.delete(item)
+    svc.prune_tags()
     log("item.delete", f"Suppression de {code}")
     db.session.commit()
     flash(f"Objet {code} supprimé.", "success")

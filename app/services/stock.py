@@ -14,6 +14,9 @@ REASONS = {
 }
 
 
+MAX_QUANTITY = 1_000_000  # même plafond que la quantité initiale du formulaire objet
+
+
 class StockError(ValueError):
     pass
 
@@ -24,12 +27,14 @@ def move(item, reason, amount, user, comment=None):
         raise StockError("Cet objet n'est pas suivi en quantité.")
     if reason not in REASONS:
         raise StockError("Motif inconnu.")
-    if amount is None or amount < 0 or (reason != "inventaire" and amount == 0):
+    if amount is None or amount < 0 or amount > MAX_QUANTITY or (reason != "inventaire" and amount == 0):
         raise StockError("Quantité invalide.")
     sign = REASONS[reason][1]
     delta = amount - item.quantity if sign == 0 else sign * amount
     if item.quantity + delta < 0:
         raise StockError(f"Stock insuffisant : il reste {item.stock_label}.")
+    if item.quantity + delta > MAX_QUANTITY:
+        raise StockError(f"Le stock ne peut pas dépasser {MAX_QUANTITY}.")
     if delta == 0:
         raise StockError("La quantité ne change pas.")
     was_low = item.is_low_stock

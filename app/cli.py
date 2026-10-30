@@ -2,6 +2,7 @@ import click
 
 from .extensions import db
 from .models import Category, CategoryType, Location, Role, User
+from .services import sessions
 
 DEFAULT_CATEGORIES = [
     ("Bois", CategoryType.INSTRUMENT),
@@ -32,6 +33,8 @@ def register_cli(app):
         user.role = Role.ADMIN
         user.active = True
         user.set_password(password)
+        if user.id:
+            sessions.revoke(user)
         db.session.commit()
         click.echo(f"Administrateur prêt : {user.full_name} <{email}>")
 

@@ -1,6 +1,3 @@
-import csv
-import io
-
 from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 from flask_wtf import FlaskForm
@@ -12,6 +9,7 @@ from ..models import Category, InventoryAudit, Location
 from ..permissions import require
 from ..services import audits as svc
 from ..services.activity import log
+from ..services.transfer import to_csv
 from .items import location_choices
 
 bp = Blueprint("audits", __name__, url_prefix="/inventaires")
@@ -131,16 +129,13 @@ def delete(audit_id):
 @require("audit.scan")
 def export(audit_id):
     audit = get_audit(audit_id)
-    out = io.StringIO()
-    writer = csv.writer(out, delimiter=";")
-    writer.writerow(["Code", "Désignation", "Catégorie", "Lieu enregistré", "Lieu constaté", "Résultat",
-                     "Scanné par", "Date"])
+    rows = [["Code", "Désignation", "Catégorie", "Lieu enregistré", "Lieu constaté", "Résultat", "Scanné par", "Date"]]
     for result, scans in svc.report(audit).items():
         for s in scans:
-            writer.writerow([s.item.code, s.item.name, s.item.category.name,
-                             s.item.location.path if s.item.location else "", s.location.path if s.location else "",
-                             svc.LABELS[result], s.scanned_by.full_name if s.scanned_by else "",
-                             s.scanned_at.strftime("%d/%m/%Y %H:%M") if s.scanned_at else ""])
-    # BOM pour qu'Excel lise correctement les accents.
-    return Response("﻿" + out.getvalue(), mimetype="text/csv",
+            rows.append([s.item.code, s.item.name, s.item.category.name,
+                         s.item.location.path if s.item.location else "", s.location.path if s.location else "",
+                         svc.LABELS[result], s.scanned_by.full_name if s.scanned_by else "",
+                         s.scanned_at.strftime("%d/%m/%Y %H:%M") if s.scanned_at else ""])
+    # to_csv neutralise les formules (nom d'objet « =… ») et ajoute le BOM pour Excel.
+    return Response(to_csv(rows), mimetype="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="inventaire-{audit.id}.csv"'})

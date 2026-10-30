@@ -23,6 +23,7 @@ def period():
         end = today
     if end < start:
         start, end = end, start
+    end = min(end, date.max - timedelta(days=1))  # fin + 1 jour doit rester une date valide
     return start, end, datetime.combine(start, datetime.min.time()), datetime.combine(end + timedelta(days=1),
                                                                                          datetime.min.time())
 

@@ -197,6 +197,25 @@ button.contrast.outline:hover { background: var(--danger-bg); }
 
 article { border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.25rem; }
 .narrow { max-width: 30rem; margin: 1.5rem auto; }
+
+/* Pages d'erreur (403, 404, 500…) */
+.error-card { max-width: 30rem; margin: 3rem auto; padding: 2.25rem 1.75rem; text-align: center; }
+body.guest .error-card { margin: 0 auto; }
+.error-icon { display: inline-grid; place-items: center; width: 3.75rem; height: 3.75rem; margin-bottom: 1rem;
+              border-radius: 50%; background: var(--brand-soft); color: var(--brand); }
+.error-icon.danger { background: var(--danger-bg); color: var(--danger); }
+.error-code { margin: 0 0 .3rem; font-size: .78rem; font-weight: 650; letter-spacing: .08em; text-transform: uppercase;
+              color: var(--text-3); }
+.error-card h1 { font-size: 1.4rem; margin: 0 0 .6rem; }
+.error-card > p { color: var(--text-2); }
+.error-card .error-ref { font-size: .85rem; color: var(--text-3); }
+.error-card .actions { justify-content: center; margin-top: 1.5rem; }
+.error-card .actions [role=button] { display: inline-flex; align-items: center; gap: .4rem; }
+.settings-security { margin-top: 2rem; }
+.settings-security p { margin: .75rem 0 1rem; }
+.settings-security button { display: inline-flex; align-items: center; gap: .4rem; }
+/* Erreur d'une action HTMX (le fragment n'est pas remplacé) : bandeau en haut de page. */
+.flash.htmx-error { position: sticky; top: calc(var(--topbar-h) + .5rem); z-index: 5; }
 .wide { max-width: 46rem; }
 
 .flash { display: flex; gap: .5rem; padding: .7rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: .92rem; border: 1px solid transparent; }

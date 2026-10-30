@@ -79,13 +79,33 @@ class User(UserMixin, TimestampMixin, db.Model):
     def check_password(self, password):
         return bool(self.password_hash) and check_password_hash(self.password_hash, password)
 
+    # Jeton de la session en cours (voir LoginSession), fixé à la connexion ou au chargement.
+    session_token = None
+
+    def get_id(self):  # utilisé par Flask-Login : stocké dans le cookie de session et « rester connecté »
+        return f"{self.id}:{self.session_token}"
+
     def __repr__(self):
         return f"<User {self.full_name} ({self.role})>"
 
 
+class LoginSession(db.Model):
+    """Connexion ouverte sur un appareil. La supprimer invalide ses cookies, même copiés ailleurs."""
+    id = db.Column(db.String(64), primary_key=True)  # jeton secret
+    user_id = db.Column(db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+    user = db.relationship("User")
+
+
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    user_id, _, token = user_id.partition(":")
+    login = db.session.get(LoginSession, token) if token else None
+    if login is None or str(login.user_id) != user_id:
+        return None
+    login.user.session_token = token
+    return login.user
 
 
 # ---------------------------------------------------------------------------

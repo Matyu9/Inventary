@@ -5,7 +5,7 @@ from decimal import Decimal, InvalidOperation
 from sqlalchemy import or_
 
 from ..extensions import db, fold, fold_contains
-from ..models import CustomField, CustomFieldValue, FieldType, Item, Location, Tag
+from ..models import CustomField, CustomFieldValue, FieldType, Item, Location, Tag, item_tags
 
 FILTERS = ("q", "category", "tag", "location", "status", "condition")
 
@@ -74,6 +74,12 @@ def parse_tags(raw):
             db.session.add(tag)
         tags.append(tag)
     return tags
+
+
+def prune_tags():
+    """Supprime les tags que plus aucun objet ne porte (sinon ils restent à vie dans le filtre)."""
+    db.session.flush()
+    db.session.execute(db.delete(Tag).where(~db.exists().where(item_tags.c.tag_id == Tag.id)))
 
 
 def fields_for_category(category_id):

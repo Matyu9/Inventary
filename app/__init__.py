@@ -1,9 +1,10 @@
 import os
 
-from flask import Flask, render_template, request
+from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import UNSAFE_SECRETS, Config
+from .errors import register_error_handlers
 from .extensions import csrf, db, login_manager, migrate
 from .services.oidc import init_oidc
 
@@ -79,12 +80,6 @@ def create_app(config_class=Config):
             response.headers["Cache-Control"] = "no-store"  # mots de passe affichés ou saisis
         return response
 
-    @app.errorhandler(403)
-    def forbidden(_e):
-        return render_template("errors/403.html"), 403
-
-    @app.errorhandler(404)
-    def not_found(_e):
-        return render_template("errors/404.html"), 404
+    register_error_handlers(app)
 
     return app

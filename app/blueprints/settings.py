@@ -2,7 +2,9 @@ from flask import Blueprint, current_app, flash, redirect, render_template, url_
 from flask_login import current_user
 
 from ..permissions import require
-from ..services import mailer, reminders
+from ..extensions import db
+from ..services import mailer, reminders, sessions
+from ..services.activity import log
 
 bp = Blueprint("settings", __name__)
 
@@ -11,7 +13,9 @@ bp = Blueprint("settings", __name__)
 @require("settings.manage")
 def index():
     cfg = current_app.config
-    return render_template("settings/index.html", cfg=cfg, smtp=mailer.smtp_enabled())
+    open_sessions, connected = sessions.stats()
+    return render_template("settings/index.html", cfg=cfg, smtp=mailer.smtp_enabled(),
+                           open_sessions=open_sessions, connected=connected)
 
 
 @bp.route("/parametres/email-test", methods=["POST"])
@@ -36,4 +40,15 @@ def test_email():
 @require("settings.manage")
 def run_reminders():
     flash(reminders.run(), "info")
+    return redirect(url_for(".index"))
+
+
+@bp.route("/parametres/deconnecter-tout", methods=["POST"])
+@require("settings.manage")
+def revoke_sessions():
+    """Ferme toutes les sessions (sauf la sienne) : en cas de doute sur un compte ou un appareil perdu."""
+    closed = sessions.revoke_all()
+    log("sessions.revoke_all", f"Déconnexion de tout le monde ({closed} session(s) fermée(s))")
+    db.session.commit()
+    flash(f"{closed} session(s) fermée(s) : chacun devra se reconnecter. Vous restez connecté.", "success")
     return redirect(url_for(".index"))

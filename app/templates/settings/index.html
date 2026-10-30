@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_icons.html" import icon %}
 {% block title %}Paramètres{% endblock %}
 {% block content %}
 <h1>Paramètres</h1>
@@ -19,4 +20,21 @@
     <button type="submit" class="secondary outline">Lancer les rappels maintenant</button>
   </form>
 </div>
+
+<section class="card wide settings-security">
+  <h2>{{ icon("key", 18) }} Sécurité</h2>
+  <dl class="props">
+    <dt>Sessions ouvertes</dt><dd>{{ open_sessions }} ({{ connected }} personne{{ "s" if connected > 1 }})</dd>
+  </dl>
+  <p class="muted small">En cas de doute (appareil perdu, mot de passe divulgué, départ d'un bénévole), déconnectez tout
+    le monde : chacun devra se reconnecter, y compris sur les appareils où « Rester connecté » était coché.
+    Votre session est conservée.</p>
+  <div class="actions">
+    <form method="post" action="{{ url_for('settings.revoke_sessions') }}"
+          onsubmit="return confirm('Déconnecter tout le monde (sauf vous) ?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="contrast outline">{{ icon("logout", 18) }} Déconnecter tout le monde</button>
+    </form>
+  </div>
+</section>
 {% endblock %}

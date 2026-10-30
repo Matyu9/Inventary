@@ -11,6 +11,7 @@ from wtforms.validators import DataRequired, Length, Optional, Regexp, Validatio
 from ..extensions import db, fold_contains
 from ..models import Loan, LoanStatus, Notification, Role, User
 from ..permissions import can, require
+from ..services import sessions
 from ..services.activity import log
 
 bp = Blueprint("users", __name__)
@@ -133,6 +134,8 @@ def edit(user_id):
                 password = temporary_password()
                 user.set_password(password)
                 user.must_change_password = True
+            if not user.active:
+                sessions.revoke(user)
             log("user.update", f"Fiche modifiée : {user.full_name}")
             db.session.commit()
             if password:
@@ -153,6 +156,7 @@ def reset_password(user_id):
     user.set_password(password)
     user.must_change_password = True
     user.active = True
+    sessions.revoke(user)
     log("user.password", f"Mot de passe provisoire généré pour {user.full_name}")
     db.session.commit()
     return render_template("users/password_created.html", user=user, password=password)

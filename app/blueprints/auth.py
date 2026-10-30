@@ -4,14 +4,14 @@ from urllib.parse import urlsplit
 
 from authlib.integrations.base_client import OAuthError
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
-from flask_login import current_user, login_required, login_user, logout_user
+from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, EmailField, PasswordField
 from wtforms.validators import DataRequired, EqualTo, Length
 
 from ..extensions import db
 from ..models import User
-from ..services import oidc
+from ..services import oidc, sessions
 
 # Limitation des tentatives : au-delà de MAX_FAILURES échecs en WINDOW secondes pour un même
 # email (ou une même IP), la connexion est refusée temporairement. Mémoire par processus :
@@ -102,7 +102,7 @@ def login():
         valid = (user or _DUMMY).check_password(form.password.data)
         if user and user.active and valid:
             _clear_failures(keys)
-            login_user(user, remember=form.remember.data)
+            sessions.start(user, remember=form.remember.data)
             return redirect(safe_next(request.args.get("next")))
         _record_failure(keys)
         flash("Email ou mot de passe incorrect.", "error")
@@ -161,14 +161,14 @@ def oidc_callback():
         flash(str(e), "error")
         return redirect(url_for(".login"))
     db.session.commit()
-    login_user(user, remember=remember)
+    sessions.start(user, remember=remember)
     return redirect(next_url)
 
 
 @bp.route("/deconnexion", methods=["POST"])
 @login_required
 def logout():
-    logout_user()
+    sessions.end()
     flash("Vous êtes déconnecté.", "info")
     return redirect(url_for("auth.login"))
 
@@ -188,6 +188,7 @@ def password():
         else:
             current_user.set_password(form.new.data)
             current_user.must_change_password = False
+            sessions.revoke(current_user, keep_current=True)  # une session volée ne survit pas au changement
             db.session.commit()
             flash("Mot de passe modifié.", "success")
             return redirect(url_for("dashboard.index"))

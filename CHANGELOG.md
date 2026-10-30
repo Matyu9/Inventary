@@ -13,6 +13,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 - **Textes des emails modifiables** (Paramètres → Emails, admin) : objet, introduction et bouton de chaque type d'email, avec des variables (`{emprunteur}`, `{debut}`…) et un aperçu. Un bouton rétablit les textes par défaut.
 - **QR code agrandi** : un clic sur le QR d'une fiche objet ou kit l'affiche en grand dans une fenêtre.
 - **Étiquettes de kits en masse** (page Kits) : étiquettes de la sélection ou de tous les kits, avec en option celles des objets qu'ils contiennent.
+- **« Enregistrer et créer un autre »** à la création d'un objet : le formulaire suivant reprend la catégorie et le lieu, pour enchaîner les saisies.
 
 ### Sécurité
 

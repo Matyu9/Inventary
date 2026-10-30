@@ -1,0 +1,21 @@
+Bonjour {{ user.first_name }},
+
+{{ intro }}
+{% if recap_title %}
+{{ recap_title }}
+{% for label, value in rows -%}
+  {{ label }} : {{ value }}
+{% endfor -%}
+{% if lines -%}
+  Matériel :
+{% for line in lines -%}
+  - {{ line }}
+{% endfor -%}
+{% endif -%}
+{% endif %}
+{%- if url %}
+{{ button }} : {{ url }}
+{% endif %}
+--
+Inventaire {{ config.ASSO_NAME }}
+Toutes vos notifications : {{ config.BASE_URL }}/notifications

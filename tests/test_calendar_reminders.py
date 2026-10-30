@@ -120,10 +120,10 @@ def test_overdue_daily(app, users, gear):
     l = loan(users, gear["sax"], LoanStatus.EN_COURS, NOW - timedelta(days=5), NOW - timedelta(days=2))
     reminders.run(NOW)
     reminders.run(NOW + timedelta(hours=2))
-    assert notes_for(users[E]) == [f"Réservation n°{l.id} en retard de 2 jour(s) (Emprunteur Test)."]
+    assert notes_for(users[E]) == [f"Réservation n°{l.id} en retard de 2 jours (Emprunteur Test)."]
     assert len(notes_for(users[A])) == 1 and len(notes_for(users[P])) == 1
     reminders.run(NOW + timedelta(days=1))
-    assert len(notes_for(users[E])) == 2 and "3 jour(s)" in notes_for(users[E])[1]
+    assert len(notes_for(users[E])) == 2 and "3 jours" in notes_for(users[E])[1]
 
 
 def test_overdue_same_day_says_since_when(app, users, gear):
@@ -161,7 +161,7 @@ def test_low_stock_weekly(app, users, gear):
     assert len(notes_for(users[A])) == 1
     reminders.run(NOW + timedelta(days=7))
     assert len(notes_for(users[A])) == 2
-    assert notes_for(users[A])[0] == "Stock bas : Anches (2 restant(s))."
+    assert notes_for(users[A])[0] == "Stock bas : Anches (il reste 2)."
 
 
 def test_inactive_admin_not_notified(app, users, gear):
@@ -223,8 +223,8 @@ def test_deliver_pending(app, users, smtp):
     db.session.commit()
     assert mailer.deliver_pending() == 2
     first = smtp.sent[0]
-    assert first["To"] == users[P].email and first["From"] == "inventaire@ohn.fr"
-    assert "https://inv.ohn.fr/prets/1" in first.get_content()
+    assert first["To"] == users[P].email and first["From"].addresses[0].addr_spec == "inventaire@ohn.fr"
+    assert "https://inv.ohn.fr/prets/1" in first.get_body("plain").get_content()
     assert mailer.deliver_pending() == 0
 
 

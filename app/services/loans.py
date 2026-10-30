@@ -161,7 +161,7 @@ def create_request(*, loan_type, borrower, guarantor, requested_by, start, end, 
             user=requested_by)
     notify([a for a in admins() if a.id != requested_by.id],
            f"Nouvelle demande de {loan.type_label.lower()} n°{loan.id} par {requested_by.full_name} "
-           f"pour {borrower.full_name}.", _link(loan))
+           f"pour {borrower.full_name}.", _link(loan), kind="loan.request", loan=loan)
     return loan, warnings
 
 
@@ -180,7 +180,7 @@ def validate(loan, admin):
     loan.validated_at = datetime.now()
     log("loan.validate", "Prêt validé", loan=loan, user=admin)
     notify([loan.borrower, loan.guarantor, loan.requested_by], f"Votre {loan.type_label.lower()} n°{loan.id} "
-           f"a été validé(e) par {admin.full_name}.", _link(loan))
+           f"a été validée par {admin.full_name}.", _link(loan), kind="loan.validated", loan=loan)
 
 
 def refuse(loan, admin, reason=None):
@@ -192,7 +192,8 @@ def refuse(loan, admin, reason=None):
     log("loan.refuse", "Prêt refusé" + (f" : {loan.refusal_reason}" if loan.refusal_reason else ""), loan=loan,
         user=admin)
     notify([loan.guarantor, loan.requested_by], f"La demande n°{loan.id} pour {loan.borrower.full_name} a été "
-           f"refusée" + (f" : {loan.refusal_reason}" if loan.refusal_reason else "."), _link(loan))
+           f"refusée" + (f" : {loan.refusal_reason}" if loan.refusal_reason else "."), _link(loan),
+           kind="loan.refused", loan=loan)
 
 
 def cancel(loan, user):
@@ -200,7 +201,7 @@ def cancel(loan, user):
     loan.status = LoanStatus.ANNULE
     log("loan.cancel", "Prêt annulé", loan=loan, user=user)
     notify([u for u in (loan.borrower, loan.guarantor, loan.requested_by) if u is not None and u.id != user.id],
-           f"Le prêt n°{loan.id} a été annulé par {user.full_name}.", _link(loan))
+           f"Le prêt n°{loan.id} a été annulé par {user.full_name}.", _link(loan), kind="loan.cancelled", loan=loan)
 
 
 def checkout(loan, user):
@@ -285,7 +286,8 @@ def change_end(loan, admin, new_end):
     log("loan.extend", "Date de fin modifiée", loan=loan, user=admin,
         changes={"end": [old.strftime("%d/%m/%Y %H:%M") if old else None,
                          new_end.strftime("%d/%m/%Y %H:%M") if new_end else None]})
-    notify([loan.borrower, loan.guarantor], f"La date de fin du prêt n°{loan.id} a été modifiée.", _link(loan))
+    notify([loan.borrower, loan.guarantor], f"La date de fin du prêt n°{loan.id} a été modifiée.", _link(loan),
+           kind="loan.end_changed", loan=loan)
 
 
 def build_lines(item_ids, quantities, kit_ids):

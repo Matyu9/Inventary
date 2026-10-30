@@ -9,6 +9,8 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 - **Déconnecter tout le monde** (Paramètres, admin) : ferme toutes les sessions sauf la sienne, y compris celles ouvertes avec « Rester connecté ». La page affiche aussi le nombre de sessions ouvertes.
 - **Pages d'erreur** soignées (400, 403, 404, 405, 413, 429, 500), avec un message en français et un lien de retour. Une page expirée (CSRF) l'explique clairement. La page 500 donne une référence à retrouver dans les logs et n'affiche aucun détail technique.
 - Une action HTMX refusée ou impossible affiche un bandeau au lieu d'échouer sans rien montrer.
+- **Emails repensés** : version HTML aux couleurs de l'appli (avec une version texte), salutation, objet clair et bouton vers la page concernée. Les emails de prêt récapitulent le matériel, les dates, l'emprunteur et le garant ; ceux d'un objet, son emplacement et son stock.
+- **Textes des emails modifiables** (Paramètres → Emails, admin) : objet, introduction et bouton de chaque type d'email, avec des variables (`{emprunteur}`, `{debut}`…) et un aperçu. Un bouton rétablit les textes par défaut.
 
 ### Sécurité
 
@@ -20,6 +22,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 - Un identifiant, un numéro de page ou une date hors limites renvoie une page 404 au lieu d'une erreur 500. Les rapports acceptent n'importe quelle période.
 - Les mouvements de stock sont plafonnés à 1 000 000.
 - Les tags que plus aucun objet ne porte sont supprimés et disparaissent du filtre.
+- Les notifications n'écrivent plus « validé(e) », « jour(s) » ni « restant(s) ».
 
 ## 0.1.0 — 2026-10-30
 

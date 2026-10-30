@@ -65,7 +65,7 @@ Il n'y a **aucune étape de build** front-end : les bibliothèques JavaScript so
 │   │   ├── reports.py         calculs des rapports
 │   │   ├── reminders.py       rappels périodiques
 │   │   ├── notify.py          notifications dans l'appli
-│   │   ├── mailer.py          envoi des emails
+│   │   ├── mailer.py          composition (templates emails/) et envoi des emails
 │   │   ├── activity.py        journal d'activité (historique)
 │   │   ├── qr.py              QR codes et résolution d'un scan
 │   │   ├── photos.py          traitement des images

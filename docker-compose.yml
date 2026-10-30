@@ -18,6 +18,8 @@ services:
 
   scheduler:
     image: pupitre
+    # Image construite localement par le service app : ne pas la chercher sur Docker Hub.
+    pull_policy: never
     env_file: .env
     environment:
       SKIP_MIGRATIONS: "1"

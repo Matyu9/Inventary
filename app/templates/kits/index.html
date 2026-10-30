@@ -7,10 +7,14 @@
 </div>
 <p class="muted">Un kit regroupe des objets toujours prêtés ensemble (batterie complète, sono de concert, saxophone + bec + étui…).</p>
 {% if kits %}
+{% set printable = can(current_user, "label.print") %}
+<form method="get" action="{{ url_for('scan.labels') }}" target="_blank">
 <div class="overflow-auto"><table class="striped">
-  <thead><tr><th>Kit</th><th>Objets</th><th>Lieu</th><th>Statut</th></tr></thead>
+  <thead><tr>{% if printable %}<th><input type="checkbox" aria-label="Tout sélectionner"
+    onchange="this.form.querySelectorAll('input[name=kit_ids]').forEach((c) => c.checked = this.checked)"></th>{% endif %}<th>Kit</th><th>Objets</th><th>Lieu</th><th>Statut</th></tr></thead>
   <tbody>{% for k in kits %}
   <tr>
+    {% if printable %}<td><input type="checkbox" name="kit_ids" value="{{ k.id }}" aria-label="Sélectionner {{ k.name }}"></td>{% endif %}
     <td><a href="{{ url_for('kits.detail', kit_id=k.id) }}">{{ k.name }}</a></td>
     <td>{{ k.items | length }}</td>
     <td>{{ k.location.path if k.location else "—" }}</td>
@@ -18,5 +22,13 @@
   </tr>
   {% endfor %}</tbody>
 </table></div>
+{% if printable %}
+<label><input type="checkbox" name="avec_objets" value="1"> Inclure les étiquettes des objets de chaque kit</label>
+<div class="actions">
+  <button type="submit" class="outline" name="selection" value="1">Étiquettes de la sélection</button>
+  <button type="submit" class="outline secondary" name="kits" value="tous">Étiquettes de tous les kits</button>
+</div>
+{% endif %}
+</form>
 {% else %}<p class="muted">Aucun kit pour l'instant.</p>{% endif %}
 {% endblock %}

@@ -46,3 +46,30 @@
     show("Connexion au serveur impossible : vérifiez votre réseau puis réessayez.");
   });
 })();
+
+// QR code d'une fiche (objet, kit) agrandi dans une fenêtre : clic sur le fond, la croix ou Échap pour fermer.
+(function () {
+  let dialog;
+  function open(trigger) {
+    if (!dialog) {
+      dialog = document.createElement("dialog");
+      dialog.className = "qr-dialog";
+      dialog.innerHTML = '<article><header><button type="button" rel="prev" aria-label="Fermer"></button>'
+        + "<p><strong></strong></p></header><img alt=\"\"></article>";
+      dialog.addEventListener("click", function (event) {
+        if (event.target === dialog || event.target.closest("[rel=prev]")) dialog.close();
+      });
+      document.body.append(dialog);
+    }
+    const source = trigger.querySelector("img");
+    const img = dialog.querySelector("article > img");
+    img.src = source.src;
+    img.alt = source.alt;
+    dialog.querySelector("strong").textContent = trigger.dataset.qrCaption || "";
+    dialog.showModal();
+  }
+  document.addEventListener("click", function (event) {
+    const trigger = event.target.closest("[data-qr-zoom]");
+    if (trigger) open(trigger);
+  });
+})();

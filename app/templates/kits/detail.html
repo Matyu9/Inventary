@@ -52,7 +52,10 @@
     </dl>
     {% if kit.description %}<p class="description">{{ kit.description }}</p>{% endif %}
     <div class="qr-block">
-      <img src="{{ url_for('scan.kit_qr', kit_id=kit.id) }}" alt="QR code du kit" width="96" height="96">
+      <button type="button" class="qr-zoom" data-qr-zoom data-qr-caption="Kit {{ kit.name }}"
+              aria-label="Agrandir le QR code" title="Agrandir">
+        <img src="{{ url_for('scan.kit_qr', kit_id=kit.id) }}" alt="QR code du kit" width="96" height="96">
+      </button>
       <div><a href="{{ url_for('scan.labels', kit_ids=kit.id) }}" target="_blank">Imprimer l'étiquette du kit</a><br>
         {% if kit.items %}<a href="{{ url_for('scan.labels', kit_ids=kit.id, ids=kit.items | map(attribute='id') | list) }}" target="_blank">Étiquettes du kit et de ses objets</a>{% endif %}</div>
     </div>

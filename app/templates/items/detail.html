@@ -72,7 +72,10 @@
     </dl>
     {% if item.description %}<p class="description">{{ item.description }}</p>{% endif %}
     <div class="qr-block">
-      <img src="{{ url_for('scan.item_qr', item_id=item.id) }}" alt="QR code de {{ item.code }}" width="96" height="96">
+      <button type="button" class="qr-zoom" data-qr-zoom data-qr-caption="{{ item.code }} — {{ item.name }}"
+              aria-label="Agrandir le QR code" title="Agrandir">
+        <img src="{{ url_for('scan.item_qr', item_id=item.id) }}" alt="QR code de {{ item.code }}" width="96" height="96">
+      </button>
       <div>
         <a href="{{ url_for('scan.labels', ids=item.id) }}" target="_blank">Imprimer l'étiquette</a><br>
         <a href="{{ url_for('scan.item_qr', item_id=item.id) }}" download="{{ item.code }}.svg">Télécharger le QR (SVG)</a>

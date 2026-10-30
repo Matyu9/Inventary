@@ -11,6 +11,8 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 - Une action HTMX refusée ou impossible affiche un bandeau au lieu d'échouer sans rien montrer.
 - **Emails repensés** : version HTML aux couleurs de l'appli (avec une version texte), salutation, objet clair et bouton vers la page concernée. Les emails de prêt récapitulent le matériel, les dates, l'emprunteur et le garant ; ceux d'un objet, son emplacement et son stock.
 - **Textes des emails modifiables** (Paramètres → Emails, admin) : objet, introduction et bouton de chaque type d'email, avec des variables (`{emprunteur}`, `{debut}`…) et un aperçu. Un bouton rétablit les textes par défaut.
+- **QR code agrandi** : un clic sur le QR d'une fiche objet ou kit l'affiche en grand dans une fenêtre.
+- **Étiquettes de kits en masse** (page Kits) : étiquettes de la sélection ou de tous les kits, avec en option celles des objets qu'ils contiennent.
 
 ### Sécurité
 

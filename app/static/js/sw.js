@@ -1,5 +1,5 @@
 // Service worker minimal : met en cache les fichiers statiques, le reste passe par le réseau.
-const CACHE = "inventaire-static-v4";
+const CACHE = "inventaire-static-v5";
 
 self.addEventListener("install", (event) => self.skipWaiting());
 self.addEventListener("activate", (event) => {

@@ -84,7 +84,11 @@ def kit_qr(kit_id):
 def labels():
     ids = request.args.getlist("ids", type=int)
     kit_ids = request.args.getlist("kit_ids", type=int)
-    if ids or kit_ids or request.args.get("selection"):
+    if request.args.get("kits") == "tous":
+        kit_ids = db.session.scalars(db.select(Kit.id)).all()
+    if kit_ids and request.args.get("avec_objets"):  # kits et les objets qu'ils contiennent
+        ids += db.session.scalars(db.select(Item.id).where(Item.kit_id.in_(kit_ids))).all()
+    if ids or kit_ids or request.args.get("selection") or request.args.get("kits"):
         query = db.select(Item).where(Item.id.in_(ids)).order_by(Item.code)
     else:
         query = search_items(request.args)

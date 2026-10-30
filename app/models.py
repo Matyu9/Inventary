@@ -530,6 +530,10 @@ class Notification(db.Model):
     user_id = db.Column(db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
     message = db.Column(db.String(500), nullable=False)
     link = db.Column(db.String(255))
+    # Type d'événement (ex. "loan.validated") et objets liés : servent à composer l'email.
+    kind = db.Column(db.String(30))
+    loan_id = db.Column(db.ForeignKey("loan.id", ondelete="SET NULL"))
+    item_id = db.Column(db.ForeignKey("item.id", ondelete="SET NULL"))
     read = db.Column(db.Boolean, nullable=False, default=False)
     # Clé de déduplication pour les rappels automatiques (ex. "overdue:12:2026-10-30").
     dedup_key = db.Column(db.String(120), unique=True)
@@ -537,3 +541,14 @@ class Notification(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now())
 
     user = db.relationship("User")
+    loan = db.relationship("Loan")
+    item = db.relationship("Item")
+
+
+class EmailTemplate(db.Model):
+    """Textes personnalisés d'un type d'email (sinon, textes par défaut de services/mailer.py)."""
+    kind = db.Column(db.String(30), primary_key=True)
+    subject = db.Column(db.String(200), nullable=False)
+    intro = db.Column(db.Text, nullable=False)
+    button = db.Column(db.String(60), nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)

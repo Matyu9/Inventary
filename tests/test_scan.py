@@ -193,6 +193,13 @@ def test_item_qr_svg(client, as_role, app, items):
         assert r.text == str(qr_svg(qr_url(items["sax"].qr_token)))
 
 
+def test_item_qr_zoomable(client, as_role, items):
+    """Le QR de la fiche s'agrandit dans une fenêtre (app.js, data-qr-zoom)."""
+    as_role(P)
+    r = client.get(f"/objets/{items['sax'].id}")
+    assert re.search(r'<button type="button" class="qr-zoom" data-qr-zoom data-qr-caption="OHN-0001 — [^"]+"', r.text)
+
+
 def test_item_qr_svg_access(client, as_role, items):
     as_role(E)
     assert client.get(f"/objets/{items['sax'].id}/qr.svg").status_code == 403
@@ -224,6 +231,35 @@ def test_labels_empty_selection_prints_nothing(client, as_role, items):
     as_role(P)
     r = client.get("/etiquettes", query_string={"selection": "1", "csrf_token": "x", "action": "move"})
     assert label_codes(r) == [] and "Aucun objet sélectionné" in r.text
+
+
+def test_labels_all_kits(client, as_role, items):
+    other = Kit(name="Batterie")
+    db.session.add(other)
+    db.session.commit()
+    as_role(P)
+    r = client.get("/etiquettes", query_string={"kits": "tous"})
+    assert label_codes(r) == [f"KIT-{other.id:03d}", f"KIT-{items['kit'].id:03d}"]  # par nom
+
+
+def test_labels_all_kits_when_there_is_none(client, as_role, items):
+    db.session.delete(items["kit"])
+    db.session.commit()
+    as_role(P)
+    assert label_codes(client.get("/etiquettes", query_string={"kits": "tous"})) == []  # et pas tous les objets
+
+
+def test_labels_kits_with_their_items(client, as_role, items):
+    items["sax"].kit = items["kit"]
+    db.session.commit()
+    as_role(P)
+    kit_code = f"KIT-{items['kit'].id:03d}"
+    r = client.get("/etiquettes", query_string={"kit_ids": [items["kit"].id], "avec_objets": "1"})
+    assert label_codes(r) == [kit_code, "OHN-0001"]
+    r = client.get("/etiquettes", query_string={"kit_ids": [items["kit"].id]})
+    assert label_codes(r) == [kit_code]
+    r = client.get("/etiquettes", query_string={"kits": "tous", "avec_objets": "1", "ids": [items["sax"].id]})
+    assert label_codes(r) == [kit_code, "OHN-0001"]  # pas de doublon
 
 
 def test_labels_from_filters(client, as_role, items):

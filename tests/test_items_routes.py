@@ -200,6 +200,37 @@ def test_prof_creates_item(client, as_role, ref):
     assert activity.user_id == prof.id and activity.item_id == item.id
 
 
+def test_create_and_create_another(client, as_role, ref):
+    as_role(P)
+    r = client.post("/objets/nouveau", data=dict(form_data(ref), then="new"))
+    item = db.session.scalar(db.select(Item))
+    assert r.status_code == 302
+    assert r.headers["Location"] == f"/objets/nouveau?category_id={ref['bois'].id}&location_id={ref['armoire'].id}"
+    r = client.get(r.headers["Location"])
+    assert f"Objet {item.code} créé." in r.text
+    assert f'<option selected value="{ref["bois"].id}">' in r.text
+    assert f'<option selected value="{ref["armoire"].id}">' in r.text
+
+
+def test_create_and_create_another_without_location(client, as_role, ref):
+    as_role(P)
+    r = client.post("/objets/nouveau", data=dict(form_data(ref), location_id="0", then="new"))
+    assert r.headers["Location"] == f"/objets/nouveau?category_id={ref['bois'].id}"
+
+
+def test_create_another_button_only_on_creation(client, as_role, ref):
+    as_role(P)
+    assert 'name="then" value="new"' in client.get("/objets/nouveau").text
+    item = new_item(ref["bois"])
+    assert 'name="then" value="new"' not in client.get(f"/objets/{item.id}/modifier").text
+
+
+def test_create_another_ignored_on_validation_error(client, as_role, ref):
+    as_role(P)
+    r = client.post("/objets/nouveau", data=dict(form_data(ref), name="", then="new"))
+    assert r.status_code == 200 and db.session.scalar(db.select(Item)) is None
+
+
 def test_create_validation_errors(client, as_role, ref):
     as_role(P)
     r = client.post("/objets/nouveau", data=form_data(ref, name=""))

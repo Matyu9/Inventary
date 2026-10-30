@@ -221,6 +221,8 @@ def create():
         item, custom_errors = _save_item(form)
         if item:
             flash(f"Objet {item.code} créé.", "success")
+            if request.form.get("then") == "new":  # saisie à la chaîne : même catégorie et même lieu
+                return redirect(url_for(".create", category_id=item.category_id, location_id=item.location_id))
             return redirect(url_for(".detail", item_id=item.id))
     category_id = form.category_id.data or (form.category_id.choices[0][0] if form.category_id.choices else None)
     return render_template("items/form.html", form=form, item=None,

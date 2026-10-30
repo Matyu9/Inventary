@@ -307,6 +307,12 @@ input[type=file]::file-selector-button { background: var(--surface-2); color: va
 .photo-form > * { margin: 0; }
 .qr-block { display: flex; gap: 1rem; align-items: center; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .9rem; }
 .qr-block img { background: #fff; padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.qr-zoom { flex: none; width: auto; margin: 0; padding: 0; border: 0; background: none; cursor: zoom-in; line-height: 0; }
+.qr-zoom:hover img { border-color: var(--brand); }
+.qr-dialog article { width: min(24rem, 100%); text-align: center; }
+.qr-dialog article > header p { margin: 0; text-align: left; }
+.qr-dialog article > img { display: block; width: 100%; height: auto; background: #fff; padding: .75rem;
+                           border-radius: var(--radius-sm); }
 .thumb-cell { width: 3.5rem; }
 .thumb { width: 2.75rem; height: 2.75rem; object-fit: cover; border-radius: var(--radius-sm); display: block; }
 

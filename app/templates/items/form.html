@@ -47,6 +47,7 @@
 
   <div class="actions">
     <button type="submit">Enregistrer</button>
+    {% if not item %}<button type="submit" class="secondary" name="then" value="new">Enregistrer et créer un autre</button>{% endif %}
     <a href="{{ url_for('items.detail', item_id=item.id) if item else url_for('items.index') }}" role="button" class="secondary outline">Annuler</a>
   </div>
 </form>

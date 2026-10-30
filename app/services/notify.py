@@ -3,14 +3,18 @@ from ..extensions import db
 from ..models import Notification, Role, User
 
 
-def notify(users, message, link=None, dedup_key=None):
-    """Crée une notification par destinataire (sans commit). `dedup_key` évite les doublons des rappels."""
+def notify(users, message, link=None, dedup_key=None, kind=None, loan=None, item=None):
+    """Crée une notification par destinataire (sans commit). `dedup_key` évite les doublons des rappels.
+
+    `kind`, `loan` et `item` décrivent l'événement : l'email en tire son objet et son récapitulatif (cf. mailer.py).
+    """
     created = []
     for user in {u.id: u for u in users if u is not None}.values():
         key = f"{dedup_key}:{user.id}" if dedup_key else None
         if key and db.session.scalar(db.select(Notification.id).filter_by(dedup_key=key)):
             continue
-        notification = Notification(user_id=user.id, message=message[:500], link=link, dedup_key=key)
+        notification = Notification(user_id=user.id, message=message[:500], link=link, dedup_key=key, kind=kind,
+                                    loan=loan, item=item)
         db.session.add(notification)
         created.append(notification)
     return created

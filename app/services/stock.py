@@ -44,5 +44,6 @@ def move(item, reason, amount, user, comment=None):
     log("stock.move", f"{REASONS[reason][0]} : {delta:+d} {item.unit or ''}".rstrip(), item=item, user=user,
         changes={"quantity": [item.quantity - delta, item.quantity]})
     if item.is_low_stock and not was_low:
-        notify(admins(), f"Stock bas : {item.name} ({item.stock_label} restant(s)).", f"/objets/{item.id}")
+        notify(admins(), f"Stock bas : {item.name} (il reste {item.stock_label}).", f"/objets/{item.id}",
+               kind="item.low_stock", item=item)
     return delta

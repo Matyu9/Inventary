@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Emails{% endblock %}
+{% block content %}
+<h1>Emails</h1>
+<p class="muted">Chaque notification de l'appli est aussi envoyée par email (si le SMTP est configuré).
+  Vous pouvez adapter l'objet, l'introduction et le bouton de chaque type d'email ; la mise en page et le
+  récapitulatif (matériel, dates, emprunteur…) sont ajoutés automatiquement.</p>
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Email</th><th>Destinataires</th><th>Objet</th><th></th></tr></thead>
+  <tbody>
+  {% for kind, k in kinds.items() %}
+  <tr>
+    <td>{{ k.label }}{% if kind in custom %} <span class="badge status-valide">Personnalisé</span>{% endif %}</td>
+    <td class="muted">{{ k.audience }}</td>
+    <td>{{ texts(kind)[0] }}</td>
+    <td class="actions"><a href="{{ url_for('settings.edit_email', kind=kind) }}">Modifier</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<p><a href="{{ url_for('settings.index') }}">← Paramètres</a></p>
+{% endblock %}

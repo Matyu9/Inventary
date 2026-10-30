@@ -82,7 +82,15 @@ def test_kit_list_and_detail(client, as_role, gear):
     assert "Batterie" in r.text and "<td>1</td>" in r.text
     r = client.get(f"/kits/{gear['kit'].id}")
     assert "OHN-0001" in r.text and "KIT-001" in r.text and f"/kits/{gear['kit'].id}/qr.svg" in r.text
+    assert 'data-qr-zoom data-qr-caption="Kit Batterie"' in r.text
     assert f"/prets/nouveau?kit_id={gear['kit'].id}" in r.text
+
+
+def test_kit_list_bulk_labels(client, as_role, gear):
+    as_role(P)
+    r = client.get("/kits")
+    assert 'action="/etiquettes"' in r.text and f'name="kit_ids" value="{gear["kit"].id}"' in r.text
+    assert 'name="avec_objets"' in r.text and 'name="kits" value="tous"' in r.text
 
 
 def test_kit_404(client, as_role):

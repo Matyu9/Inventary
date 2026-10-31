@@ -15,6 +15,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 - **Étiquettes de kits en masse** (page Kits) : étiquettes de la sélection ou de tous les kits, avec en option celles des objets qu'ils contiennent.
 - **Vérification du matériel d'un prêt** (« Rien oublié ? ») : sur un prêt validé ou en cours, on scanne tout ce qu'on a en main (en fin de concert, avant de quitter la salle). La page montre les manquants et les pointés, se met à jour quand plusieurs personnes scannent en même temps, gère les kits et les objets en quantité, et permet de pointer à la main.
 - **Liste du matériel à imprimer** pour chaque prêt : feuille A4 avec cases « Départ » et « Retour », contenu des kits, lieux de rangement, signatures et QR code vers la vérification.
+- **Icônes Papicons** (association Papillon, licence MIT) dans toute l'appli.
 - **« Enregistrer et créer un autre »** à la création d'un objet : le formulaire suivant reprend la catégorie et le lieu, pour enchaîner les saisies.
 
 ### Sécurité

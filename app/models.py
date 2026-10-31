@@ -538,6 +538,8 @@ class Loan(TimestampMixin, db.Model):
     deposit_returned = db.Column(db.Boolean, nullable=False, default=False)
     comment = db.Column(db.Text)
     refusal_reason = db.Column(db.String(255))
+    # Demande faite par l'emprunteur lui-même : le garant choisi doit l'accepter avant que l'admin la valide.
+    awaiting_guarantor = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
 
     borrower = db.relationship("User", foreign_keys=[borrower_id])
     guarantor = db.relationship("User", foreign_keys=[guarantor_id])
@@ -558,8 +560,19 @@ class Loan(TimestampMixin, db.Model):
         return self.status == LoanStatus.EN_COURS and self.end is not None and self.end < datetime.now()
 
     @property
+    def is_awaiting_guarantor(self):
+        return self.status == LoanStatus.DEMANDE and self.awaiting_guarantor
+
+    @property
     def status_label(self):
+        if self.is_awaiting_guarantor:
+            return "En attente du garant"
         return "En retard" if self.is_overdue else LoanStatus.LABELS[self.status]
+
+    @property
+    def status_css(self):
+        """Classe du badge : comme le statut, avec une couleur à part pour l'attente du garant."""
+        return "attente_garant" if self.is_awaiting_guarantor else self.status
 
     @property
     def type_label(self):

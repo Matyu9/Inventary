@@ -51,6 +51,12 @@ class Kind:
 KINDS = {
     "loan.request": Kind("Nouvelle demande de prêt", "Admins", "Nouvelle demande de {type} pour {emprunteur}",
                          "Examiner la demande", "brand"),
+    "loan.guarantee_request": Kind("Demande de garantie", "Garant choisi par l'emprunteur",
+                                   "{emprunteur} vous demande d'être garant", "Répondre à la demande", "brand"),
+    "loan.guarantee_accepted": Kind("Garantie acceptée", "Emprunteur", "Votre demande n°{numero} a un garant",
+                                    "Voir la demande", "ok"),
+    "loan.guarantee_refused": Kind("Garantie refusée", "Emprunteur", "Demande n°{numero} : garant non obtenu",
+                                   "Voir la demande", "danger"),
     "loan.validated": Kind("Prêt validé", "Emprunteur, garant, demandeur", "Votre {type} n°{numero} est validée",
                            "Voir le prêt", "ok"),
     "loan.refused": Kind("Demande refusée", "Garant, demandeur", "Demande n°{numero} refusée", "Voir la demande",

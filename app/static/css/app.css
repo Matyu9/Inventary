@@ -243,6 +243,7 @@ body.guest .error-card { margin: 0 auto; }
          font-weight: 600; background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); white-space: nowrap; }
 .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .8; }
 .status-demande { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.status-attente_garant { background: var(--brand-soft); color: var(--brand); border-color: transparent; }
 .status-valide { background: var(--info-bg); color: var(--info); border-color: transparent; }
 .status-en_cours { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
 .status-refuse, .status-annule, .status-rendu { color: var(--text-3); }

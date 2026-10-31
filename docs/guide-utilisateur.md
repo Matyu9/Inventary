@@ -67,7 +67,7 @@ Cliquez sur votre nom (en bas du menu) ou sur votre avatar, puis **Mon compte** 
 
 - **Administrateur** : gère tout, et il est le seul à **valider** les prêts, à supprimer, à gérer les comptes et les paramètres.
 - **Professeur** : gère l'inventaire au quotidien (objets, notes, entretiens, stock). Il **demande** les prêts pour ses élèves et s'en porte **garant**, puis remet et récupère le matériel des prêts dont il est garant.
-- **Emprunteur** : voit uniquement **ses** prêts, son calendrier et ses notifications. Un emprunteur peut aussi être une simple **fiche** sans accès à l'appli : un élève à qui on prête un instrument, mais qui ne se connecte pas.
+- **Emprunteur** : voit uniquement **ses** prêts, son calendrier et ses notifications. Il peut **demander du matériel pour lui-même** en choisissant un garant, qui doit accepter (voir [Demande d'un emprunteur](#demande-dun-emprunteur)). Un emprunteur peut aussi être une simple **fiche** sans accès à l'appli : un élève à qui on prête un instrument, mais qui ne se connecte pas.
 
 Ce sont les rôles de base. Un admin peut modifier leurs droits et créer d'autres rôles : voir [Rôles sur mesure](#rôles-sur-mesure).
 
@@ -259,6 +259,17 @@ Le stock ne peut jamais devenir négatif. Avec un **seuil de stock bas**, les ad
 6. **Caution et commentaire** (facultatif) : montant de la caution, informations utiles à l'admin.
 
 Les admins sont notifiés de la nouvelle demande.
+
+### Demande d'un emprunteur
+
+Un emprunteur connecté peut demander du matériel pour lui-même : bouton **Demander du matériel** sur son tableau de bord et dans « Mes prêts ».
+
+1. Il remplit le même formulaire, sans choisir d'emprunteur (c'est lui) ni de caution, et choisit **son garant** parmi les personnes qui peuvent l'être (un prof, par exemple). Un commentaire lui permet d'expliquer pour quoi faire.
+2. La demande apparaît « **En attente du garant** ». Seul le garant est prévenu : elle figure dans son tableau de bord et dans ses prêts, sous « Demandes à confirmer comme garant ».
+3. Le garant ouvre la demande et clique sur **Accepter d'être garant**, ou la **refuse** avec un motif facultatif. S'il refuse, l'emprunteur est prévenu et la demande passe à « Refusé ».
+4. Une fois acceptée, la demande suit le circuit normal : les admins sont prévenus, la valident ou la refusent, puis le matériel est remis.
+
+Tant que le garant n'a pas répondu, un admin ne peut pas valider la demande (il peut la refuser ou l'annuler), et le matériel n'est pas bloqué. Sans réponse au bout de 3 jours, le garant est relancé chaque jour. L'emprunteur peut annuler sa demande avant la remise. Dans la liste des prêts, ces demandes ont leur propre onglet, **Attente du garant**.
 
 ### Valider ou refuser
 
@@ -501,7 +512,8 @@ Droits par défaut des rôles de base (modifiables dans l'écran [Rôles](#rôle
 | Créer une fiche emprunteur (sans accès) | ✅ | ✅ | — |
 | Gérer les comptes et les accès | ✅ | — | — |
 | Créer et modifier les rôles | ✅ (toujours) | — | — |
-| Demander un prêt | ✅ | ✅ (garant) | — |
+| Demander un prêt | ✅ | ✅ (garant) | pour lui-même, avec un garant |
+| Accepter ou refuser d'être garant d'une demande d'emprunteur | — | s'il a été choisi | — |
 | Voir tous les prêts | ✅ | ✅ | ses prêts |
 | Valider ou refuser un prêt, modifier sa date de fin | ✅ | — | — |
 | Remettre et récupérer le matériel | ✅ | s'il est garant | — |

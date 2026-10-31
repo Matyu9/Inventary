@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from functools import wraps
 
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -24,6 +25,7 @@ DT_FORMAT = "%Y-%m-%dT%H:%M"
 VIEWS = {
     "actifs": ("En attente et en cours", (LoanStatus.DEMANDE, LoanStatus.VALIDE, LoanStatus.EN_COURS)),
     "demande": ("À valider", (LoanStatus.DEMANDE,)),
+    "garant": ("Attente du garant", (LoanStatus.DEMANDE,)),
     "valide": ("Validés", (LoanStatus.VALIDE,)),
     "en_cours": ("En cours", (LoanStatus.EN_COURS,)),
     "retard": ("En retard", (LoanStatus.EN_COURS,)),
@@ -53,6 +55,14 @@ class LoanForm(FlaskForm):
         super().__init__(*args, **kwargs)
         people = db.session.scalars(db.select(User).where(User.archived_at.is_(None))
                                     .order_by(User.last_name, User.first_name)).all()
+        if requests_for_self():
+            # Emprunteur : la demande est forcément pour lui, avec un garant qui devra l'accepter.
+            guarantors = holders("loan.guarantee")
+            self.borrower_id.choices = [(current_user.id, user_label(current_user))]
+            self.guarantor_id.label.text = "Garant (il devra accepter votre demande)"
+            self.guarantor_id.choices = [(0, "— choisir —")] + [
+                (u.id, user_label(u)) for u in people if u.role in guarantors and u.active and u.id != current_user.id]
+            return
         self.borrower_id.choices = [(0, "— choisir —")] + [(u.id, user_label(u)) for u in people]
         if can(current_user, "loan.validate"):
             guarantors = holders("loan.guarantee")
@@ -63,6 +73,29 @@ class LoanForm(FlaskForm):
             self.guarantor_id.choices = [(current_user.id, user_label(current_user))]
         else:
             self.guarantor_id.choices = [(0, "— aucun —")]
+
+
+def requests_for_self(user=None):
+    """Emprunteur qui demande du matériel pour lui-même (loan.request_own sans loan.request)."""
+    user = user or current_user
+    return can(user, "loan.request_own") and not can(user, "loan.request")
+
+
+@bp.app_template_global()
+def can_request_loan():
+    return can(current_user, "loan.request") or can(current_user, "loan.request_own")
+
+
+def require_request(view):
+    """Comme @require, pour l'un ou l'autre des droits de demande."""
+    @wraps(view)
+    @login_required
+    def wrapped(*args, **kwargs):
+        if not can_request_loan():
+            abort(403)
+        return view(*args, **kwargs)
+
+    return wrapped
 
 
 def get_loan(loan_id):
@@ -100,9 +133,7 @@ def index():
     view = request.args.get("vue", "actifs")
     if view not in VIEWS:
         view = "actifs"
-    query = db.select(Loan).where(Loan.status.in_(VIEWS[view][1]))
-    if view == "retard":
-        query = query.where(Loan.end.is_not(None), Loan.end < datetime.now())
+    query = _in_view(db.select(Loan), view)
     loan_type = request.args.get("type")
     if loan_type in LoanType.ALL:
         query = query.where(Loan.type == loan_type)
@@ -112,16 +143,19 @@ def index():
                                 fold_contains(Loan.title, q)))
     order = Loan.start.desc() if view == "historique" else Loan.start
     loans = db.session.scalars(query.order_by(order).limit(500)).all()
-    counts = {key: _count(statuses, key == "retard") for key, (_, statuses) in VIEWS.items() if key != "historique"}
+    counts = {key: db.session.scalar(_in_view(db.select(db.func.count(Loan.id)), key))
+              for key in VIEWS if key != "historique"}
     return render_template("loans/index.html", loans=loans, view=view, views=VIEWS, counts=counts,
                            loan_type=loan_type, q=q)
 
 
-def _count(statuses, overdue=False):
-    query = db.select(db.func.count(Loan.id)).where(Loan.status.in_(statuses))
-    if overdue:
+def _in_view(query, view):
+    query = query.where(Loan.status.in_(VIEWS[view][1]))
+    if view == "retard":
         query = query.where(Loan.end.is_not(None), Loan.end < datetime.now())
-    return db.session.scalar(query)
+    elif view in ("demande", "garant"):  # une demande d'emprunteur ne se valide qu'une fois le garant d'accord
+        query = query.where(Loan.awaiting_guarantor.is_(view == "garant"))
+    return query
 
 
 @bp.route("/mes-prets")
@@ -129,13 +163,16 @@ def _count(statuses, overdue=False):
 def mine():
     as_borrower = db.session.scalars(
         db.select(Loan).where(Loan.borrower_id == current_user.id).order_by(Loan.start.desc())).all()
-    as_guarantor = []
+    as_guarantor = to_confirm = []
     if can(current_user, "loan.guarantee"):
         as_guarantor = db.session.scalars(
             db.select(Loan).where(Loan.guarantor_id == current_user.id,
                                   Loan.status.in_((LoanStatus.DEMANDE, LoanStatus.VALIDE, LoanStatus.EN_COURS)))
             .order_by(Loan.start)).all()
-    return render_template("loans/mine.html", as_borrower=as_borrower, as_guarantor=as_guarantor)
+        to_confirm = [loan for loan in as_guarantor if loan.is_awaiting_guarantor]
+        as_guarantor = [loan for loan in as_guarantor if not loan.is_awaiting_guarantor]
+    return render_template("loans/mine.html", as_borrower=as_borrower, as_guarantor=as_guarantor,
+                           to_confirm=to_confirm)
 
 
 # ---------------------------------------------------------------------------
@@ -143,13 +180,13 @@ def mine():
 # ---------------------------------------------------------------------------
 
 @bp.route("/prets/nouveau", methods=["GET", "POST"])
-@require("loan.request")
+@require_request
 def create():
     form = LoanForm()
     if request.method == "GET":
         start = datetime.now().replace(second=0, microsecond=0) + timedelta(hours=1)
         form.start.data = start.replace(minute=0)
-        form.borrower_id.data = request.args.get("borrower_id", type=int)
+        form.borrower_id.data = current_user.id if requests_for_self() else request.args.get("borrower_id", type=int)
         if can(current_user, "loan.validate"):
             form.auto_validate.data = False
     else:
@@ -164,21 +201,26 @@ def create():
             else:
                 deliver_quietly()
                 return redirect(url_for(".detail", loan_id=loan.id))
-    return render_template("loans/form.html", form=form, rows=selected_lines())
+    return render_template("loans/form.html", form=form, rows=selected_lines(), own=requests_for_self())
 
 
 def _create_from_form(form):
-    borrower = db.session.get(User, form.borrower_id.data)
+    own = requests_for_self()
+    borrower = current_user if own else db.session.get(User, form.borrower_id.data)
     guarantor = db.session.get(User, form.guarantor_id.data) if form.guarantor_id.data else None
     if guarantor and not can(guarantor, "loan.guarantee"):
         raise svc.LoanError("Cette personne ne peut pas être garante d'un prêt (voir son rôle).")
     loan, warnings = svc.create_request(
         loan_type=form.type.data, borrower=borrower, guarantor=guarantor, requested_by=current_user,
         start=form.start.data, end=form.end.data, lines=form_lines(), title=(form.title.data or "").strip(),
-        comment=form.comment.data, deposit_amount=form.deposit_amount.data)
+        comment=form.comment.data, deposit_amount=None if own else form.deposit_amount.data,
+        awaiting_guarantor=own)
     for warning in warnings:
         flash(warning, "warning")
-    if form.auto_validate.data and can(current_user, "loan.validate"):
+    if own:
+        flash(f"Demande envoyée à {guarantor.full_name}, votre garant. Dès son accord, un administrateur "
+              "la validera.", "success")
+    elif form.auto_validate.data and can(current_user, "loan.validate"):
         svc.validate(loan, current_user)
         flash("Prêt enregistré et validé.", "success")
     elif can(current_user, "loan.validate"):
@@ -190,7 +232,7 @@ def _create_from_form(form):
 
 
 @bp.route("/prets/recherche-materiel")
-@require("loan.request")
+@require_request
 def search_equipment():
     """Fragment HTMX : objets et kits correspondant à la recherche, à ajouter à la demande."""
     q = (request.args.get("q") or "").strip()
@@ -207,7 +249,7 @@ def search_equipment():
 
 
 @bp.route("/prets/verifier", methods=["POST"])
-@require("loan.request")
+@require_request
 def check():
     """Fragment HTMX : disponibilité du matériel choisi sur la période saisie."""
     problems, warnings = [], []
@@ -281,6 +323,21 @@ def validate(loan_id):
 def refuse(loan_id):
     reason = request.form.get("reason")
     return _action(loan_id, "loan.validate", lambda l: svc.refuse(l, current_user, reason), "Demande refusée.")
+
+
+@bp.route("/prets/<int:loan_id>/garant/accepter", methods=["POST"])
+@login_required
+def guarantor_accept(loan_id):
+    return _action(loan_id, "loan.answer", lambda l: svc.guarantor_accept(l, current_user),
+                   "Vous êtes garant de cette demande : elle attend maintenant la validation d'un administrateur.")
+
+
+@bp.route("/prets/<int:loan_id>/garant/refuser", methods=["POST"])
+@login_required
+def guarantor_refuse(loan_id):
+    reason = request.form.get("reason")
+    return _action(loan_id, "loan.answer", lambda l: svc.guarantor_refuse(l, current_user, reason),
+                   "Demande refusée : l'emprunteur est prévenu.")
 
 
 @bp.route("/prets/<int:loan_id>/annuler", methods=["POST"])

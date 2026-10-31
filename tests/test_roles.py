@@ -34,7 +34,7 @@ def person_with(role_key, email):
 def test_builtin_defaults_without_saved_roles(app):
     assert permissions_of(A) == set(PERMISSIONS)
     assert permissions_of(P) == DEFAULT_PERMISSIONS[P]
-    assert permissions_of(E) == {"myloans.view", "calendar.view"}
+    assert permissions_of(E) == {"myloans.view", "calendar.view", "loan.request_own"}
     assert permissions_of("inconnu") == set()
 
 

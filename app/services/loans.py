@@ -142,16 +142,24 @@ def _validate_period(loan_type, start, end):
 
 
 def create_request(*, loan_type, borrower, guarantor, requested_by, start, end, lines, title=None,
-                   comment=None, deposit_amount=None):
-    """Crée une demande. Refuse si le matériel est déjà pris ; renvoie (prêt, avertissements)."""
+                   comment=None, deposit_amount=None, awaiting_guarantor=False):
+    """Crée une demande. Refuse si le matériel est déjà pris ; renvoie (prêt, avertissements).
+
+    `awaiting_guarantor` : demande d'un emprunteur pour lui-même, que le garant doit d'abord accepter.
+    """
     if loan_type not in LoanType.ALL:
         raise LoanError("Type de prêt inconnu.")
+    if awaiting_guarantor and guarantor is None:
+        raise LoanError("Choisissez le garant de la demande.")
+    if awaiting_guarantor and guarantor.id == borrower.id:
+        raise LoanError("Le garant doit être une autre personne que l'emprunteur.")
     _validate_period(loan_type, start, end)
     problems, warnings = check_availability(lines, start, end)
     if problems:
         raise LoanError(" ".join(problems))
     loan = Loan(type=loan_type, borrower=borrower, guarantor=guarantor, requested_by=requested_by, start=start,
-                end=end, title=title or None, comment=comment or None, deposit_amount=deposit_amount)
+                end=end, title=title or None, comment=comment or None, deposit_amount=deposit_amount,
+                awaiting_guarantor=awaiting_guarantor)
     loan.lines = list(lines)
     db.session.add(loan)
     db.session.flush()
@@ -160,10 +168,50 @@ def create_request(*, loan_type, borrower, guarantor, requested_by, start, end, 
     for item, _ in (pair for line in loan.lines for pair in line_items(line)):
         log("loan.request", f"Demandé dans le prêt n°{loan.id} ({borrower.full_name})", item=item, loan=loan,
             user=requested_by)
-    notify([a for a in admins() if a.id != requested_by.id],
-           f"Nouvelle demande de {loan.type_label.lower()} n°{loan.id} par {requested_by.full_name} "
-           f"pour {borrower.full_name}.", _link(loan), kind="loan.request", loan=loan)
+    if awaiting_guarantor:
+        notify([guarantor], f"{borrower.full_name} vous demande d'être garant de sa demande de "
+               f"{loan.type_label.lower()} n°{loan.id}.", _link(loan), kind="loan.guarantee_request", loan=loan)
+    else:
+        _notify_admins(loan, requested_by)
     return loan, warnings
+
+
+def _notify_admins(loan, requested_by):
+    """Une demande prête à être validée : les admins sont prévenus (sauf celui qui vient d'agir)."""
+    notify([a for a in admins() if a.id != requested_by.id],
+           f"Nouvelle demande de {loan.type_label.lower()} n°{loan.id} par {loan.requested_by.full_name} "
+           f"pour {loan.borrower.full_name}.", _link(loan), kind="loan.request", loan=loan)
+
+
+def _require_guarantor(loan, user):
+    if not loan.is_awaiting_guarantor:
+        raise LoanError("Cette demande n'attend pas de réponse du garant.")
+    if loan.guarantor_id != user.id:
+        raise LoanError("Seul le garant choisi peut répondre à cette demande.")
+
+
+def guarantor_accept(loan, user):
+    """Le garant accepte : la demande passe à la validation par un admin."""
+    _require_guarantor(loan, user)
+    loan.awaiting_guarantor = False
+    log("loan.guarantee_accept", f"{user.full_name} accepte d'être garant", loan=loan, user=user)
+    notify([loan.borrower], f"{user.full_name} a accepté d'être garant de votre demande n°{loan.id} : "
+           "elle attend maintenant la validation d'un administrateur.", _link(loan), kind="loan.guarantee_accepted",
+           loan=loan)
+    _notify_admins(loan, user)
+
+
+def guarantor_refuse(loan, user, reason=None):
+    _require_guarantor(loan, user)
+    loan.status = LoanStatus.REFUSE
+    loan.awaiting_guarantor = False
+    loan.validated_by, loan.validated_at = user, datetime.now()
+    loan.refusal_reason = (reason or "").strip()[:255] or None
+    log("loan.guarantee_refuse", f"{user.full_name} refuse d'être garant"
+        + (f" : {loan.refusal_reason}" if loan.refusal_reason else ""), loan=loan, user=user)
+    notify([loan.borrower, loan.requested_by], f"{user.full_name} n'a pas accepté d'être garant de la demande "
+           f"n°{loan.id}" + (f" : {loan.refusal_reason}" if loan.refusal_reason else "."), _link(loan),
+           kind="loan.guarantee_refused", loan=loan)
 
 
 def _require(loan, *statuses):
@@ -173,6 +221,8 @@ def _require(loan, *statuses):
 
 def validate(loan, admin):
     _require(loan, LoanStatus.DEMANDE)
+    if loan.awaiting_guarantor:
+        raise LoanError("Cette demande attend encore l'accord de son garant.")
     problems, _ = check_availability(loan.lines, loan.start, loan.end, exclude_loan_id=loan.id)
     if problems:
         raise LoanError(" ".join(problems))
@@ -187,6 +237,7 @@ def validate(loan, admin):
 def refuse(loan, admin, reason=None):
     _require(loan, LoanStatus.DEMANDE)
     loan.status = LoanStatus.REFUSE
+    loan.awaiting_guarantor = False
     loan.validated_by = admin
     loan.validated_at = datetime.now()
     loan.refusal_reason = (reason or "").strip()[:255] or None
@@ -200,6 +251,7 @@ def refuse(loan, admin, reason=None):
 def cancel(loan, user):
     _require(loan, LoanStatus.DEMANDE, LoanStatus.VALIDE)
     loan.status = LoanStatus.ANNULE
+    loan.awaiting_guarantor = False
     log("loan.cancel", "Prêt annulé", loan=loan, user=user)
     notify([u for u in (loan.borrower, loan.guarantor, loan.requested_by) if u is not None and u.id != user.id],
            f"Le prêt n°{loan.id} a été annulé par {user.full_name}.", _link(loan), kind="loan.cancelled", loan=loan)

@@ -35,7 +35,8 @@ PERMISSION_GROUPS = [
     ("Prêts", [
         ("myloans.view", "Voir ses propres prêts"),
         ("calendar.view", "Voir le calendrier"),
-        ("loan.request", "Faire une demande de prêt"),
+        ("loan.request", "Faire une demande de prêt (pour n'importe qui)"),
+        ("loan.request_own", "Demander du matériel pour soi, avec l'accord d'un garant"),
         ("loan.guarantee", "Être garant d'un prêt (et le remettre ou le récupérer)"),
         ("loan.list_all", "Voir tous les prêts"),
         ("loan.validate", "Valider ou refuser les demandes"),
@@ -66,12 +67,12 @@ DEFAULT_PERMISSIONS = {
         "reminder.edit", "stock.move", "scan", "label.print", "myloans.view", "calendar.view", "loan.request",
         "loan.guarantee", "loan.list_all", "loan.verify", "audit.scan", "report.view", "export", "borrower.create",
         "report.handle"},
-    E: {"myloans.view", "calendar.view"},
+    E: {"myloans.view", "calendar.view", "loan.request_own"},
 }
 
 
 # Droits vérifiés sur un objet précis (prêt, note, entretien) : déduits des droits ci-dessus dans can().
-OBJECT_ACTIONS = {"loan.view", "loan.checkout", "note.delete", "maintenance.delete", "loan.cancel"}
+OBJECT_ACTIONS = {"loan.view", "loan.checkout", "note.delete", "maintenance.delete", "loan.cancel", "loan.answer"}
 
 
 def permissions_of(role_key):
@@ -93,7 +94,10 @@ def can(user, action, obj=None):
 
     # Droits dépendant de l'objet.
     if action == "loan.view":
-        return "loan.list_all" in perms or obj is not None and obj.borrower_id == user.id
+        return "loan.list_all" in perms or obj is not None and user.id in (obj.borrower_id, obj.guarantor_id)
+    if action == "loan.answer":  # accepter ou refuser d'être garant d'une demande
+        return ("loan.guarantee" in perms and obj is not None and obj.guarantor_id == user.id
+                and obj.is_awaiting_guarantor)
     if action == "loan.checkout":  # remise / retour physique
         return "loan.checkout_any" in perms or (
             "loan.guarantee" in perms and obj is not None and obj.guarantor_id == user.id)

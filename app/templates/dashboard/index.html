@@ -9,7 +9,7 @@
 </div>
 
 <div class="quick-actions">
-  {% if can(current_user, "loan.request") %}<a href="{{ url_for('loans.create') }}" role="button">{{ icon("plus", 18) }} Demande de prêt</a>{% endif %}
+  {% if can_request_loan() %}<a href="{{ url_for('loans.create') }}" role="button">{{ icon("plus", 18) }} Demande de prêt</a>{% endif %}
   {% if can(current_user, "scan") %}<a href="{{ url_for('scan.index') }}" role="button" class="secondary">{{ icon("scan", 18) }} Scanner</a>{% endif %}
   {% if can(current_user, "item.edit") %}<a href="{{ url_for('items.create') }}" role="button" class="secondary">{{ icon("package", 18) }} Nouvel objet</a>{% endif %}
 </div>
@@ -22,6 +22,12 @@
 </section>
 
 <div class="dash-grid">
+  {% if to_confirm %}
+  <section class="card span-2">
+    <h2>{{ icon("user-check", 18) }} Demandes à confirmer comme garant <span class="count">{{ to_confirm | length }}</span></h2>
+    {{ loan_table(to_confirm, "") }}
+  </section>
+  {% endif %}
   {% if can(current_user, "loan.validate") %}
   <section class="card span-2">
     <h2>{{ icon("clock", 18) }} Demandes à valider <span class="count">{{ pending | length }}</span></h2>

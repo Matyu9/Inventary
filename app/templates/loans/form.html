@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% from "partials/_form.html" import field %}
-{% block title %}Nouvelle demande de prêt{% endblock %}
+{% block title %}{{ "Demander du matériel" if own else "Nouvelle demande de prêt" }}{% endblock %}
 {% block content %}
-<h1>Nouvelle demande de prêt</h1>
+<h1>{{ "Demander du matériel" if own else "Nouvelle demande de prêt" }}</h1>
+{% if own %}<p class="muted">Choisissez un garant (un professeur, par exemple) : il recevra votre demande et devra
+  l'accepter. Un administrateur la validera ensuite, puis le matériel vous sera remis.</p>{% endif %}
 <form method="post" id="loan-form" novalidate
       hx-post="{{ url_for('loans.check') }}" hx-target="#availability" hx-trigger="change, lines-changed">
   {{ form.hidden_tag() }}
@@ -11,6 +13,10 @@
     {% for sub in form.type %}<label>{{ sub() }} {{ sub.label.text }}</label>{% endfor %}
   </fieldset>
 
+  {% if own %}
+  <input type="hidden" name="borrower_id" value="{{ current_user.id }}">
+  {{ field(form.guarantor_id) }}
+  {% else %}
   <div class="grid">
     <div>
       {{ field(form.borrower_id) }}
@@ -18,6 +24,7 @@
     </div>
     <div>{{ field(form.guarantor_id) }}</div>
   </div>
+  {% endif %}
   {{ field(form.title, placeholder="ex. Concert de la Sainte-Cécile, année 2026-2027…") }}
   <div class="grid">
     <div>{{ field(form.start) }}</div>
@@ -49,15 +56,19 @@
   <div id="equipment-results"></div>
   <div id="availability" aria-live="polite"></div>
 
+  {% if own %}
+  {{ field(form.comment, rows=3, placeholder="Pour quoi faire ? (cours, concert, stage…)") }}
+  {% else %}
   <details>
     <summary>Caution et commentaire</summary>
     {{ field(form.deposit_amount, inputmode="decimal") }}
     {{ field(form.comment, rows=3) }}
   </details>
+  {% endif %}
   {% if can(current_user, "loan.validate") %}<label>{{ form.auto_validate() }} {{ form.auto_validate.label.text }}</label>{% endif %}
 
   <div class="actions">
-    <button type="submit">Envoyer la demande</button>
+    <button type="submit">{{ "Envoyer au garant" if own else "Envoyer la demande" }}</button>
     <a href="{{ url_for('loans.index') if can(current_user, 'loan.list_all') else url_for('loans.mine') }}" role="button" class="secondary outline">Annuler</a>
   </div>
 </form>

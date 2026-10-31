@@ -23,7 +23,7 @@ BORROWER = PUBLIC | {"dashboard.index", "auth.logout", "auth.password", "loans.m
                      "users.notifications", "calendar.index", "account.index", "account.change_email",
                      "account.revoke_session", "account.revoke_others", "account.set_avatar",
                      "account.remove_avatar", "users.avatar_file", "calendar.events", "calendar.reset_token",
-                     "scan.resolve"}
+                     "scan.resolve", "loans.create", "loans.search_equipment", "loans.check"}
 
 
 @pytest.fixture

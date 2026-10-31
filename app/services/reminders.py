@@ -75,9 +75,18 @@ def run(now=None):
 
     # Demandes en attente depuis plus de 2 jours : relance quotidienne des admins.
     for loan in db.session.scalars(db.select(Loan).where(
-            Loan.status == LoanStatus.DEMANDE, Loan.created_at < now - timedelta(days=2))):
+            Loan.status == LoanStatus.DEMANDE, Loan.awaiting_guarantor.is_(False),
+            Loan.created_at < now - timedelta(days=2))):
         add("demandes", notify(admins(), f"La demande n°{loan.id} attend toujours une validation.", _loan_link(loan),
                                dedup_key=f"pending:{loan.id}:{today}", kind="loan.pending", loan=loan))
+
+    # Demandes d'emprunteurs sans réponse du garant depuis 3 jours : relance quotidienne du garant.
+    for loan in db.session.scalars(db.select(Loan).where(
+            Loan.status == LoanStatus.DEMANDE, Loan.awaiting_guarantor.is_(True),
+            Loan.created_at < now - timedelta(days=3))):
+        add("garants", notify([loan.guarantor], f"{loan.borrower.full_name} attend toujours votre réponse : "
+                              f"acceptez-vous d'être garant de la demande n°{loan.id} ?", _loan_link(loan),
+                              dedup_key=f"guarantee:{loan.id}:{today}", kind="loan.guarantee_request", loan=loan))
 
     # Stocks bas : une relance par semaine.
     week = today.isocalendar()

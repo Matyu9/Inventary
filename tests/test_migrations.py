@@ -180,3 +180,24 @@ def test_reports_migration(migrated_app):
                                      "SELECT message FROM notification")
     assert "report.handle" not in json.loads(prof[0]) and notifications == [("avant",)]
     upgrade(MIGRATIONS)
+
+
+def test_borrower_requests_migration(migrated_app):
+    """Colonne ajoutée sans recréer `loan` (référencée partout) ; l'emprunteur peut demander pour lui-même."""
+    import json
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="c7f1a3e9d5b2")
+    run_sql(path,
+            "INSERT INTO user (id, first_name, last_name, email, role, active, ical_token) "
+            "VALUES (1, 'Alice', 'Martin', 'alice@ohn.test', 'admin', 1, 'tok')",
+            "INSERT INTO loan (id, type, status, borrower_id, requested_by_id, start, deposit_returned) "
+            "VALUES (1, 'garde', 'demande', 1, 1, '2026-11-01', 0)",
+            "INSERT INTO activity (user_id, action, message, loan_id) VALUES (1, 'loan.request', 'x', 1)")
+    upgrade(MIGRATIONS, revision="d2a6b8c4e1f3")
+    (perms,), loans, activity = run_sql(path, "SELECT permissions FROM role WHERE key = 'emprunteur'",
+                                        "SELECT id, awaiting_guarantor FROM loan", "SELECT loan_id FROM activity")
+    assert "loan.request_own" in json.loads(perms[0]) and loans == [(1, 0)] and activity == [(1,)]
+    downgrade(MIGRATIONS, revision="c7f1a3e9d5b2")
+    (perms,), loans = run_sql(path, "SELECT permissions FROM role WHERE key = 'emprunteur'", "SELECT id FROM loan")
+    assert "loan.request_own" not in json.loads(perms[0]) and loans == [(1,)]
+    upgrade(MIGRATIONS)

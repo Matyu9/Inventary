@@ -420,3 +420,37 @@ def test_anonymous_report_from_qr_then_handled(browser, server, page_for):
     prof.fill("input[name=note]", "Récupérée")
     prof.click("text=Marquer comme traité")
     assert "Aucun signalement à traiter" in prof.inner_text("main")
+
+
+def test_borrower_request_then_guarantor_accepts(page_for):
+    """L'emprunteur demande du matériel en choisissant son garant ; le prof accepte depuis son tableau de bord."""
+    borrower = page_for("emprunteur", mobile=True)
+    borrower.click("text=Demander du matériel")
+    borrower.wait_for_url(re.compile(r"/prets/nouveau"))
+    assert borrower.locator("#borrower_id").count() == 0
+    value = borrower.locator("#guarantor_id option", has_text="Paul").first.get_attribute("value")
+    borrower.select_option("#guarantor_id", value)
+    borrower.check("input[value=reservation]")
+    borrower.fill("#start", local_dt(20))
+    borrower.fill("#end", local_dt(21))
+    borrower.fill("#loan-form input[name=q]", "flûte")
+    borrower.wait_for_selector("#equipment-results >> text=OHN-0002")
+    borrower.click("#equipment-results button[data-add-line]")
+    borrower.wait_for_selector("#availability .flash-success")
+    borrower.click("button:has-text('Envoyer au garant')")
+    borrower.wait_for_selector("text=votre garant")
+    assert "En attente du garant" in borrower.locator(".page-head").inner_text()
+    loan_url = borrower.url
+    assert not borrower.errors
+
+    prof = page_for("prof")
+    assert "Demandes à confirmer comme garant" in prof.inner_text("main")
+    prof.goto(loan_url)
+    prof.click("button:has-text('être garant')")
+    prof.wait_for_selector("text=attend maintenant la validation")
+    assert "Demandé" in prof.locator(".page-head .badge").inner_text()
+
+    admin = page_for("admin")
+    admin.goto(loan_url)
+    admin.click(".page-head button:has-text('Valider')")
+    admin.wait_for_selector("text=Prêt validé.")

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Signalements{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Signalements</h1>
+</div>
+<p class="muted">Messages laissés en scannant le QR code d'un objet ou d'un kit : un problème constaté, ou un objet
+  trouvé. Les personnes qui ont le droit « Traiter les signalements » sont prévenues à chaque message.</p>
+<nav class="tabs">
+  <a href="{{ url_for('public_reports.index') }}" {% if not handled %}aria-current="page"{% endif %}>À traiter ({{ pending }})</a>
+  <a href="{{ url_for('public_reports.index', vue='traites') }}" {% if handled %}aria-current="page"{% endif %}>Traités</a>
+</nav>
+
+{% for r in reports %}
+<article class="card report-card{{ ' found' if r.kind == 'trouve' }}">
+  <header>
+    <span class="badge {{ 'health-ok' if r.kind == 'trouve' else 'health-warn' }}">{{ r.kind_label }}</span>
+    {% if r.item %}<a href="{{ url_for('items.detail', item_id=r.item.id) }}">{{ r.target_label }}</a>
+    {% else %}<a href="{{ url_for('kits.detail', kit_id=r.kit.id) }}">{{ r.target_label }}</a>{% endif %}
+    <small class="muted">· {{ r.created_at | datetime_fr }}</small>
+  </header>
+  <blockquote>{{ r.message }}</blockquote>
+  <p class="small">
+    {% if r.name or r.reported_by %}De <strong>{{ r.name or r.reported_by.full_name }}</strong>{% if r.reported_by %} (compte {{ r.reported_by.role_label | lower }}){% endif %}{% else %}Anonyme{% endif %}
+    {% if r.contact %} · {{ r.contact }}{% endif %}
+  </p>
+  {% if r.handled_at %}
+  <p class="small muted">Traité le {{ r.handled_at | datetime_fr }}{% if r.handled_by %} par {{ r.handled_by.full_name }}{% endif %}{% if r.handled_note %} : {{ r.handled_note }}{% endif %}</p>
+  <form method="post" action="{{ url_for('public_reports.reopen', report_id=r.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="secondary outline">Rouvrir</button>
+  </form>
+  {% else %}
+  <form method="post" action="{{ url_for('public_reports.handle', report_id=r.id) }}" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="text" name="note" maxlength="500" placeholder="Ce qui a été fait (facultatif)" aria-label="Note">
+    <button type="submit">Marquer comme traité</button>
+  </form>
+  {% if r.item and r.kind == "probleme" and not r.item.is_quantity and can(current_user, "maintenance.edit") %}
+  <p class="small"><a href="{{ url_for('items.detail', item_id=r.item.id) }}#entretiens">Enregistrer un entretien sur cet objet</a></p>
+  {% endif %}
+  {% endif %}
+</article>
+{% else %}
+<p class="empty">{{ "Aucun signalement traité pour l'instant." if handled else "Aucun signalement à traiter." }}</p>
+{% endfor %}
+{% endblock %}

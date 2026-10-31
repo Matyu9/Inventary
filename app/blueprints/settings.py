@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, url_for
 from flask_login import current_user
 from flask_wtf import FlaskForm
@@ -6,7 +8,7 @@ from wtforms.validators import DataRequired, Length
 
 from ..permissions import require
 from ..extensions import db
-from ..models import EmailTemplate, Item, Loan, Notification
+from ..models import EmailTemplate, Item, Loan, Notification, PublicReport
 from ..services import mailer, reminders, sessions
 from ..services.activity import log
 
@@ -141,8 +143,15 @@ def preview_email(kind):
         loan = None
         item = sample.item if sample and sample.item else db.session.scalar(
             db.select(Item).order_by(Item.id.desc()).limit(1))
+    report = None
+    if kind.startswith("public."):
+        report = sample.report if sample and sample.report else PublicReport(
+            kind=PublicReport.TROUVE if kind == "public.found" else PublicReport.PROBLEME, item=item,
+            message="(texte laissé par la personne qui a scanné le QR code)", name="Camille",
+            contact="06 00 00 00 00", created_at=datetime.now())
+        item = None
     # Notification jamais enregistrée : n'existe que le temps du rendu.
-    notification = Notification(user=current_user, kind=kind, loan=loan, item=item,
+    notification = Notification(user=current_user, kind=kind, loan=loan, item=item, report=report,
                                 message=sample.message if sample else "(texte de la notification)",
                                 link=sample.link if sample else "/")
     _, _, html = mailer.compose(notification)

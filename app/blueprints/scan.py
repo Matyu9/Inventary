@@ -1,15 +1,34 @@
 """QR codes, étiquettes, page de scan et fichiers PWA."""
 from flask import (Blueprint, Response, abort, current_app, flash, redirect, render_template, request,
                    send_from_directory, url_for)
-from flask_login import current_user, login_required
+from flask_login import current_user
+from flask_wtf import FlaskForm
+from wtforms import HiddenField, StringField, TextAreaField
+from wtforms.validators import AnyOf, DataRequired, Length, Optional
 
 from ..extensions import db
-from ..models import Item, Kit, Loan, LoanLine, LoanStatus, get_live
+from ..models import Item, Kit, Loan, LoanLine, LoanStatus, PublicReport, get_live
 from ..permissions import can, require
+from ..services import public_reports, throttle
 from ..services.items import search_items
+from ..services.mailer import deliver_quietly
 from ..services.qr import find_by_token, qr_svg, qr_url, resolve_scan
 
 bp = Blueprint("scan", __name__)
+
+# Signalements depuis un QR : par heure, 5 par adresse IP et 10 par objet.
+_reports_by_ip = throttle.Limiter(5, 3600)
+_reports_by_target = throttle.Limiter(10, 3600)
+
+
+class ReportForm(FlaskForm):
+    kind = HiddenField(validators=[AnyOf(list(PublicReport.KINDS))])
+    message = TextAreaField("Message", validators=[DataRequired("Décrivez le problème ou l'endroit où vous l'avez "
+                                                                "trouvé."), Length(max=2000)])
+    name = StringField("Votre nom (facultatif)", validators=[Optional(), Length(max=120)])
+    contact = StringField("Téléphone ou email pour vous recontacter (facultatif)",
+                          validators=[Optional(), Length(max=160)])
+    website = StringField("Ne pas remplir")  # piège à robots, masqué à l'écran
 
 MAX_LABELS = 500
 # Formats d'étiquettes A4 courants (planches adhésives type Avery).
@@ -27,21 +46,50 @@ def target_url(obj):
 
 
 @bp.route("/q/<token>")
-@login_required
 def resolve(token):
-    """Destination des QR codes collés sur le matériel."""
+    """Destination des QR codes collés sur le matériel, accessible sans compte."""
     obj = find_by_token(token) or abort(404)
     if can(current_user, "inventory.view"):
         return redirect(target_url(obj))
-    # Emprunteur : fiche réduite, avec ses éventuels prêts en cours sur cet objet.
+    return _public_page(obj, ReportForm())
+
+
+def _public_page(obj, form, status=200):
+    """Fiche réduite : nom et code, de quoi signaler un problème ou un objet trouvé ; rien d'autre n'est dévoilé.
+    Emprunteur connecté : on y ajoute ses prêts en cours sur cet objet."""
     loans = []
-    if isinstance(obj, Item):
+    if current_user.is_authenticated and isinstance(obj, Item):
         loans = db.session.scalars(
             db.select(Loan).join(LoanLine).where(
                 LoanLine.item_id == obj.id, Loan.borrower_id == current_user.id,
                 Loan.status.in_((LoanStatus.VALIDE, LoanStatus.EN_COURS)))
         ).all()
-    return render_template("scan/limited.html", obj=obj, loans=loans)
+    template = "scan/limited.html" if current_user.is_authenticated else "scan/public.html"
+    return render_template(template, obj=obj, loans=loans, form=form, token=obj.qr_token), status
+
+
+@bp.route("/q/<token>/signaler", methods=["POST"])
+def report(token):
+    obj = find_by_token(token) or abort(404)
+    form = ReportForm()
+    if not form.validate():
+        return _public_page(obj, form, 400)
+    if form.website.data:  # robot : on fait comme si de rien n'était
+        flash("Merci, votre message a bien été transmis.", "success")
+        return redirect(url_for(".resolve", token=token))
+    by_ip, by_target = [request.remote_addr or "?"], [token]
+    if _reports_by_ip.blocked(by_ip) or _reports_by_target.blocked(by_target):
+        flash("Trop de messages envoyés : réessayez un peu plus tard.", "error")
+        return _public_page(obj, form, 429)
+    _reports_by_ip.hit(by_ip)
+    _reports_by_target.hit(by_target)
+    user = current_user if current_user.is_authenticated else None
+    public_reports.create(obj, form.kind.data, form.message.data, name=form.name.data or (user and user.full_name),
+                          contact=form.contact.data, user=user)
+    db.session.commit()
+    deliver_quietly()
+    flash("Merci, votre message a bien été transmis aux responsables du matériel.", "success")
+    return redirect(url_for(".resolve", token=token))
 
 
 @bp.route("/scan")

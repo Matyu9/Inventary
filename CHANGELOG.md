@@ -6,6 +6,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ### Ajouté
 
+- **QR code public et signalements** : sans compte, scanner l'étiquette d'un objet ou d'un kit ouvre une page qui ne montre que son nom et son code, avec **Signaler un problème** et **J'ai trouvé cet objet** (nom et contact facultatifs, limité contre les abus). Les messages arrivent dans le nouveau menu **Signalements** (droit « Traiter les signalements », donné par défaut aux profs), avec une pastille, un bandeau sur la fiche et deux nouveaux emails modifiables. Un objet trouvé prévient aussi l'emprunteur et le garant. Les emprunteurs connectés ont les mêmes boutons.
 - **Documents joints** (fiches objet et kit) : factures, devis, notices, garanties, certificats, assurances, en PDF, image, Word, Excel, OpenDocument ou texte. Le contenu réel du fichier est vérifié. Deux nouveaux droits, « Voir les documents joints » et « Ajouter et supprimer des documents joints », donnés par défaut aux profs. Une pastille 📎 signale les objets qui en ont dans la liste.
 - **Corbeille** (bouton en haut de l'inventaire et des kits, admin) : un objet ou un kit supprimé y reste 30 jours, invisible partout ailleurs, puis il est effacé automatiquement. On peut le restaurer tel quel (un kit récupère ses objets) ou le supprimer définitivement. Seul un administrateur peut vider la corbeille.
 - **État de l'installation** (Paramètres, admin) : page `/sante` et sa version JSON `/health` qui vérifient la base, les migrations, l'espace disque, le passage des rappels automatiques et les emails. Réponse `503` en cas de problème, `404` pour qui ne gère pas les paramètres.
@@ -30,6 +31,8 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 - **« Enregistrer et créer un autre »** à la création d'un objet : le formulaire suivant reprend la catégorie et le lieu, pour enchaîner les saisies.
 
 ### Sécurité
+
+- Le lien d'un QR code ne demande plus de connexion : sans compte, il mène à une page publique qui ne montre que le nom et le code de l'objet.
 
 - L'adresse des photos (`/objets/fichiers/…`) ne sert plus que les photos d'objets, et plus le reste du dossier des fichiers envoyés.
 

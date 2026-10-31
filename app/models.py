@@ -653,6 +653,53 @@ class AuditScan(db.Model):
 
 
 # ---------------------------------------------------------------------------
+# Signalements envoyés depuis la page publique d'un QR code
+# ---------------------------------------------------------------------------
+
+class PublicReport(db.Model):
+    PROBLEME, TROUVE = "probleme", "trouve"
+    KINDS = {PROBLEME: "Problème signalé", TROUVE: "Objet trouvé"}
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.ForeignKey("item.id", ondelete="CASCADE"), index=True)
+    kit_id = db.Column(db.ForeignKey("kit.id", ondelete="CASCADE"), index=True)
+    kind = db.Column(db.String(20), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    name = db.Column(db.String(120))  # facultatifs : la personne peut rester anonyme
+    contact = db.Column(db.String(160))
+    reported_by_id = db.Column(db.ForeignKey("user.id", ondelete="SET NULL"))  # si connectée
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now(), index=True)
+    handled_at = db.Column(db.DateTime)
+    handled_by_id = db.Column(db.ForeignKey("user.id", ondelete="SET NULL"))
+    handled_note = db.Column(db.String(500))
+
+    item = db.relationship("Item")
+    kit = db.relationship("Kit")
+    reported_by = db.relationship("User", foreign_keys=[reported_by_id])
+    handled_by = db.relationship("User", foreign_keys=[handled_by_id])
+
+    __table_args__ = (
+        CheckConstraint("(item_id IS NULL) != (kit_id IS NULL)", name="ck_public_report_item_xor_kit"),
+        CheckConstraint(kind.in_(KINDS), name="ck_public_report_kind"),
+    )
+
+    @property
+    def target(self):
+        return self.item or self.kit
+
+    @property
+    def target_label(self):
+        target = self.target
+        if target is None:
+            return ""
+        return f"{target.code} {target.name}" if isinstance(target, Item) else f"Kit {target.name}"
+
+    @property
+    def kind_label(self):
+        return self.KINDS[self.kind]
+
+
+# ---------------------------------------------------------------------------
 # Journal d'activité et notifications
 # ---------------------------------------------------------------------------
 
@@ -682,6 +729,7 @@ class Notification(db.Model):
     kind = db.Column(db.String(30))
     loan_id = db.Column(db.ForeignKey("loan.id", ondelete="SET NULL"))
     item_id = db.Column(db.ForeignKey("item.id", ondelete="SET NULL"))
+    report_id = db.Column(db.ForeignKey("public_report.id", ondelete="SET NULL"))
     read = db.Column(db.Boolean, nullable=False, default=False)
     # Clé de déduplication pour les rappels automatiques (ex. "overdue:12:2026-10-30").
     dedup_key = db.Column(db.String(120), unique=True)
@@ -691,6 +739,7 @@ class Notification(db.Model):
     user = db.relationship("User")
     loan = db.relationship("Loan")
     item = db.relationship("Item")
+    report = db.relationship("PublicReport")
 
 
 class EmailTemplate(db.Model):

@@ -30,6 +30,7 @@ PERMISSION_GROUPS = [
         ("stock.move", "Entrées et sorties de stock des consommables"),
         ("scan", "Scanner les QR codes"),
         ("label.print", "Imprimer les étiquettes"),
+        ("report.handle", "Traiter les signalements reçus par QR code (problème, objet trouvé)"),
     ]),
     ("Prêts", [
         ("myloans.view", "Voir ses propres prêts"),
@@ -63,7 +64,8 @@ DEFAULT_PERMISSIONS = {
     A: set(PERMISSIONS),
     P: {"inventory.view", "item.edit", "document.view", "document.edit", "note.add", "maintenance.edit",
         "reminder.edit", "stock.move", "scan", "label.print", "myloans.view", "calendar.view", "loan.request",
-        "loan.guarantee", "loan.list_all", "loan.verify", "audit.scan", "report.view", "export", "borrower.create"},
+        "loan.guarantee", "loan.list_all", "loan.verify", "audit.scan", "report.view", "export", "borrower.create",
+        "report.handle"},
     E: {"myloans.view", "calendar.view"},
 }
 

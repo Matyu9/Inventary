@@ -30,6 +30,7 @@ Ce guide décrit l'inventaire écran par écran. Il s'adresse aux trois rôles :
   - [Récupérer le matériel](#récupérer-le-matériel)
   - [Prolonger, raccourcir, annuler](#prolonger-raccourcir-annuler)
 - [QR codes, étiquettes et scanner](#qr-codes-étiquettes-et-scanner)
+- [Signalements](#signalements)
 - [Inventaire physique](#inventaire-physique)
 - [Calendrier et abonnement iCal](#calendrier-et-abonnement-ical)
 - [Notifications et rappels automatiques](#notifications-et-rappels-automatiques)
@@ -315,7 +316,8 @@ La vérification ne change rien au prêt : le retour au local s'enregistre toujo
 
 Chaque objet et chaque kit a un **QR code unique**. Il contient l'adresse publique de l'appli suivie d'un identifiant secret, par exemple `https://inventaire.exemple.fr/q/3f9a…`.
 
-- **Scanner avec l'appareil photo du téléphone** ouvre directement la fiche, après connexion si besoin. Un emprunteur qui scanne voit une fiche réduite et ses éventuels prêts sur cet objet.
+- **Scanner avec l'appareil photo du téléphone** ouvre directement la fiche pour les admins et les profs connectés. Un emprunteur connecté voit une fiche réduite et ses éventuels prêts sur cet objet.
+- **Sans compte**, n'importe qui (un parent, le gardien de la salle, une personne qui a trouvé l'instrument) voit une page publique : nom de l'association, nom et code de l'objet, et deux boutons, **Signaler un problème** et **J'ai trouvé cet objet**. Rien d'autre n'y apparaît (ni emplacement, ni valeur, ni n° de série, ni emprunteur). Un lien permet aux membres de se connecter pour voir la fiche complète. Voir [Signalements](#signalements).
 - **Page Scanner** (admins et profs) : scan avec la caméra, ou saisie d'un code (`INV-0042`), ou lecture par une douchette USB.
 - **Étiquettes** : depuis une fiche, un kit ou une sélection d'objets dans la liste. Trois formats de planches A4 adhésives (type Avery) sont proposés :
   - petit, 38 × 21 mm, 65 par page ;
@@ -327,6 +329,17 @@ Chaque objet et chaque kit a un **QR code unique**. Il contient l'adresse publiq
 > **Avant d'imprimer**, vérifiez que l'adresse publique (`BASE_URL`) est l'adresse définitive : elle est inscrite dans chaque QR code. L'appli prévient si elle vaut encore `localhost`.
 
 La caméra du navigateur exige une connexion **HTTPS**, sauf sur `localhost`.
+
+## Signalements
+
+**Menu Signalements** (admins et profs, droit « Traiter les signalements »). Les messages laissés depuis la page d'un QR code arrivent ici :
+
+- **Problème signalé** (« le tampon du sol fuit ») ou **Objet trouvé** (« oublié dans la salle des fêtes, déposé à l'accueil »), avec le nom et le contact laissés par la personne s'il y en a ;
+- chaque message prévient par notification (et par email si le SMTP est configuré) les personnes qui traitent les signalements. Pour un objet trouvé, l'emprunteur et le garant d'un prêt en cours sont prévenus aussi ;
+- une pastille dans le menu compte les signalements à traiter, et la fiche de l'objet ou du kit affiche un bandeau ;
+- **Marquer comme traité**, avec une note facultative (« tampon changé »), le range dans l'onglet **Traités**. **Rouvrir** le remet à traiter. Pour un problème, un lien mène aux entretiens de l'objet.
+
+Contre les abus, une même connexion peut envoyer 5 messages par heure, et un même objet en recevoir 10 par heure. Les signalements d'un objet mis à la corbeille ne s'affichent plus. Les textes des deux emails se modifient dans Paramètres → Emails.
 
 ## Inventaire physique
 
@@ -496,6 +509,8 @@ Droits par défaut des rôles de base (modifiables dans l'écran [Rôles](#rôle
 | Imprimer la liste du matériel d'un prêt | ✅ | ✅ | ses prêts |
 | Annuler un prêt (avant la remise) | ✅ | s'il l'a demandé ou en est garant | — |
 | Scanner, imprimer des étiquettes | ✅ | ✅ | — |
+| Traiter les signalements reçus par QR code | ✅ | ✅ | — |
+| Signaler un problème ou un objet trouvé depuis un QR code | ✅ | ✅ | ✅ (et sans compte) |
 | Scanner pendant un inventaire physique | ✅ | ✅ | — |
 | Ouvrir, clôturer, supprimer un inventaire physique | ✅ | — | — |
 | Rapports et export | ✅ | ✅ | — |

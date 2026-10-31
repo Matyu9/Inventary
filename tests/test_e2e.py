@@ -19,6 +19,7 @@ from app.models import Category, Item, Kit, Location, Role, User  # noqa: E402
 
 pytestmark = pytest.mark.e2e
 PASSWORD = "motdepasse-e2e"
+APP = {}  # appli du serveur de test, pour lire la base depuis un test
 
 
 @pytest.fixture(scope="module")
@@ -51,6 +52,7 @@ def server(tmp_path_factory):
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
     app.config["BASE_URL"] = f"http://127.0.0.1:{httpd.server_port}"
+    APP["app"] = app
     yield app.config["BASE_URL"]
     httpd.shutdown()
 
@@ -386,3 +388,35 @@ def test_every_staff_page_without_js_errors(page_for):
         page.goto(path)
         assert page.locator("h1").count() >= 1, path
     assert not page.errors, page.errors
+
+
+def test_anonymous_report_from_qr_then_handled(browser, server, page_for):
+    """Une personne sans compte scanne le QR, signale un objet trouvé ; un prof le voit et le traite."""
+    from app.models import PublicReport
+    with APP["app"].app_context():
+        token = db.session.scalar(db.select(Item.qr_token).where(Item.code == "OHN-0002"))
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, base_url=server, locale="fr-FR")
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(f"/q/{token}")
+    assert "Flûte traversière" in page.inner_text("h1")
+    page.click("summary:has-text('trouvé cet objet')")
+    hp = page.locator("details[open] .hp input").bounding_box()
+    assert hp is None or hp["x"] + hp["width"] < 0  # piège à robots hors de l'écran
+    form = page.locator("details[open] form")
+    form.locator("textarea[name=message]").fill("Oubliée dans la salle des fêtes, déposée à l'accueil")
+    form.locator("input[name=name]").fill("Camille")
+    form.locator("button[type=submit]").click()
+    assert "bien été transmis" in page.locator(".flash-success").inner_text()
+    ctx.close()
+    assert errors == []
+    with APP["app"].app_context():
+        assert db.session.scalar(db.select(PublicReport.name).where(PublicReport.kind == "trouve")) == "Camille"
+
+    prof = page_for("prof")
+    prof.click(".sidebar a[href='/signalements']")
+    assert "Oubliée dans la salle des fêtes" in prof.inner_text("main")
+    prof.fill("input[name=note]", "Récupérée")
+    prof.click("text=Marquer comme traité")
+    assert "Aucun signalement à traiter" in prof.inner_text("main")

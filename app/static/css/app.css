@@ -433,6 +433,18 @@ progress { height: .6rem; border-radius: 999px; }
 
 /* Connexion */
 .login-card { padding: 2rem; }
+.report-form { margin-bottom: .75rem; }
+.report-form > summary { width: 100%; }
+.report-form form { margin-top: .75rem; }
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.inline-form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.inline-form > * { margin: 0; }
+.inline-form input[type=text] { flex: 1 1 14rem; }
+.nav-count { margin-left: auto; font-size: .72rem; font-weight: 700; background: var(--warn-bg); color: var(--warn);
+             border-radius: 999px; padding: 0 .45rem; }
+.report-card { border-left: 4px solid var(--warn); }
+.report-card.found { border-left-color: var(--ok); }
+.report-card blockquote { margin: .5rem 0; white-space: pre-line; }
 .login-card .brand { padding: 0 0 1.25rem; }
 .login-card h1 { font-size: 1.35rem; }
 .login-or { display: flex; align-items: center; gap: .75rem; margin: 1.25rem 0; }

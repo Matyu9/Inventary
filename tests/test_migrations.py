@@ -158,3 +158,25 @@ def test_documents_migration_grants_prof_rights(migrated_app):
     for _key, perms in rows:
         assert not {"document.view", "document.edit"} & set(json.loads(perms))
     upgrade(MIGRATIONS)
+
+
+def test_reports_migration(migrated_app):
+    """Table des signalements, lien depuis les notifications (gardées au retour arrière) et droit du professeur."""
+    import json
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="b4e8c2d6f9a1")
+    run_sql(path,
+            "INSERT INTO user (id, first_name, last_name, email, role, active, ical_token) "
+            "VALUES (1, 'Alice', 'Martin', 'alice@ohn.test', 'admin', 1, 'tok')",
+            "INSERT INTO notification (user_id, message, read, emailed) VALUES (1, 'avant', 0, 0)")
+    upgrade(MIGRATIONS, revision="c7f1a3e9d5b2")
+    (prof,), notifications, fk_errors = run_sql(
+        path, "SELECT permissions FROM role WHERE key = 'prof'", "SELECT message, report_id FROM notification",
+        "PRAGMA foreign_key_check")
+    assert "report.handle" in json.loads(prof[0])
+    assert notifications == [("avant", None)] and fk_errors == []
+    downgrade(MIGRATIONS, revision="b4e8c2d6f9a1")
+    (prof,), notifications = run_sql(path, "SELECT permissions FROM role WHERE key = 'prof'",
+                                     "SELECT message FROM notification")
+    assert "report.handle" not in json.loads(prof[0]) and notifications == [("avant",)]
+    upgrade(MIGRATIONS)

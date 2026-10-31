@@ -42,6 +42,9 @@
       {{ navlink("locations.index", "Lieux", "map-pin", ["locations"]) }}
       {{ navlink("referentiel.categories", "Catégories", "tag") }}
       <p class="nav-title">Suivi</p>
+      {% if can(current_user, "report.handle") %}{% set reports_count = pending_reports_count() %}
+      <a href="{{ url_for('public_reports.index') }}" class="nav-link{{ ' active' if request.endpoint and request.endpoint.startswith('public_reports.') }}">{{ icon("alert") }}<span>Signalements</span>{% if reports_count %}<span class="nav-count" aria-label="{{ reports_count }} à traiter">{{ reports_count }}</span>{% endif %}</a>
+      {% endif %}
       {% if can(current_user, "audit.scan") %}{{ navlink("audits.index", "Inventaires", "clipboard", ["audits"]) }}{% endif %}
       {% if can(current_user, "report.view") %}{{ navlink("reports.index", "Rapports", "chart", ["reports"]) }}{% endif %}
       {% if can(current_user, "export") %}{{ navlink("transfer.index", "Import / export", "transfer", ["transfer"]) }}{% endif %}

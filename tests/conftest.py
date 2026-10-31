@@ -28,10 +28,10 @@ def fast_hashing(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def reset_login_throttle():
-    from app.blueprints import auth
-    auth._failures.clear()
+    from app.services import throttle
+    throttle.reset_all()
     yield
-    auth._failures.clear()
+    throttle.reset_all()
 
 
 _HEADS = []

@@ -2,6 +2,12 @@
 {% from "partials/_loan_rows.html" import loan_table %}
 {% block title %}{{ kit.name }}{% endblock %}
 {% block content %}
+{% set waiting = pending_reports_for(kit) %}
+{% if waiting %}
+<div class="flash flash-warning" role="status">{{ waiting | length }} signalement{{ "s" if waiting | length > 1 }} à traiter
+  ({{ waiting[0].kind_label | lower }} : « {{ waiting[0].message | truncate(80) }} »).
+  <a href="{{ url_for('public_reports.index') }}">Voir les signalements</a></div>
+{% endif %}
 <div class="page-head">
   <div>
     <p class="muted crumbs"><a href="{{ url_for('kits.index') }}">Kits</a> › KIT-{{ "%03d" % kit.id }}</p>

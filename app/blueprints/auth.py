@@ -1,5 +1,3 @@
-import threading
-import time
 from urllib.parse import urlsplit
 
 from authlib.integrations.base_client import OAuthError
@@ -11,42 +9,20 @@ from wtforms.validators import DataRequired, EqualTo, Length
 
 from ..extensions import db
 from ..models import AccountToken, User
-from ..services import accounts, mailer, oidc, sessions
+from ..services import accounts, mailer, oidc, sessions, throttle
 from ..services.activity import log
 
 # Limitation des tentatives : au-delà de MAX_FAILURES échecs en WINDOW secondes pour un même
-# email (ou une même IP), la connexion est refusée temporairement. Mémoire par processus :
-# suffisant pour une petite association, sans dépendance supplémentaire.
+# email (ou une même IP), la connexion est refusée temporairement.
 MAX_FAILURES = 8
 WINDOW = 15 * 60
-_failures = {}
-_lock = threading.Lock()
+_failures = throttle.Limiter(MAX_FAILURES, WINDOW)
 # Hash factice pour que la vérification prenne le même temps si le compte n'existe pas.
 _DUMMY = User()
 _DUMMY.set_password("pas-un-vrai-mot-de-passe")
 
 
-def _recent(key, now):
-    return [t for t in _failures.get(key, []) if now - t < WINDOW]
-
-
-def _throttled(keys):
-    now = time.monotonic()
-    with _lock:
-        return any(len(_recent(k, now)) >= MAX_FAILURES for k in keys)
-
-
-def _record_failure(keys):
-    now = time.monotonic()
-    with _lock:
-        for k in keys:
-            _failures[k] = _recent(k, now) + [now]
-
-
-def _clear_failures(keys):
-    with _lock:
-        for k in keys:
-            _failures.pop(k, None)
+_throttled, _record_failure, _clear_failures = _failures.blocked, _failures.hit, _failures.clear
 
 bp = Blueprint("auth", __name__)
 

@@ -40,6 +40,7 @@ def create_app(config_class=Config):
     from .blueprints.kits import bp as kits_bp
     from .blueprints.loans import bp as loans_bp
     from .blueprints.locations import bp as locations_bp
+    from .blueprints.public_reports import bp as public_reports_bp
     from .blueprints.maintenance import bp as maintenance_bp
     from .blueprints.referentiel import bp as referentiel_bp
     from .blueprints.reports import bp as reports_bp
@@ -73,6 +74,7 @@ def create_app(config_class=Config):
     app.register_blueprint(settings_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(audits_bp)
+    app.register_blueprint(public_reports_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(transfer_bp)
     app.register_blueprint(trash_bp)

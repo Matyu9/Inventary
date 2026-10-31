@@ -9,8 +9,8 @@ from wtforms.validators import DataRequired, Length, NumberRange, Optional, Vali
 
 from ..extensions import db
 from ..forms import FrDecimalField, amount_range
-from ..models import Item, ItemStatus, Maintenance, Reminder, Role, User
-from ..permissions import can, ensure, require
+from ..models import Item, ItemStatus, Maintenance, Reminder, User
+from ..permissions import can, ensure, holders, require
 from ..services.activity import log
 
 bp = Blueprint("maintenance", __name__)
@@ -40,7 +40,7 @@ class ReminderForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        staff = db.session.scalars(db.select(User).where(User.role.in_((Role.ADMIN, Role.PROF)), User.active.is_(True))
+        staff = db.session.scalars(db.select(User).where(User.role.in_(holders("inventory.view")), User.active.is_(True))
                                    .order_by(User.last_name)).all()
         self.recipients.choices = [(u.id, u.full_name) for u in staff]
 

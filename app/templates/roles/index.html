@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Rôles{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Rôles</h1>
+    <p class="muted">Chaque personne a un rôle, qui détermine ce qu'elle peut voir et faire dans l'appli.
+      L'administrateur a toujours tous les droits.</p>
+  </div>
+  <a href="{{ url_for('roles.create') }}" role="button">+ Nouveau rôle</a>
+</div>
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Rôle</th><th>Droits</th><th>Groupes OIDC</th><th>Personnes</th><th></th></tr></thead>
+  <tbody>
+  {% for r in roles %}
+  {% set members = counts.get(r.key, 0) %}
+  <tr>
+    <td><strong>{{ r.name }}</strong>{% if r.builtin %} <small class="muted">(de base)</small>{% endif %}
+      {% if r.description %}<br><small class="muted">{{ r.description }}</small>{% endif %}</td>
+    <td>{{ "Tous" if r.key == "admin" else (r.permissions | length) ~ " / " ~ total }}</td>
+    <td><small>{{ r.oidc_groups or "—" }}</small></td>
+    <td><a href="{{ url_for('users.index', role=r.key) }}">{{ members }}</a></td>
+    <td class="actions">
+      <a href="{{ url_for('roles.edit', key=r.key) }}">Modifier</a>
+      {% if r.key != "admin" %}<a href="{{ url_for('roles.create', depuis=r.key) }}">Dupliquer</a>{% endif %}
+      {% if not r.builtin %}
+      <form method="post" action="{{ url_for('roles.delete', key=r.key) }}"
+            onsubmit="return confirm('Supprimer le rôle « {{ r.name }} » ?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="link-button" {% if members %}disabled title="Attribué à des personnes"{% endif %}>Supprimer</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

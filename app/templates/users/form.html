@@ -12,6 +12,7 @@
     <div class="grid"><div>{{ field(form.section) }}</div><div>{{ field(form.member_status) }}</div></div>
     {% if admin %}
     {{ field(form.role) }}
+    {% if current_user.is_admin %}<small class="muted"><a href="{{ url_for('roles.index') }}">Gérer les rôles et leurs droits</a></small>{% endif %}
     <label>{{ form.active() }} {{ form.active.label.text }}</label>
     {% if form.active.errors %}<small class="error">{{ form.active.errors | join(" ") }}</small>{% endif %}
     {% endif %}

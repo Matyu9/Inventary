@@ -48,6 +48,7 @@
       {% if can(current_user, "borrower.create") or can(current_user, "settings.manage") %}
       <p class="nav-title">Administration</p>
       {% if can(current_user, "borrower.create") %}{{ navlink("users.index", "Personnes", "users", ["users"]) }}{% endif %}
+      {% if current_user.is_admin %}{{ navlink("roles.index", "Rôles", "key", ["roles"]) }}{% endif %}
       {% if can(current_user, "customfield.manage") %}{{ navlink("referentiel.custom_fields", "Champs perso", "sliders") }}{% endif %}
       {% if can(current_user, "settings.manage") %}{{ navlink("settings.index", "Paramètres", "settings", ["settings"]) }}{% endif %}
       {% endif %}

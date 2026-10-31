@@ -87,16 +87,19 @@ def test_location_path_survives_cycle(app):
     assert a.path in ("B > A", "A > B")
 
 
-def test_user_role_constraint(app):
-    db.session.add(User(first_name="X", last_name="Y", role="superadmin"))
-    with pytest.raises(IntegrityError):
-        db.session.commit()
+def test_unknown_role_grants_nothing(app):
+    from app.permissions import PERMISSIONS, can
+    user = User(first_name="X", last_name="Y", role="superadmin", active=True)
+    db.session.add(user)
+    db.session.commit()
+    assert not any(can(user, action) for action in PERMISSIONS)
+    assert user.role_label == "superadmin"
 
 
 def test_user_password_and_flags(app):
     user = make_user(Role.PROF)
     assert user.check_password("motdepasse") and not user.check_password("autre")
-    assert user.is_prof and not user.is_admin
+    assert user.role == Role.PROF and not user.is_admin
     assert user.full_name == "Prof Test" and user.role_label == "Professeur"
     assert user.ical_token
 

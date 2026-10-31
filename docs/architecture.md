@@ -148,14 +148,15 @@ Les points importants :
 - **`Notification.dedup_key`**, unique, empêche les rappels périodiques de créer des doublons.
 - **`qr_token`** : un jeton aléatoire par objet et par kit. Le QR code ne contient pas l'identifiant interne, qui serait devinable.
 
-Les contraintes `CHECK` (rôle, statut, quantité ≥ 0) protègent la base même en cas de bug applicatif.
+Les contraintes `CHECK` (statut, quantité ≥ 0) protègent la base même en cas de bug applicatif.
 
 ## Permissions
 
 Tout passe par **une seule fonction**, `can(user, action, obj=None)`, dans [app/permissions.py](../app/permissions.py) :
 
-- `ROLE_PERMISSIONS` liste les droits qui ne dépendent que du rôle (`"loan.validate": {ADMIN}`…) ;
-- quelques droits dépendent de l'objet : un prof ne remet un prêt que s'il en est garant, ne supprime que ses notes, etc. ;
+- `PERMISSION_GROUPS` est le catalogue des droits, avec leurs libellés affichés dans l'écran **Rôles** ;
+- les droits de chaque rôle sont stockés dans la table `role` (`User.role` en est la clé). Tant qu'un rôle de base n'a pas été modifié, `DEFAULT_PERMISSIONS` s'applique. L'administrateur a toujours tous les droits ;
+- quelques droits dépendent de l'objet et se déduisent des droits du rôle : remettre un prêt demande `loan.checkout_any`, ou `loan.guarantee` et en être le garant ; supprimer une note demande `note.delete_any`, ou `note.add` et en être l'auteur, etc. ;
 - une action inconnue lève une erreur, pour qu'une faute de frappe ne donne jamais un accès par défaut.
 
 Trois façons de l'utiliser :

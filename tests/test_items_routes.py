@@ -67,7 +67,7 @@ def test_anonymous_redirected_to_login(client, url):
     ("/champs-perso/nouveau", {A}),
 ])
 def test_page_access_by_role(client, as_role, ref, url, allowed):
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         as_role(role)
         expected = 200 if role in allowed else 403
         assert client.get(url).status_code == expected, (url, role)
@@ -75,7 +75,7 @@ def test_page_access_by_role(client, as_role, ref, url, allowed):
 
 def test_item_pages_access_by_role(client, as_role, ref):
     item = new_item(ref["bois"])
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         as_role(role)
         ok = role != E
         assert client.get(f"/objets/{item.id}").status_code == (200 if ok else 403)

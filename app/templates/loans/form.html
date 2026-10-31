@@ -54,7 +54,7 @@
     {{ field(form.deposit_amount, inputmode="decimal") }}
     {{ field(form.comment, rows=3) }}
   </details>
-  {% if current_user.is_admin %}<label>{{ form.auto_validate() }} {{ form.auto_validate.label.text }}</label>{% endif %}
+  {% if can(current_user, "loan.validate") %}<label>{{ form.auto_validate() }} {{ form.auto_validate.label.text }}</label>{% endif %}
 
   <div class="actions">
     <button type="submit">Envoyer la demande</button>

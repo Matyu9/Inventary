@@ -56,6 +56,8 @@ Mot de passe oublié : demandez à un administrateur de générer un nouveau mot
 - **Professeur** : gère l'inventaire au quotidien (objets, notes, entretiens, stock). Il **demande** les prêts pour ses élèves et s'en porte **garant**, puis remet et récupère le matériel des prêts dont il est garant.
 - **Emprunteur** : voit uniquement **ses** prêts, son calendrier et ses notifications. Un emprunteur peut aussi être une simple **fiche** sans accès à l'appli : un élève à qui on prête un instrument, mais qui ne se connecte pas.
 
+Ce sont les rôles de base. Un admin peut modifier leurs droits et créer d'autres rôles : voir [Rôles sur mesure](#rôles-sur-mesure).
+
 Le tableau complet est en fin de guide : [Qui peut faire quoi](#qui-peut-faire-quoi).
 
 ## Le tableau de bord
@@ -389,13 +391,32 @@ Les lignes en erreur sont ignorées, les autres importées. Les dates (`15/03/20
 
 - **Les profs** peuvent créer des **fiches emprunteur**, sans accès à l'appli, pour pouvoir leur prêter du matériel.
 - **Les admins** créent et modifient tous les comptes :
-  - **Rôle** : administrateur, professeur ou emprunteur.
+  - **Rôle** : administrateur, professeur, emprunteur ou un [rôle sur mesure](#rôles-sur-mesure).
   - **Peut se connecter** : ouvre l'accès, ce qui demande un email. L'appli génère alors un **mot de passe provisoire**, affiché **une seule fois**. Transmettez-le à la personne, qui devra le changer à sa première connexion.
   - **Nouveau mot de passe provisoire** : en cas d'oubli.
   - Décocher **Peut se connecter** coupe l'accès immédiatement, y compris pour une personne déjà connectée. L'historique et les prêts sont conservés.
 - Un admin ne peut pas retirer ses propres droits d'administrateur, pour éviter de se retrouver sans aucun admin.
+- Seul un admin peut donner ou retirer le rôle d'administrateur, ou modifier le compte d'un admin.
 
 Avec la connexion OIDC et des groupes configurés, les rôles peuvent aussi venir du fournisseur d'identité : voir [Rôles d'après les groupes](oidc-authentik.md#rôles-daprès-les-groupes).
+
+## Rôles sur mesure
+
+**Menu Rôles** (admins). La liste montre chaque rôle, son nombre de droits, ses groupes OIDC et le nombre de personnes qui l'ont.
+
+- **Nouveau rôle** : un nom (« Régisseur », « Secrétariat »…), une description facultative, puis les droits à cocher, regroupés par thème (inventaire, prêts, inventaires et rapports, administration).
+- **Dupliquer** part des droits d'un rôle existant : pratique pour créer « Prof principal » à partir de Professeur.
+- **Modifier** : on peut aussi renommer les rôles de base et changer les droits du Professeur et de l'Emprunteur. L'**Administrateur** garde toujours tous les droits.
+- **Supprimer** : seulement pour un rôle sur mesure que plus personne n'a. Les rôles de base ne se suppriment pas.
+- **Groupes OIDC** : les membres de ces groupes reçoivent le rôle à la connexion (voir [Rôles d'après les groupes](oidc-authentik.md#rôles-daprès-les-groupes)).
+
+Quelques droits ont un effet particulier :
+
+- **Être garant** : la personne apparaît dans la liste des garants, voit « Prêts dont je suis garant » et remet ou récupère le matériel des prêts dont elle est garante ;
+- **Ajouter des notes** et **Enregistrer des entretiens** permettent de supprimer les siens ; « … des autres » permet de supprimer ceux de tout le monde ;
+- **Gérer les comptes** donne accès à la modification des personnes, mais pas aux comptes administrateurs ni à l'écran Rôles, réservés aux admins.
+
+Un changement de droits s'applique immédiatement, y compris aux personnes déjà connectées.
 
 ## Paramètres
 
@@ -417,6 +438,8 @@ Sur téléphone, une barre d'onglets en bas d'écran donne accès à l'accueil, 
 
 ## Qui peut faire quoi
 
+Droits par défaut des rôles de base (modifiables dans l'écran [Rôles](#rôles-sur-mesure)).
+
 | Action | Admin | Prof | Emprunteur |
 |---|:---:|:---:|:---:|
 | Voir l'inventaire, les kits, les lieux | ✅ | ✅ | — |
@@ -429,7 +452,8 @@ Sur téléphone, une barre d'onglets en bas d'écran donne accès à l'accueil, 
 | Mouvements de stock | ✅ | ✅ | — |
 | Champs personnalisés | ✅ | — | — |
 | Créer une fiche emprunteur (sans accès) | ✅ | ✅ | — |
-| Gérer les comptes, rôles et accès | ✅ | — | — |
+| Gérer les comptes et les accès | ✅ | — | — |
+| Créer et modifier les rôles | ✅ (toujours) | — | — |
 | Demander un prêt | ✅ | ✅ (garant) | — |
 | Voir tous les prêts | ✅ | ✅ | ses prêts |
 | Valider ou refuser un prêt, modifier sa date de fin | ✅ | — | — |

@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.models import Role
-from app.permissions import ROLE_PERMISSIONS, can
+from app.permissions import PERMISSIONS, can
 
 A, P, E = Role.ADMIN, Role.PROF, Role.EMPRUNTEUR
 
@@ -28,7 +28,7 @@ def u(role, id=1):
     ("myloans.view", {A, P, E}),
 ])
 def test_role_matrix(action, allowed):
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         assert can(u(role), action) is (role in allowed), (action, role)
 
 
@@ -52,7 +52,7 @@ def test_borrower_sees_only_own_loans():
 
 def test_anonymous_has_no_rights():
     anon = SimpleNamespace(is_authenticated=False)
-    assert not any(can(anon, action) for action in ROLE_PERMISSIONS)
+    assert not any(can(anon, action) for action in PERMISSIONS)
 
 
 def test_unknown_permission_raises():

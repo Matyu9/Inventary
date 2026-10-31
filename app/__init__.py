@@ -38,6 +38,7 @@ def create_app(config_class=Config):
     from .blueprints.maintenance import bp as maintenance_bp
     from .blueprints.referentiel import bp as referentiel_bp
     from .blueprints.reports import bp as reports_bp
+    from .blueprints.roles import bp as roles_bp
     from .blueprints.scan import bp as scan_bp
     from .blueprints.settings import bp as settings_bp
     from .blueprints.transfer import bp as transfer_bp
@@ -54,6 +55,7 @@ def create_app(config_class=Config):
     app.register_blueprint(scan_bp)
     app.register_blueprint(loans_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(roles_bp)
     app.register_blueprint(kits_bp)
     app.register_blueprint(consumables_bp)
     app.register_blueprint(maintenance_bp)

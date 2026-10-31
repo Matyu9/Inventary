@@ -10,8 +10,8 @@ from wtforms.validators import DataRequired, Length, Optional, Regexp, Validatio
 
 from ..extensions import db, fold_contains
 from ..models import Loan, LoanStatus, Notification, Role, User
-from ..permissions import can, require
-from ..services import sessions
+from ..permissions import can, permissions_of, require
+from ..services import roles, sessions
 from ..services.activity import log
 
 bp = Blueprint("users", __name__)
@@ -27,12 +27,14 @@ class UserForm(FlaskForm):
     phone = StringField("Téléphone", validators=[Optional(), Length(max=30)])
     section = StringField("Pupitre / classe", validators=[Optional(), Length(max=80)])
     member_status = SelectField("Statut", choices=MEMBER_STATUSES)
-    role = SelectField("Rôle", choices=[(r, Role.LABELS[r]) for r in Role.ALL], default=Role.EMPRUNTEUR)
+    role = SelectField("Rôle", default=Role.EMPRUNTEUR)
     active = BooleanField("Peut se connecter")
 
     def __init__(self, *args, current=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._current = current
+        # Seul un administrateur peut donner (ou retirer) le rôle d'administrateur.
+        self.role.choices = roles.choices(include_admin=current_user.is_admin)
 
     def validate_email(self, field):
         if not field.data:
@@ -72,8 +74,9 @@ def _apply(form, user, allow_role):
 @require("borrower.create")
 def index():
     query = db.select(User)
+    labels = dict(roles.choices())
     role = request.args.get("role")
-    if role in Role.ALL:
+    if role in labels:
         query = query.where(User.role == role)
     if q := (request.args.get("q") or "").strip():
         query = query.where(or_(*(fold_contains(c, q) for c in (User.first_name, User.last_name, User.email,
@@ -83,7 +86,7 @@ def index():
         db.select(Loan.borrower_id, db.func.count(Loan.id))
         .where(Loan.status.in_((LoanStatus.VALIDE, LoanStatus.EN_COURS))).group_by(Loan.borrower_id)).all())
     return render_template("users/index.html", users=users, role=role, q=q, active_loans=active_loans,
-                           labels=Role.LABELS)
+                           labels=labels)
 
 
 @bp.route("/utilisateurs/nouveau", methods=["GET", "POST"])
@@ -120,12 +123,17 @@ def create():
 @require("user.manage")
 def edit(user_id):
     user = get_user(user_id)
+    if user.is_admin and not current_user.is_admin:
+        abort(403)
     form = UserForm(obj=user, current=user)
     if request.method == "GET":
         form.member_status.data = user.member_status or ""
     if form.validate_on_submit():
-        if user.id == current_user.id and (form.role.data != Role.ADMIN or not form.active.data):
-            flash("Vous ne pouvez pas retirer vos propres droits d'administrateur.", "error")
+        # On ne peut pas se retirer l'accès aux comptes (ni, pour un admin, le rôle d'administrateur).
+        keeps_access = (form.role.data == Role.ADMIN if user.is_admin
+                        else "user.manage" in permissions_of(form.role.data))
+        if user.id == current_user.id and not (form.active.data and keeps_access):
+            flash("Vous ne pouvez pas retirer vos propres droits sur les comptes.", "error")
         else:
             was_active = user.active
             _apply(form, user, allow_role=True)

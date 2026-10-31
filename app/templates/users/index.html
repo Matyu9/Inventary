@@ -25,7 +25,7 @@
     <td>{{ active_loans.get(u.id, 0) }}</td>
     <td class="actions">
       {% if can(current_user, "loan.request") %}<a href="{{ url_for('loans.create', borrower_id=u.id) }}">Prêter</a>{% endif %}
-      {% if can(current_user, "user.manage") %}<a href="{{ url_for('users.edit', user_id=u.id) }}">Modifier</a>{% endif %}
+      {% if can(current_user, "user.manage") and (current_user.is_admin or not u.is_admin) %}<a href="{{ url_for('users.edit', user_id=u.id) }}">Modifier</a>{% endif %}
     </td>
   </tr>
   {% else %}

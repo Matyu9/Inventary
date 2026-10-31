@@ -279,7 +279,7 @@ def test_reminders_send_emails(app, users, gear, smtp):
 # ---------------------------------------------------------------------------
 
 def test_calendar_page(client, as_role, users):
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         as_role(role)
         r = client.get("/calendrier")
         assert r.status_code == 200 and "fullcalendar.min.js" in r.text

@@ -71,7 +71,7 @@ def make_loan(users, *items, status=LoanStatus.DEMANDE, loan_type=LoanType.RESER
     ("/utilisateurs/nouveau", {A, P}),
 ])
 def test_access(client, as_role, gear, url, allowed):
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         as_role(role)
         assert client.get(url).status_code == (200 if role in allowed else 403), (url, role)
 

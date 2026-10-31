@@ -24,12 +24,35 @@ class TimestampMixin:
 # Utilisateurs
 # ---------------------------------------------------------------------------
 
-class Role:
+class Role(db.Model):
+    """Rôle attribuable aux personnes, avec ses droits (cochés dans l'écran « Rôles »).
+
+    Les trois rôles de base existent toujours (non supprimables) ; l'administrateur a tous les droits
+    quelle que soit sa liste, pour qu'on ne puisse pas se retirer l'accès à l'appli.
+    """
     ADMIN = "admin"
     PROF = "prof"
     EMPRUNTEUR = "emprunteur"
-    ALL = (ADMIN, PROF, EMPRUNTEUR)
-    LABELS = {ADMIN: "Administrateur", PROF: "Professeur", EMPRUNTEUR: "Emprunteur"}
+    BUILTIN = (ADMIN, PROF, EMPRUNTEUR)
+    DEFAULT_NAMES = {ADMIN: "Administrateur", PROF: "Professeur", EMPRUNTEUR: "Emprunteur"}
+
+    key = db.Column(db.String(20), primary_key=True)
+    name = db.Column(db.String(80), nullable=False, unique=True)
+    description = db.Column(db.String(255))
+    permissions = db.Column(db.JSON, nullable=False, default=list)
+    # Groupes OIDC (séparés par des virgules) dont les membres reçoivent ce rôle à la connexion.
+    oidc_groups = db.Column(db.String(255))
+
+    @property
+    def builtin(self):
+        return self.key in self.BUILTIN
+
+    @property
+    def oidc_group_list(self):
+        return [g.strip() for g in (self.oidc_groups or "").split(",") if g.strip()]
+
+    def __repr__(self):
+        return f"<Role {self.key}>"
 
 
 class User(UserMixin, TimestampMixin, db.Model):
@@ -51,8 +74,6 @@ class User(UserMixin, TimestampMixin, db.Model):
     # Rôle attribué d'après les groupes OIDC (et non par un admin) : il suit les groupes.
     role_from_oidc = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
 
-    __table_args__ = (CheckConstraint(role.in_(Role.ALL), name="ck_user_role"),)
-
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
@@ -66,12 +87,9 @@ class User(UserMixin, TimestampMixin, db.Model):
         return self.role == Role.ADMIN
 
     @property
-    def is_prof(self):
-        return self.role == Role.PROF
-
-    @property
     def role_label(self):
-        return Role.LABELS[self.role]
+        role = db.session.get(Role, self.role)
+        return role.name if role else Role.DEFAULT_NAMES.get(self.role, self.role)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

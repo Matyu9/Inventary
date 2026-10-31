@@ -65,3 +65,32 @@ def test_oidc_sub_is_unique(migrated_app):
     run_sql(path, insert.format("t1"))
     with pytest.raises(sqlite3.IntegrityError):
         run_sql(path, insert.format("t2"))
+
+
+def test_custom_roles_migration_keeps_linked_rows(migrated_app):
+    """Le retrait de la contrainte sur user.role ne recrée pas `user` : sessions et notifications restent."""
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="c4d8e1f2a6b9")
+    run_sql(path,
+            "INSERT INTO user (id, first_name, last_name, email, role, active, ical_token) "
+            "VALUES (1, 'Alice', 'Martin', 'alice@ohn.test', 'prof', 1, 'tok')",
+            "INSERT INTO login_session (id, user_id, created_at) VALUES ('session-1', 1, '2026-10-31')",
+            "INSERT INTO notification (user_id, message, read, emailed) VALUES (1, 'bonjour', 0, 0)")
+    with pytest.raises(sqlite3.IntegrityError):
+        run_sql(path, "UPDATE user SET role = 'regie' WHERE id = 1")
+
+    upgrade(MIGRATIONS)
+    roles, = run_sql(path, "SELECT key, name FROM role ORDER BY key")
+    assert roles == [("admin", "Administrateur"), ("emprunteur", "Emprunteur"), ("prof", "Professeur")]
+    run_sql(path, "INSERT INTO role (key, name, permissions) VALUES ('regie', 'Régie', '[]')",
+            "UPDATE user SET role = 'regie' WHERE id = 1")
+    counts = run_sql(path, "SELECT count(*) FROM login_session", "SELECT count(*) FROM notification",
+                     "PRAGMA integrity_check", "PRAGMA foreign_key_check")
+    assert counts == [[(1,)], [(1,)], [("ok",)], []]
+
+    downgrade(MIGRATIONS, revision="-1")
+    users, sessions = run_sql(path, "SELECT role FROM user", "SELECT count(*) FROM login_session")
+    assert users == [("emprunteur",)] and sessions == [(1,)]
+    with pytest.raises(sqlite3.IntegrityError):
+        run_sql(path, "UPDATE user SET role = 'regie' WHERE id = 1")
+    upgrade(MIGRATIONS)

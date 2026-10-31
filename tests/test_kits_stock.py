@@ -51,7 +51,7 @@ def loan_on(users, *, kit=None, item=None, status=LoanStatus.VALIDE):
     (lambda g: "/consommables", {A, P}),
 ])
 def test_access(client, as_role, gear, url_fn, allowed):
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         as_role(role)
         assert client.get(url_fn(gear)).status_code == (200 if role in allowed else 403), role
 

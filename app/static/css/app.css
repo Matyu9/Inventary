@@ -386,6 +386,8 @@ progress { height: .6rem; border-radius: 999px; }
 .hbar:hover { filter: brightness(1.12); }
 .hbar-value { font-variant-numeric: tabular-nums; font-size: .88rem; color: var(--text); font-weight: 550; }
 .mapping-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0 1rem; }
+.perm-grid label { display: flex; gap: .1rem; align-items: baseline; }
+.perm-grid input { flex: none; }
 
 /* Tableau de bord */
 .hello { margin-bottom: 1.25rem; }

@@ -587,3 +587,60 @@ def test_oidc_only_ignored_when_oidc_not_configured(tmp_path):
         assert login(app.test_client(), user).status_code == 302
         db.session.remove()
         db.drop_all()
+
+
+# --- Groupes saisis sur les rôles ------------------------------------------------
+
+def add_role(key, name, permissions, oidc_groups):
+    db.session.add(Role(key=key, name=name, permissions=permissions, oidc_groups=oidc_groups))
+    db.session.commit()
+
+
+def test_custom_role_from_its_groups(oclient, idp):
+    add_role("regie", "Régie", ["inventory.view"], "regie, technique")
+    oidc_login(oclient, idp, {**ALICE, "groups": ["technique"]})
+    user = get_by_sub("alice-1")
+    assert user.role == "regie" and user.role_from_oidc
+
+
+def test_role_with_most_rights_wins(oclient, idp):
+    add_role("regie", "Régie", ["inventory.view", "item.edit", "scan"], "regie")
+    add_role("lecture", "Lecture", ["inventory.view"], "lecture")
+    oidc_login(oclient, idp, {**ALICE, "groups": ["lecture", "regie"]})
+    assert get_by_sub("alice-1").role == "regie"
+
+
+def test_custom_role_loses_to_prof_with_more_rights(oclient, idp):
+    add_role("lecture", "Lecture", ["inventory.view"], "lecture")
+    oidc_login(oclient, idp, {**ALICE, "groups": ["lecture", "profs"]})
+    assert get_by_sub("alice-1").role == Role.PROF
+
+
+def test_admin_always_wins(oclient, idp):
+    add_role("regie", "Régie", ["inventory.view"], "regie")
+    oidc_login(oclient, idp, {**ALICE, "groups": ["regie", "inventaire-admins"]})
+    assert get_by_sub("alice-1").role == Role.ADMIN
+
+
+def test_admin_role_group_saved_on_role(oclient, idp):
+    add_role(Role.ADMIN, "Administrateur", [], "bureau")
+    oidc_login(oclient, idp, {**ALICE, "groups": ["bureau"]})
+    assert get_by_sub("alice-1").role == Role.ADMIN
+
+
+def test_role_groups_alone_enable_sync(tmp_path, monkeypatch):
+    app, ctx, idp = make_oidc_app(tmp_path, monkeypatch)  # aucun groupe dans le .env
+    try:
+        add_role("regie", "Régie", ["inventory.view"], "regie")
+        client = app.test_client()
+        oidc_login(client, idp, {**ALICE, "groups": ["regie"]})
+        user = get_by_sub("alice-1")
+        assert user.role == "regie"
+        client.post("/deconnexion")
+        oidc_login(client, idp, {**ALICE, "groups": []})
+        db.session.refresh(user)
+        assert user.role == Role.EMPRUNTEUR
+    finally:
+        db.session.remove()
+        db.drop_all()
+        ctx.pop()

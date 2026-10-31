@@ -64,7 +64,7 @@ def make_user(role, email=None, active=True, password="motdepasse"):
 
 @pytest.fixture
 def users(app):
-    return {r: make_user(r) for r in Role.ALL}
+    return {r: make_user(r) for r in Role.BUILTIN}
 
 
 def login(client, user, password="motdepasse"):

@@ -40,7 +40,7 @@ Inspirée de [Shelf.nu](https://www.shelf.nu/), elle est **entièrement en fran�
 | Supprimer ou réformer, comptes, import, paramètres, clôture d'inventaire | ✅ | — | — |
 | Mes prêts, calendrier, notifications | ✅ | ✅ | ✅ |
 
-Le détail des droits est dans le [guide d'utilisation](docs/guide-utilisateur.md#qui-peut-faire-quoi). Côté code, toutes les règles sont centralisées dans [app/permissions.py](app/permissions.py).
+Ce sont les droits **par défaut** : les droits du Prof et de l'Emprunteur se modifient dans l'écran **Rôles** (admin), qui permet aussi de créer des rôles sur mesure (« Régisseur », « Secrétariat »…). L'Admin garde toujours tous les droits. Le détail des droits est dans le [guide d'utilisation](docs/guide-utilisateur.md#qui-peut-faire-quoi). Côté code, toutes les règles sont centralisées dans [app/permissions.py](app/permissions.py).
 
 ## Démarrage rapide
 

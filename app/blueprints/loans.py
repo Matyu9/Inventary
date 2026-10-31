@@ -10,7 +10,7 @@ from wtforms.validators import DataRequired, Length, NumberRange, Optional
 from ..extensions import db, fold_contains
 from ..forms import FrDecimalField, amount_range
 from ..models import (Activity, Condition, Item, ItemStatus, Kit, Loan, LoanLine, LoanStatus, LoanType, Role, User)
-from ..permissions import can, ensure, require
+from ..permissions import can, ensure, holders, require
 from ..services import loan_checks as checks
 from ..services import loans as svc
 from ..services.mailer import deliver_quietly
@@ -31,7 +31,7 @@ VIEWS = {
 
 
 def user_label(user):
-    extra = " · ".join(x for x in (user.section, Role.LABELS[user.role] if user.role != Role.EMPRUNTEUR else None) if x)
+    extra = " · ".join(x for x in (user.section, user.role_label if user.role != Role.EMPRUNTEUR else None) if x)
     return f"{user.last_name.upper()} {user.first_name}" + (f" ({extra})" if extra else "")
 
 
@@ -52,12 +52,15 @@ class LoanForm(FlaskForm):
         super().__init__(*args, **kwargs)
         people = db.session.scalars(db.select(User).order_by(User.last_name, User.first_name)).all()
         self.borrower_id.choices = [(0, "— choisir —")] + [(u.id, user_label(u)) for u in people]
-        if current_user.is_admin:
+        if can(current_user, "loan.validate"):
+            guarantors = holders("loan.guarantee")
             self.guarantor_id.choices = [(0, "— aucun —")] + [
-                (u.id, user_label(u)) for u in people if u.role in (Role.PROF, Role.ADMIN) and u.active]
-        else:
+                (u.id, user_label(u)) for u in people if u.role in guarantors and u.active]
+        elif can(current_user, "loan.guarantee"):
             # Un prof qui fait la demande en est le garant.
             self.guarantor_id.choices = [(current_user.id, user_label(current_user))]
+        else:
+            self.guarantor_id.choices = [(0, "— aucun —")]
 
 
 def get_loan(loan_id):
@@ -125,7 +128,7 @@ def mine():
     as_borrower = db.session.scalars(
         db.select(Loan).where(Loan.borrower_id == current_user.id).order_by(Loan.start.desc())).all()
     as_guarantor = []
-    if current_user.role != Role.EMPRUNTEUR:
+    if can(current_user, "loan.guarantee"):
         as_guarantor = db.session.scalars(
             db.select(Loan).where(Loan.guarantor_id == current_user.id,
                                   Loan.status.in_((LoanStatus.DEMANDE, LoanStatus.VALIDE, LoanStatus.EN_COURS)))
@@ -145,10 +148,10 @@ def create():
         start = datetime.now().replace(second=0, microsecond=0) + timedelta(hours=1)
         form.start.data = start.replace(minute=0)
         form.borrower_id.data = request.args.get("borrower_id", type=int)
-        if current_user.is_admin:
+        if can(current_user, "loan.validate"):
             form.auto_validate.data = False
     else:
-        if not current_user.is_admin:
+        if not can(current_user, "loan.validate"):
             form.auto_validate.data = False
         if form.validate():
             try:
@@ -165,8 +168,8 @@ def create():
 def _create_from_form(form):
     borrower = db.session.get(User, form.borrower_id.data)
     guarantor = db.session.get(User, form.guarantor_id.data) if form.guarantor_id.data else None
-    if guarantor and guarantor.role not in (Role.PROF, Role.ADMIN):
-        raise svc.LoanError("Le garant doit être un professeur ou un administrateur.")
+    if guarantor and not can(guarantor, "loan.guarantee"):
+        raise svc.LoanError("Cette personne ne peut pas être garante d'un prêt (voir son rôle).")
     loan, warnings = svc.create_request(
         loan_type=form.type.data, borrower=borrower, guarantor=guarantor, requested_by=current_user,
         start=form.start.data, end=form.end.data, lines=form_lines(), title=(form.title.data or "").strip(),

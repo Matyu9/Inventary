@@ -124,8 +124,8 @@ def test_borrower_only_reaches_allowed_routes(client, app, users, rich):
 
 
 def test_admin_only_routes_forbidden_to_prof(client, app, users, rich):
-    from app.permissions import ROLE_PERMISSIONS
-    admin_only = {a for a, roles in ROLE_PERMISSIONS.items() if roles == {A}}
+    from app.permissions import DEFAULT_PERMISSIONS
+    admin_only = DEFAULT_PERMISSIONS[A] - DEFAULT_PERMISSIONS[P] - DEFAULT_PERMISSIONS[E]
     assert {"loan.validate", "user.manage", "import", "audit.manage", "settings.manage", "item.delete",
             "customfield.manage"} <= admin_only
     login(client, users[P])

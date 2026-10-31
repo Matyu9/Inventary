@@ -351,6 +351,9 @@ def delete_photo(photo_id):
 @bp.route("/fichiers/<path:filename>")
 @require("inventory.view")
 def uploaded_file(filename):
+    # Photos seulement : documents et photos de profil ont leurs propres routes et leurs propres droits.
+    if not filename.startswith("photos/"):
+        abort(404)
     return send_from_directory(current_app.config["UPLOAD_DIR"], filename)
 
 

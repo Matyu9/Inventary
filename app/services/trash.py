@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from ..extensions import db
 from ..models import AuditScan, Item, ItemStatus, Kit, LoanLine
 from .activity import log
+from .documents import delete_document_files
 from .items import prune_tags
 from .photos import delete_photo_files
 
@@ -98,6 +99,8 @@ def restore_kit(kit, user):
 def purge_item(item, user=None):
     for photo in item.photos:
         delete_photo_files(photo)
+    for document in item.documents:
+        delete_document_files(document)
     label = f"{item.code} {item.name}"
     db.session.delete(item)
     db.session.flush()
@@ -106,6 +109,8 @@ def purge_item(item, user=None):
 
 
 def purge_kit(kit, user=None):
+    for document in kit.documents:
+        delete_document_files(document)
     name = kit.name
     db.session.delete(kit)
     log("kit.purge", f"Kit supprimé définitivement : {name}", user=user)

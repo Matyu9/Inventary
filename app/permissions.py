@@ -20,6 +20,8 @@ PERMISSION_GROUPS = [
         ("inventory.view", "Voir l'inventaire (objets, kits, consommables, lieux)"),
         ("item.edit", "Créer et modifier objets, kits, photos, tags et lieux"),
         ("item.delete", "Supprimer ou réformer du matériel"),
+        ("document.view", "Voir les documents joints (factures, notices…)"),
+        ("document.edit", "Ajouter et supprimer des documents joints"),
         ("note.add", "Ajouter des notes (et supprimer les siennes)"),
         ("note.delete_any", "Supprimer les notes des autres"),
         ("maintenance.edit", "Enregistrer des entretiens (et supprimer les siens)"),
@@ -59,9 +61,9 @@ PERMISSIONS = {key: label for _, perms in PERMISSION_GROUPS for key, label in pe
 # Droits des rôles de base tant qu'ils n'ont pas été modifiés (et à la création de la base).
 DEFAULT_PERMISSIONS = {
     A: set(PERMISSIONS),
-    P: {"inventory.view", "item.edit", "note.add", "maintenance.edit", "reminder.edit", "stock.move", "scan",
-        "label.print", "myloans.view", "calendar.view", "loan.request", "loan.guarantee", "loan.list_all",
-        "loan.verify", "audit.scan", "report.view", "export", "borrower.create"},
+    P: {"inventory.view", "item.edit", "document.view", "document.edit", "note.add", "maintenance.edit",
+        "reminder.edit", "stock.move", "scan", "label.print", "myloans.view", "calendar.view", "loan.request",
+        "loan.guarantee", "loan.list_all", "loan.verify", "audit.scan", "report.view", "export", "borrower.create"},
     E: {"myloans.view", "calendar.view"},
 }
 

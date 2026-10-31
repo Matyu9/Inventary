@@ -141,3 +141,20 @@ def test_trash_migration_keeps_linked_rows(migrated_app):
                                      "SELECT name FROM pragma_table_info('item') WHERE name = 'deleted_at'")
     assert items == [(1, 1)] and photos == [(1,)] and columns == []
     upgrade(MIGRATIONS)
+
+
+def test_documents_migration_grants_prof_rights(migrated_app):
+    """Le rôle Professeur enregistré reçoit les droits sur les documents ; le retour arrière les retire partout."""
+    import json
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="a9d3e5f7b2c8")
+    run_sql(path, "INSERT INTO role (key, name, permissions) VALUES ('regie', 'Régie', '[\"inventory.view\"]')")
+    upgrade(MIGRATIONS, revision="b4e8c2d6f9a1")
+    (prof,), = run_sql(path, "SELECT permissions FROM role WHERE key = 'prof'")
+    assert {"document.view", "document.edit"} <= set(json.loads(prof[0]))
+    run_sql(path, "UPDATE role SET permissions = '[\"inventory.view\", \"document.view\"]' WHERE key = 'regie'")
+    downgrade(MIGRATIONS, revision="a9d3e5f7b2c8")
+    rows = run_sql(path, "SELECT key, permissions FROM role WHERE key IN ('prof', 'regie')")[0]
+    for _key, perms in rows:
+        assert not {"document.view", "document.edit"} & set(json.loads(perms))
+    upgrade(MIGRATIONS)

@@ -1,6 +1,8 @@
 from datetime import date, datetime
 from decimal import Decimal
 
+from .services.documents import human_size
+
 MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 
 
@@ -28,3 +30,4 @@ def register_filters(app):
     app.add_template_filter(date_fr, "date_fr")
     app.add_template_filter(lambda v: date_fr(v, with_time=True), "datetime_fr")
     app.add_template_filter(euros, "euros")
+    app.add_template_filter(human_size, "filesize")

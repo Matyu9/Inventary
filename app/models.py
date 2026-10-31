@@ -321,6 +321,8 @@ class Kit(TrashableMixin, TimestampMixin, db.Model):
 
     location = db.relationship("Location")
     items = db.relationship("Item", back_populates="kit", order_by="Item.code")
+    documents = db.relationship("Document", back_populates="kit", cascade="all, delete-orphan",
+                                order_by="Document.created_at.desc()")
 
 
 class Item(TrashableMixin, TimestampMixin, db.Model):
@@ -352,6 +354,8 @@ class Item(TrashableMixin, TimestampMixin, db.Model):
     kit = db.relationship("Kit", back_populates="items")
     tags = db.relationship("Tag", secondary=item_tags, order_by="Tag.name")
     photos = db.relationship("Photo", back_populates="item", cascade="all, delete-orphan", order_by="Photo.id")
+    documents = db.relationship("Document", back_populates="item", cascade="all, delete-orphan",
+                                order_by="Document.created_at.desc()")
     notes = db.relationship("Note", back_populates="item", cascade="all, delete-orphan",
                             order_by="Note.created_at.desc()")
     maintenances = db.relationship("Maintenance", back_populates="item", cascade="all, delete-orphan",
@@ -409,6 +413,41 @@ class Photo(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now())
 
     item = db.relationship("Item", back_populates="photos")
+
+
+class Document(db.Model):
+    """Fichier joint à un objet ou à un kit : facture, notice, certificat…"""
+    KINDS = {"facture": "Facture", "devis": "Devis", "notice": "Notice", "garantie": "Garantie",
+             "certificat": "Certificat", "assurance": "Assurance", "autre": "Autre"}
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.ForeignKey("item.id", ondelete="CASCADE"), index=True)
+    kit_id = db.Column(db.ForeignKey("kit.id", ondelete="CASCADE"), index=True)
+    title = db.Column(db.String(160), nullable=False)
+    kind = db.Column(db.String(20), nullable=False, default="autre")
+    filename = db.Column(db.String(255), nullable=False)  # chemin relatif à UPLOAD_DIR (nom aléatoire)
+    original_name = db.Column(db.String(255), nullable=False)
+    mime = db.Column(db.String(120), nullable=False)
+    size = db.Column(db.Integer, nullable=False)
+    uploaded_by_id = db.Column(db.ForeignKey("user.id", ondelete="SET NULL"))
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now())
+
+    item = db.relationship("Item", back_populates="documents")
+    kit = db.relationship("Kit", back_populates="documents")
+    uploaded_by = db.relationship("User")
+
+    __table_args__ = (
+        CheckConstraint("(item_id IS NULL) != (kit_id IS NULL)", name="ck_document_item_xor_kit"),
+        CheckConstraint(kind.in_(KINDS), name="ck_document_kind"),
+    )
+
+    @property
+    def kind_label(self):
+        return self.KINDS.get(self.kind, self.kind)
+
+    @property
+    def extension(self):
+        return self.filename.rsplit(".", 1)[-1].upper()
 
 
 class Note(db.Model):

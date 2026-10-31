@@ -6,6 +6,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ### Ajouté
 
+- **Documents joints** (fiches objet et kit) : factures, devis, notices, garanties, certificats, assurances, en PDF, image, Word, Excel, OpenDocument ou texte. Le contenu réel du fichier est vérifié. Deux nouveaux droits, « Voir les documents joints » et « Ajouter et supprimer des documents joints », donnés par défaut aux profs. Une pastille 📎 signale les objets qui en ont dans la liste.
 - **Corbeille** (bouton en haut de l'inventaire et des kits, admin) : un objet ou un kit supprimé y reste 30 jours, invisible partout ailleurs, puis il est effacé automatiquement. On peut le restaurer tel quel (un kit récupère ses objets) ou le supprimer définitivement. Seul un administrateur peut vider la corbeille.
 - **État de l'installation** (Paramètres, admin) : page `/sante` et sa version JSON `/health` qui vérifient la base, les migrations, l'espace disque, le passage des rappels automatiques et les emails. Réponse `503` en cas de problème, `404` pour qui ne gère pas les paramètres.
 - **Déconnecter tout le monde** (Paramètres, admin) : ferme toutes les sessions sauf la sienne, y compris celles ouvertes avec « Rester connecté ». La page affiche aussi le nombre de sessions ouvertes.
@@ -29,6 +30,8 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 - **« Enregistrer et créer un autre »** à la création d'un objet : le formulaire suivant reprend la catégorie et le lieu, pour enchaîner les saisies.
 
 ### Sécurité
+
+- L'adresse des photos (`/objets/fichiers/…`) ne sert plus que les photos d'objets, et plus le reste du dossier des fichiers envoyés.
 
 - Un gestionnaire de comptes qui n'est pas administrateur ne peut plus générer de mot de passe provisoire pour un compte administrateur (ce qui permettait de le prendre).
 - Seul un administrateur peut donner ou retirer le rôle d'administrateur, modifier le compte d'un admin ou gérer les rôles.

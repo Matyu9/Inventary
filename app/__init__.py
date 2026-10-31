@@ -34,6 +34,7 @@ def create_app(config_class=Config):
     from .blueprints.calendar import bp as calendar_bp
     from .blueprints.consumables import bp as consumables_bp
     from .blueprints.dashboard import bp as dashboard_bp
+    from .blueprints.documents import bp as documents_bp
     from .blueprints.health import bp as health_bp
     from .blueprints.items import bp as items_bp
     from .blueprints.kits import bp as kits_bp
@@ -50,7 +51,9 @@ def create_app(config_class=Config):
     from .blueprints.users import bp as users_bp
     from .cli import register_cli
     from .filters import register_filters
+    from .models import Document
     from .permissions import can
+    from .services import documents
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -63,6 +66,7 @@ def create_app(config_class=Config):
     app.register_blueprint(roles_bp)
     app.register_blueprint(account_bp)
     app.register_blueprint(kits_bp)
+    app.register_blueprint(documents_bp)
     app.register_blueprint(consumables_bp)
     app.register_blueprint(maintenance_bp)
     app.register_blueprint(calendar_bp)
@@ -77,7 +81,8 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_globals():
-        return {"can": can, "asso_name": app.config["ASSO_NAME"], "code_prefix": app.config["ITEM_CODE_PREFIX"]}
+        return {"can": can, "asso_name": app.config["ASSO_NAME"], "code_prefix": app.config["ITEM_CODE_PREFIX"],
+                "document_kinds": Document.KINDS, "document_accept": documents.ACCEPT}
 
     @app.after_request
     def security_headers(response):

@@ -62,6 +62,9 @@
   </section>
 </div>
 
+{% from "partials/_documents.html" import documents_section with context %}
+{{ documents_section("kits", kit) }}
+
 <section>
   <h2>Prêts</h2>
   {{ loan_table(kit_loans(kit), "Ce kit n'a jamais été prêté.", show_items=false) }}

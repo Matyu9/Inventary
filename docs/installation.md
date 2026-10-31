@@ -163,7 +163,7 @@ ou, dans l'appli, **Paramètres → Lancer les rappels maintenant**. Chaque rapp
 
 ## Sauvegarde et restauration
 
-Tout est dans `data/` : `inventaire.db` (la base) et `uploads/` (les photos).
+Tout est dans `data/` : `inventaire.db` (la base) et `uploads/` (photos et documents joints).
 
 ### Sauvegarder
 

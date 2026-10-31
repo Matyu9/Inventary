@@ -104,6 +104,9 @@
 </section>
 {% endif %}
 
+{% from "partials/_documents.html" import documents_section with context %}
+{{ documents_section("objets", item) }}
+
 <section id="loans">
   <h2>Prêts</h2>
   {% from "partials/_loan_rows.html" import loan_table %}

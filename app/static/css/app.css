@@ -324,6 +324,13 @@ input[type=file]::file-selector-button { background: var(--surface-2); color: va
 .gallery figure { margin: 0; }
 .gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 .gallery figcaption { font-size: .78rem; color: var(--text-3); }
+.documents { list-style: none; padding: 0; margin: 0 0 1rem; }
+.documents li { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--border); }
+.documents li > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.documents form { margin: 0; }
+.doc-ext { flex: none; min-width: 3rem; padding: .2rem .35rem; border-radius: var(--radius-sm); text-align: center;
+           font-size: .7rem; font-weight: 700; background: var(--brand-soft); color: var(--brand); }
+.doc-count { white-space: nowrap; }
 .photo-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: .5rem; margin-top: 1rem; }
 .photo-form > * { margin: 0; }
 .qr-block { display: flex; gap: 1rem; align-items: center; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .9rem; }

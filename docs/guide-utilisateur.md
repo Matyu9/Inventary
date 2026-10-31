@@ -12,7 +12,7 @@ Ce guide décrit l'inventaire écran par écran. Il s'adresse aux trois rôles :
   - [Fiche objet](#fiche-objet)
   - [Créer et modifier un objet](#créer-et-modifier-un-objet)
   - [Statuts et états](#statuts-et-états)
-  - [Photos, notes, entretiens, rappels](#photos-notes-entretiens-rappels)
+  - [Photos, documents, notes, entretiens, rappels](#photos-documents-notes-entretiens-rappels)
   - [Réformer ou supprimer](#réformer-ou-supprimer)
   - [La corbeille](#la-corbeille)
   - [Actions groupées](#actions-groupées)
@@ -140,8 +140,9 @@ L'**état** décrit l'objet physique : neuf, bon, usé, à réparer, HS. Il peut
 
 Un objet **en entretien** ou **réformé** ne peut pas être prêté.
 
-### Photos, notes, entretiens, rappels
+### Photos, documents, notes, entretiens, rappels
 
+- **Documents** : section « Documents » des fiches objet et kit. Joignez une facture, un devis, une notice, une garantie, un certificat ou une attestation d'assurance : PDF, image, Word, Excel, OpenDocument ou texte, 16 Mo au plus. Choisissez le type et, si vous voulez, un titre. Les PDF et images s'ouvrent dans le navigateur, les autres fichiers se téléchargent. Un fichier dont le contenu ne correspond pas à son extension est refusé. Les documents ont leurs propres droits : par défaut, les profs les voient et en ajoutent, les emprunteurs non. Ils suivent l'objet à la corbeille et sont effacés avec lui.
 - **Photos** : choisissez une image, éventuellement depuis l'appareil photo du téléphone, avec une légende facultative. Les images sont redressées et réduites automatiquement.
 - **Notes** : remarques libres, datées et signées. Un prof peut supprimer ses propres notes, un admin toutes.
 - **Entretiens** : date, type (révision, réparation, nettoyage…), prestataire, coût, description et **date du prochain entretien**. On peut aussi mettre l'objet « en entretien » ou le rendre disponible au même moment. La date du prochain entretien alimente les rappels et le tableau de bord. Les coûts alimentent le rapport « Coûts d'entretien ».
@@ -476,6 +477,7 @@ Droits par défaut des rôles de base (modifiables dans l'écran [Rôles](#rôle
 |---|:---:|:---:|:---:|
 | Voir l'inventaire, les kits, les lieux | ✅ | ✅ | — |
 | Créer et modifier objets, kits, lieux, catégories, photos, tags | ✅ | ✅ | — |
+| Voir, ajouter et supprimer les documents joints (factures, notices…) | ✅ | ✅ | — |
 | Réformer ou supprimer un objet ; supprimer un kit, un lieu, une catégorie ; restaurer depuis la corbeille | ✅ | — | — |
 | Ajouter une note | ✅ | ✅ | — |
 | Supprimer une note | ✅ | ses notes | — |

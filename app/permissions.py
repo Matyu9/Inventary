@@ -27,6 +27,7 @@ ROLE_PERMISSIONS = {
     "loan.request": {A, P},
     "loan.validate": {A},
     "loan.list_all": {A, P},
+    "loan.verify": {A, P},  # pointer le matériel d'un prêt (départ, fin de concert)
     "audit.scan": {A, P},
     "audit.manage": {A},
     "report.view": {A, P},

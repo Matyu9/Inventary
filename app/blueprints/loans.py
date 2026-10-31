@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
 from sqlalchemy import or_
@@ -11,8 +11,10 @@ from ..extensions import db, fold_contains
 from ..forms import FrDecimalField, amount_range
 from ..models import (Activity, Condition, Item, ItemStatus, Kit, Loan, LoanLine, LoanStatus, LoanType, Role, User)
 from ..permissions import can, ensure, require
+from ..services import loan_checks as checks
 from ..services import loans as svc
 from ..services.mailer import deliver_quietly
+from ..services.qr import qr_svg
 from .items import none_if_zero
 
 bp = Blueprint("loans", __name__)
@@ -314,6 +316,100 @@ def change_end(loan_id):
         svc.change_end(loan, current_user, new_end)
 
     return _action(loan_id, "loan.validate", apply, "Date de fin mise à jour.")
+
+
+# ---------------------------------------------------------------------------
+# Vérification du matériel (scan avant de quitter la salle) et liste imprimable
+# ---------------------------------------------------------------------------
+
+CHECK_LABELS = {checks.CHECKED: "pointé ✓", checks.ALREADY: "déjà pointé", checks.NOT_IN_LOAN: "ne fait pas partie de ce prêt"}
+
+
+def _check_page(loan, template, **context):
+    return render_template(template, loan=loan, progress=checks.progress(loan), labels=CHECK_LABELS, **context)
+
+
+@bp.route("/prets/<int:loan_id>/verification")
+@require("loan.verify")
+def verify(loan_id):
+    loan = get_loan(loan_id)
+    if loan.status not in checks.ALLOWED_STATUSES:
+        flash("La vérification n'est possible que pour un prêt validé ou en cours.", "warning")
+        return redirect(url_for(".detail", loan_id=loan.id))
+    return _check_page(loan, "loans/verify.html")
+
+
+@bp.route("/prets/<int:loan_id>/verification/etat")
+@require("loan.verify")
+def verify_state(loan_id):
+    """Fragment HTMX rafraîchi régulièrement : on voit ce que les autres ont scanné."""
+    return _check_page(get_loan(loan_id), "loans/_verify_list.html", oob=False)
+
+
+@bp.route("/prets/<int:loan_id>/verification/scan", methods=["POST"])
+@require("loan.verify")
+def verify_scan(loan_id):
+    loan = get_loan(loan_id)
+    error, results = None, []
+    try:
+        results = checks.scan(loan, request.form.get("code"), current_user)
+        db.session.commit()
+    except checks.CheckError as exc:
+        db.session.rollback()
+        error = str(exc)
+    if request.headers.get("HX-Request"):
+        return _check_page(loan, "loans/_verify_result.html", results=results, error=error)
+    if error:
+        flash(error, "error")
+    for item, result, count, qty in results:
+        flash(f"{item.code} {item.name} : {CHECK_LABELS[result]}" + (f" ({count}/{qty})" if qty > 1 else "") + ".",
+              "success" if result == checks.CHECKED else "warning")
+    return redirect(url_for(".verify", loan_id=loan.id))
+
+
+@bp.route("/prets/<int:loan_id>/verification/<int:item_id>", methods=["POST"])
+@require("loan.verify")
+def verify_mark(loan_id, item_id):
+    loan = get_loan(loan_id)
+    try:
+        checks.mark(loan, item_id, current_user, checked=request.form.get("action") != "retirer")
+        db.session.commit()
+    except checks.CheckError as exc:
+        db.session.rollback()
+        flash(str(exc), "error")
+    if request.headers.get("HX-Request"):
+        return _check_page(loan, "loans/_verify_list.html", oob=False)
+    return redirect(url_for(".verify", loan_id=loan.id))
+
+
+@bp.route("/prets/<int:loan_id>/verification/recommencer", methods=["POST"])
+@require("loan.verify")
+def verify_reset(loan_id):
+    loan = get_loan(loan_id)
+    try:
+        checks.reset(loan)
+        db.session.commit()
+    except checks.CheckError as exc:
+        db.session.rollback()
+        flash(str(exc), "error")
+    else:
+        flash("Pointage remis à zéro.", "success")
+    return redirect(url_for(".verify", loan_id=loan.id))
+
+
+@bp.route("/prets/<int:loan_id>/liste")
+@login_required
+def checklist(loan_id):
+    """Liste du matériel à imprimer, à cocher au départ et au retour."""
+    loan = get_loan(loan_id)
+    ensure("loan.view", loan)
+    groups = {}  # objets regroupés par kit (None = hors kit), dans l'ordre des lignes
+    for row in checks.expected(loan, everything=True):
+        groups.setdefault(row["kit"], []).append(row)
+    verify_url = current_app.config["BASE_URL"] + url_for(".verify", loan_id=loan.id)
+    return render_template("loans/checklist.html", loan=loan, groups=groups,
+                           count=sum(len(rows) for rows in groups.values()), qr=qr_svg(verify_url) if can(current_user, "loan.verify") else None,
+                           printed_at=datetime.now())
 
 
 @bp.app_template_global()

@@ -23,6 +23,8 @@ Ce guide décrit l'inventaire écran par écran. Il s'adresse aux trois rôles :
   - [Demander un prêt](#demander-un-prêt)
   - [Valider ou refuser](#valider-ou-refuser)
   - [Remettre le matériel](#remettre-le-matériel)
+  - [Vérifier qu'on n'a rien oublié](#vérifier-quon-na-rien-oublié)
+  - [Liste du matériel à imprimer](#liste-du-matériel-à-imprimer)
   - [Récupérer le matériel](#récupérer-le-matériel)
   - [Prolonger, raccourcir, annuler](#prolonger-raccourcir-annuler)
 - [QR codes, étiquettes et scanner](#qr-codes-étiquettes-et-scanner)
@@ -248,6 +250,24 @@ Les demandes en attente depuis plus de 2 jours font l'objet d'une relance quotid
 - Les objets passent « en garde » ou « sortis ». Leur état au départ est noté.
 - Les consommables distribués sont retirés du stock et n'ont pas à être rendus.
 
+### Vérifier qu'on n'a rien oublié
+
+**Vérifier le matériel**, sur un prêt validé ou en cours (admins et profs) : typiquement en fin de concert, avant de quitter la salle, ou au départ du local.
+
+- Scannez chaque objet avec la caméra du téléphone, une douchette, ou tapez son code. Le scan est continu : pas besoin de revenir en arrière entre deux objets.
+- Scanner le QR d'un **kit** pointe tous les objets du kit. Pour un objet suivi **en quantité** (ex. 6 pupitres sous un seul QR), chaque scan compte un exemplaire ; **Tout compté** pointe la quantité entière d'un coup.
+- Un QR abîmé ? **Pointer** coche l'objet à la main. **✕** retire un pointage.
+- Un objet qui ne fait pas partie du prêt est signalé en rouge : il est peut-être à quelqu'un d'autre.
+- La page affiche les **manquants** et les pointés (avec qui et à quelle heure). Quand tout est là, un bandeau vert l'indique.
+- **Plusieurs personnes peuvent scanner en même temps** : la liste se met à jour toute seule.
+- **Recommencer** efface le pointage. Il est aussi remis à zéro automatiquement à la remise du matériel : le pointage de préparation ne compte pas pour la fin du concert.
+
+La vérification ne change rien au prêt : le retour au local s'enregistre toujours avec **Retour** (ci-dessous). Les consommables distribués et les éléments déjà rendus ne sont pas à pointer.
+
+### Liste du matériel à imprimer
+
+**Liste à imprimer**, sur la fiche d'un prêt (et sur la page de vérification) : une feuille A4 avec l'emprunteur, le garant, les dates et tout le matériel (contenu des kits détaillé, quantités, lieu de rangement), une case **Départ** et une case **Retour** par ligne, et des zones de signature. Un QR code en haut ouvre directement la page de vérification. L'emprunteur peut imprimer la liste de ses propres prêts (sans le QR).
+
 ### Récupérer le matériel
 
 **Retour**, sur un prêt en cours : par un admin, ou par le prof garant.
@@ -414,6 +434,8 @@ Sur téléphone, une barre d'onglets en bas d'écran donne accès à l'accueil, 
 | Voir tous les prêts | ✅ | ✅ | ses prêts |
 | Valider ou refuser un prêt, modifier sa date de fin | ✅ | — | — |
 | Remettre et récupérer le matériel | ✅ | s'il est garant | — |
+| Vérifier le matériel d'un prêt (scan « rien oublié ») | ✅ | ✅ | — |
+| Imprimer la liste du matériel d'un prêt | ✅ | ✅ | ses prêts |
 | Annuler un prêt (avant la remise) | ✅ | s'il l'a demandé ou en est garant | — |
 | Scanner, imprimer des étiquettes | ✅ | ✅ | — |
 | Scanner pendant un inventaire physique | ✅ | ✅ | — |

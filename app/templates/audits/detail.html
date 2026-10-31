@@ -18,7 +18,7 @@
 {% with oob = false %}{% include "audits/_progress.html" %}{% endwith %}
 
 <article id="audit-scanner" data-scan-url="{{ url_for('audits.add_scan', audit_id=audit.id) }}">
-  <form id="audit-scan-form" method="post" action="{{ url_for('audits.add_scan', audit_id=audit.id) }}"
+  <form id="audit-scan-form" data-camera-button="audit-camera" method="post" action="{{ url_for('audits.add_scan', audit_id=audit.id) }}"
         hx-post="{{ url_for('audits.add_scan', audit_id=audit.id) }}" hx-target="#scan-feedback" hx-swap="afterbegin"
         hx-on::after-request="if (event.detail.successful) { this.code.value = ''; this.code.focus(); }">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

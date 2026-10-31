@@ -1,7 +1,7 @@
-// Scan continu pendant un inventaire : chaque QR lu est envoyé au serveur (HTMX), sans quitter la page.
+// Scan continu (inventaire, vérification d'un prêt) : chaque QR lu est envoyé au serveur (HTMX), sans quitter la page.
 (function () {
-  const form = document.getElementById("audit-scan-form");
-  const button = document.getElementById("audit-camera");
+  const form = document.querySelector("form[data-camera-button]");
+  const button = form && document.getElementById(form.dataset.cameraButton);
   const status = document.getElementById("scan-status");
   if (!form || !button) return;
   if (!window.isSecureContext || !navigator.mediaDevices) {

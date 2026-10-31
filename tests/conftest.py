@@ -2,6 +2,7 @@ import os
 from functools import partial
 
 from hypothesis import settings
+from sqlalchemy import text
 
 import pytest
 from werkzeug.security import generate_password_hash
@@ -33,6 +34,26 @@ def reset_login_throttle():
     auth._failures.clear()
 
 
+_HEADS = []
+
+
+def stamp(revisions):
+    """La base de test est créée sans Alembic (create_all) : on y inscrit la version voulue."""
+    db.session.execute(text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) PRIMARY KEY)"))
+    db.session.execute(text("DELETE FROM alembic_version"))
+    for rev in revisions:
+        db.session.execute(text("INSERT INTO alembic_version VALUES (:r)"), {"r": rev})
+    db.session.commit()
+
+
+def stamp_head():
+    """create_all produit le schéma le plus récent : la base est donc « à jour » pour la page de santé."""
+    if not _HEADS:
+        from app.services.health import migration_heads
+        _HEADS.extend(migration_heads()[1])
+    stamp(_HEADS)
+
+
 @pytest.fixture
 def app(tmp_path):
     class Cfg(TestConfig):
@@ -43,6 +64,7 @@ def app(tmp_path):
     app = create_app(Cfg)
     with app.app_context():
         db.create_all()
+        stamp_head()
         yield app
         db.session.remove()
         db.drop_all()

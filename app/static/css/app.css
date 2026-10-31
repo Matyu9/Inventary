@@ -249,6 +249,9 @@ body.guest .error-card { margin: 0 auto; }
 .account-actif { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
 .account-invite, .account-jamais { background: var(--info-bg); color: var(--info); border-color: transparent; }
 .account-sans_acces, .account-archive { color: var(--text-3); }
+.health-ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.health-warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.health-error { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
 .danger-zone { margin-top: 2rem; }
 .card .props + .actions { margin-top: 1rem; }
 .badge.overdue { background: var(--danger-bg); color: var(--danger); border-color: transparent; }

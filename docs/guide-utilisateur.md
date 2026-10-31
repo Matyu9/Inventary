@@ -438,8 +438,9 @@ Un changement de droits s'applique immédiatement, y compris aux personnes déj�
 
 ## Paramètres
 
-**Menu Paramètres** (admins). La page affiche la configuration en cours : nom de l'association, adresse publique, préfixe des codes, état des emails. Elle propose deux actions :
+**Menu Paramètres** (admins). La page affiche la configuration en cours : nom de l'association, adresse publique, préfixe des codes, état des emails. Elle propose ces actions :
 
+- **État de l'installation**, qui vérifie la base de données, les migrations, l'espace disque, le passage des rappels automatiques et les emails (voir [Installation](installation.md#journaux-et-diagnostic)) ;
 - **M'envoyer un email de test**, pour vérifier la configuration SMTP ;
 - **Lancer les rappels maintenant**, sans attendre le prochain passage automatique.
 

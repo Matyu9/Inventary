@@ -8,6 +8,8 @@ from .errors import register_error_handlers
 from .extensions import csrf, db, login_manager, migrate
 from .services.oidc import init_oidc
 
+__version__ = "0.1.0"
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -32,6 +34,7 @@ def create_app(config_class=Config):
     from .blueprints.calendar import bp as calendar_bp
     from .blueprints.consumables import bp as consumables_bp
     from .blueprints.dashboard import bp as dashboard_bp
+    from .blueprints.health import bp as health_bp
     from .blueprints.items import bp as items_bp
     from .blueprints.kits import bp as kits_bp
     from .blueprints.loans import bp as loans_bp
@@ -63,6 +66,7 @@ def create_app(config_class=Config):
     app.register_blueprint(maintenance_bp)
     app.register_blueprint(calendar_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(health_bp)
     app.register_blueprint(audits_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(transfer_bp)

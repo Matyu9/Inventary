@@ -55,6 +55,8 @@ def register_cli(app):
     @app.cli.command("run-reminders")
     def run_reminders():
         """Génère les rappels et notifications (lancé périodiquement par le service scheduler)."""
+        from .services.health import record_scheduler_run
         from .services.reminders import run
 
         click.echo(run())
+        record_scheduler_run()

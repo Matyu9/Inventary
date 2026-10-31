@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -80,6 +81,16 @@ def create_app(config_class=Config):
     app.register_blueprint(trash_bp)
     register_cli(app)
     register_filters(app)
+
+    @app.url_defaults
+    def static_version(endpoint, values):
+        """?v=<date du fichier> sur les fichiers statiques : après une mise à jour, navigateur et service worker
+        (qui sert /static/ depuis son cache) chargent la nouvelle version au lieu de l'ancienne."""
+        if endpoint == "static" and "filename" in values and "v" not in values:
+            try:
+                values["v"] = int((Path(app.static_folder) / values["filename"]).stat().st_mtime)
+            except OSError:
+                pass
 
     @app.context_processor
     def inject_globals():

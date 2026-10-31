@@ -19,7 +19,8 @@
       <label>{{ form.contact.label.text }} <input type="text" name="contact" maxlength="160" autocomplete="tel" value="{{ form.contact.data or '' if chosen == kind else '' }}"></label>
     </div>
     {% endif %}
-    <div class="hp" aria-hidden="true"><label>Ne pas remplir <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+    {#- Masqué en ligne, pas seulement par app.css : une feuille de style périmée ne doit jamais l'afficher. -#}
+    <div class="hp" aria-hidden="true" style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden"><label>Ne pas remplir <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
     <button type="submit">Envoyer</button>
   </form>
 </details>

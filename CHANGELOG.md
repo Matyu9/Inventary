@@ -44,6 +44,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ### Corrigé
 
+- Après une mise à jour, le téléphone pouvait garder l'ancienne feuille de style (cache de l'appli installée) : sur la page publique d'un QR code, le champ anti-robots « Ne pas remplir » s'affichait. Ce champ est désormais masqué même sans feuille de style, et les fichiers de l'appli changent d'adresse à chaque version pour que la nouvelle soit toujours chargée.
 - Un identifiant, un numéro de page ou une date hors limites renvoie une page 404 au lieu d'une erreur 500. Les rapports acceptent n'importe quelle période.
 - Les mouvements de stock sont plafonnés à 1 000 000.
 - Les tags que plus aucun objet ne porte sont supprimés et disparaissent du filtre.

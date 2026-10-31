@@ -1,5 +1,6 @@
 // Service worker minimal : met en cache les fichiers statiques, le reste passe par le réseau.
-const CACHE = "inventaire-static-v5";
+// Les URL portent ?v=<version du fichier> : une mise à jour change l'URL, donc la clé du cache.
+const CACHE = "inventaire-static-v6";
 
 self.addEventListener("install", (event) => self.skipWaiting());
 self.addEventListener("activate", (event) => {

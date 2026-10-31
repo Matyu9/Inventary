@@ -1,4 +1,5 @@
 """QR public : une personne sans compte signale un problème ou un objet trouvé ; l'équipe traite le signalement."""
+import re
 from datetime import datetime
 
 import pytest
@@ -270,3 +271,16 @@ def test_email_previews_for_report_kinds(client, as_role, gear):
         assert r.status_code == 200 and "Saxophone alto" in r.text and "Camille" in r.text
     send(client, gear["sax"], message="Vrai message")
     assert "Vrai message" in client.get("/parametres/emails/public.problem/apercu").text
+
+
+def test_honeypot_hidden_even_without_stylesheet(client, gear):
+    """Feuille de style ancienne (cache du téléphone) : le champ piège ne doit pas apparaître pour autant."""
+    page = client.get(f"/q/{gear['sax'].qr_token}").text
+    for block in re.findall(r'<div class="hp"[^>]*>', page):
+        assert "left: -10000px" in block
+
+
+def test_static_urls_are_versioned(client, gear):
+    page = client.get(f"/q/{gear['sax'].qr_token}").text
+    assert re.search(r'/static/css/app\.css\?v=\d+', page)
+    assert client.get(re.search(r'/static/css/app\.css\?v=\d+', page).group(0)).status_code == 200

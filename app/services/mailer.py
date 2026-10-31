@@ -82,9 +82,10 @@ KINDS = {
     "item.low_stock": Kind("Stock bas", "Admins", "Stock bas : {objet}", "Voir le stock", "warn"),
     "public.problem": Kind("Problème signalé par QR code", "Personnes qui traitent les signalements",
                            "Problème signalé : {materiel}", "Voir les signalements", "warn"),
-    "public.found": Kind("Objet trouvé signalé par QR code",
-                         "Personnes qui traitent les signalements, emprunteur et garant",
+    "public.found": Kind("Objet trouvé signalé par QR code", "Personnes qui traitent les signalements",
                          "Objet trouvé : {materiel}", "Voir les signalements", "ok"),
+    "public.found_loan": Kind("Matériel prêté retrouvé", "Emprunteur et garant du prêt en cours",
+                              "Votre matériel a été retrouvé : {materiel}", "Voir le prêt", "ok"),
 }
 
 # Variables utilisables dans les textes, par famille de type ("loan" ou "item").

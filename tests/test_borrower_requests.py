@@ -285,3 +285,41 @@ def test_guarantee_email_texts(app, users, sax, monkeypatch, ctx):
     mailer.deliver_pending()
     assert (users[P].email, f"[Mon association] {users[E].full_name} vous demande d'être garant") in sent
 
+
+
+def test_borrower_does_not_see_other_borrowers_names(client, as_role, users, sax):
+    """Conflit ou demande concurrente : l'emprunteur voit les dates, pas le nom de l'autre emprunteur."""
+    other = make_user(E, email="lea@ohn.test")
+    other.first_name, other.last_name = "Léa", "Secret"
+    taken = Loan(type=LoanType.RESERVATION, status=LoanStatus.VALIDE, borrower=other, requested_by=users[P],
+                 start=soon(1), end=soon(3))
+    taken.lines = svc.build_lines([sax.id], {}, [])
+    db.session.add(taken)
+    db.session.commit()
+    as_role(E)
+    data = request_form(users, sax)
+    r = client.post("/prets/verifier", data=data)
+    assert f"n°{taken.id}" in r.text and "Secret" not in r.text
+    r = client.post("/prets/nouveau", data=data)
+    assert "déjà pris" in r.text and "Secret" not in r.text
+    as_role(P)  # qui voit tous les prêts garde le détail
+    assert "Secret" in client.post("/prets/verifier", data=data).text
+
+
+def test_departed_guarantor_alerts_admins(client, as_role, users, sax):
+    _, loan = borrower_requests(client, as_role, users, sax)
+    db.session.execute(db.delete(Notification))
+    loan.created_at = datetime.now() - timedelta(days=4)
+    users[P].active = False
+    db.session.commit()
+    reminders.run()
+    assert notified("loan.guarantee_request") == set()
+    assert users[A].id in notified("loan.pending")
+    message = db.session.scalar(db.select(Notification.message).where(Notification.kind == "loan.pending"))
+    assert "n'a plus accès" in message
+
+
+def test_prof_mine_button_label(client, as_role, users):
+    as_role(P)
+    page = client.get("/mes-prets").text
+    assert "Nouvelle demande" in page and "Demander du matériel" not in page

@@ -5,9 +5,10 @@ import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from app.extensions import db
-from app.models import (Activity, AuditScan, Category, CategoryType, InventoryAudit, Item, ItemStatus, Kit, Location,
-                        Maintenance, Note, Reminder, Role, StockMovement, Tag, Tracking)
-from app.services import reminders, reports, transfer, trash
+from app.models import (Activity, AuditScan, Category, CategoryType, InventoryAudit, Item, ItemStatus, Kit, Loan,
+                        LoanLine, LoanStatus, LoanType, Location, Maintenance, Note, Reminder, Role, StockMovement,
+                        Tag, Tracking)
+from app.services import loans, reminders, reports, transfer, trash
 from app.services.reminders import due_maintenances
 
 from .conftest import login, make_user
@@ -220,7 +221,7 @@ def test_trash_kit_detaches_items_and_restores_them(client, as_role, stock, user
     db.session.add(other)
     db.session.commit()
     r = client.post(f"/corbeille/kits/{kit.id}/restaurer", follow_redirects=True)
-    assert "1 objet remis dedans" in r.text and "1 entré entre-temps" in r.text
+    assert "1 objet remis dedans" in r.text and "1 non remis" in r.text
     db.session.expire_all()
     assert sax.kit == kit and flute.kit == other
     assert kit.trashed_item_ids is None
@@ -346,3 +347,33 @@ def test_visible_plus_trashed_is_constant(app, users, ops):
         db.session.commit()
         visible = db.session.scalar(db.select(db.func.count(Item.id)))
         assert visible + len(trash.trashed_items()) == total
+
+
+def test_item_trashed_before_its_kit_is_freed(client, as_role, stock, users):
+    """Objet du kit mis à la corbeille, puis le kit : restauré, l'objet ne reste pas lié au kit invisible."""
+    as_role(A)
+    trash_item(client, stock["sax"])
+    client.post(f"/kits/{stock['kit'].id}/supprimer")
+    client.post(f"/corbeille/objets/{stock['sax'].id}/restaurer")
+    db.session.expire_all()
+    assert stock["sax"].kit_id is None
+    with client.application.test_request_context():  # avant : 500 (item.kit.name sur un kit invisible)
+        loan, _ = loans.create_request(loan_type=LoanType.RESERVATION, borrower=users[E], guarantor=users[P],
+                                       requested_by=users[P], start=datetime.now() + timedelta(days=1),
+                                       end=datetime.now() + timedelta(days=2),
+                                       lines=loans.build_lines([stock["sax"].id], {}, []))
+    assert loan.id
+
+
+def test_restored_kit_skips_item_lent_meanwhile(client, as_role, stock, users):
+    as_role(A)
+    client.post(f"/kits/{stock['kit'].id}/supprimer")
+    loan = Loan(type=LoanType.GARDE, status=LoanStatus.EN_COURS, borrower=users[E], requested_by=users[P],
+                start=datetime.now())
+    loan.lines.append(LoanLine(item=stock["flute"]))
+    db.session.add(loan)
+    db.session.commit()
+    r = client.post(f"/corbeille/kits/{stock['kit'].id}/restaurer", follow_redirects=True)
+    assert "1 objet remis dedans" in r.text and "prêté" in r.text
+    db.session.expire_all()
+    assert stock["sax"].kit == stock["kit"] and stock["flute"].kit_id is None

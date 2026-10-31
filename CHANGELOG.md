@@ -44,6 +44,13 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ### Corrigé
 
+- Un emprunteur qui demande du matériel ne voit plus, dans les messages de disponibilité, le nom des autres emprunteurs (seulement le numéro et les dates du prêt en conflit).
+- Objet prêté retrouvé : l'emprunteur et le garant reçoivent une notification et un email qui mènent à leur prêt, et non plus à la page Signalements qui leur est fermée.
+- Corbeille : un objet mis à la corbeille avant son kit, puis restauré, ne reste plus lié au kit supprimé (sa demande de prêt provoquait une erreur). Un kit restauré ne reprend plus un objet prêté seul entre-temps.
+- Demande d'un emprunteur dont le garant a quitté l'appli : les admins sont prévenus au lieu de relancer un compte inactif.
+- Sur téléphone, les tableaux des rapports défilent au lieu d'avoir leurs dernières colonnes coupées, et le nom de l'objet n'est plus coupé dans la page Signalements.
+- Un formulaire resté ouvert plus d'une heure (par exemple sur la page d'un QR code) ne finit plus en « page expirée » : le jeton de sécurité vaut toute la session.
+- Le téléphone ou l'email laissé dans un signalement est cliquable. « Mes prêts » propose « Nouvelle demande » aux profs et « Demander du matériel » aux emprunteurs.
 - Après une mise à jour, le téléphone pouvait garder l'ancienne feuille de style (cache de l'appli installée) : sur la page publique d'un QR code, le champ anti-robots « Ne pas remplir » s'affichait. Ce champ est désormais masqué même sans feuille de style, et les fichiers de l'appli changent d'adresse à chaque version pour que la nouvelle soit toujours chargée.
 - Un identifiant, un numéro de page ou une date hors limites renvoie une page 404 au lieu d'une erreur 500. Les rapports acceptent n'importe quelle période.
 - Les mouvements de stock sont plafonnés à 1 000 000.

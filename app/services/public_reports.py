@@ -37,14 +37,19 @@ def create(target, kind, message, name=None, contact=None, user=None):
                           **({"kit": target} if isinstance(target, Kit) else {"item": target}))
     db.session.add(report)
     db.session.flush()
-    recipients = list(handlers())
-    if kind == PublicReport.TROUVE:
-        for loan in current_loans(target):
-            recipients += [loan.borrower, loan.guarantor]
+    handling = handlers()
     who = report.name or (user.full_name if user else "une personne sans compte")
-    text = (f"{report.kind_label} sur {report.target_label} par {who} : {report.message}")
-    notify(recipients, text, LINK, kind="public.found" if kind == PublicReport.TROUVE else "public.problem",
+    text = f"{report.kind_label} sur {report.target_label} par {who} : {report.message}"
+    notify(handling, text, LINK, kind="public.found" if kind == PublicReport.TROUVE else "public.problem",
            item=report.item, report=report)
+    if kind == PublicReport.TROUVE:
+        # Emprunteur et garant d'un prêt en cours : lien vers leur prêt (la page Signalements ne leur est pas ouverte).
+        already = {u.id for u in handling}
+        for loan in current_loans(target):
+            people = [u for u in (loan.borrower, loan.guarantor) if u is not None and u.id not in already]
+            already |= {u.id for u in people}
+            notify(people, f"Votre matériel a été retrouvé : {report.target_label}. Message laissé : {report.message}",
+                   f"/prets/{loan.id}", kind="public.found_loan", item=report.item, loan=loan, report=report)
     log("report.create", f"{report.kind_label} ({who}) : {report.message[:200]}",
         user=user, **({"kit": target} if isinstance(target, Kit) else {"item": target}))
     return report

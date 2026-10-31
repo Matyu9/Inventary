@@ -36,7 +36,8 @@ def restore(kind, obj_id):
             message += f", {back} objet{'s' if back > 1 else ''} remis dedans"
         if elsewhere:
             plural = "s" if elsewhere > 1 else ""
-            message += f" ({elsewhere} entré{plural} entre-temps dans un autre kit ou supprimé{plural})"
+            message += (f" ({elsewhere} non remis : entré{plural} dans un autre kit, prêté{plural} seul{plural} "
+                        f"ou supprimé{plural} entre-temps)")
         flash(message + ".", "success")
         return redirect(url_for("kits.detail", kit_id=obj.id))
     trash.restore_item(obj, current_user)

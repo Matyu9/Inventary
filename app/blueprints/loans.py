@@ -214,7 +214,7 @@ def _create_from_form(form):
         loan_type=form.type.data, borrower=borrower, guarantor=guarantor, requested_by=current_user,
         start=form.start.data, end=form.end.data, lines=form_lines(), title=(form.title.data or "").strip(),
         comment=form.comment.data, deposit_amount=None if own else form.deposit_amount.data,
-        awaiting_guarantor=own)
+        awaiting_guarantor=own, show_people=can(current_user, "loan.list_all"))
     for warning in warnings:
         flash(warning, "warning")
     if own:
@@ -261,7 +261,8 @@ def check():
             if end is not None and end <= start:
                 problems = ["La date de fin doit être après la date de début."]
             else:
-                problems, warnings = svc.check_availability(lines, start, end)
+                problems, warnings = svc.check_availability(lines, start, end,
+                                                            show_people=can(current_user, "loan.list_all"))
     except svc.LoanError as exc:
         problems = [str(exc)]
     return render_template("loans/_check.html", problems=problems, warnings=warnings,

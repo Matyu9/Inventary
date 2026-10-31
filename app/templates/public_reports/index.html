@@ -13,16 +13,16 @@
 
 {% for r in reports %}
 <article class="card report-card{{ ' found' if r.kind == 'trouve' }}">
-  <header>
+  <div class="report-meta">
     <span class="badge {{ 'health-ok' if r.kind == 'trouve' else 'health-warn' }}">{{ r.kind_label }}</span>
     {% if r.item %}<a href="{{ url_for('items.detail', item_id=r.item.id) }}">{{ r.target_label }}</a>
     {% else %}<a href="{{ url_for('kits.detail', kit_id=r.kit.id) }}">{{ r.target_label }}</a>{% endif %}
     <small class="muted">· {{ r.created_at | datetime_fr }}</small>
-  </header>
+  </div>
   <blockquote>{{ r.message }}</blockquote>
   <p class="small">
     {% if r.name or r.reported_by %}De <strong>{{ r.name or r.reported_by.full_name }}</strong>{% if r.reported_by %} (compte {{ r.reported_by.role_label | lower }}){% endif %}{% else %}Anonyme{% endif %}
-    {% if r.contact %} · {{ r.contact }}{% endif %}
+    {% if r.contact %} · {{ r.contact | contact_link }}{% endif %}
   </p>
   {% if r.handled_at %}
   <p class="small muted">Traité le {{ r.handled_at | datetime_fr }}{% if r.handled_by %} par {{ r.handled_by.full_name }}{% endif %}{% if r.handled_note %} : {{ r.handled_note }}{% endif %}</p>

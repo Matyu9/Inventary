@@ -84,9 +84,16 @@ def run(now=None):
     for loan in db.session.scalars(db.select(Loan).where(
             Loan.status == LoanStatus.DEMANDE, Loan.awaiting_guarantor.is_(True),
             Loan.created_at < now - timedelta(days=3))):
-        add("garants", notify([loan.guarantor], f"{loan.borrower.full_name} attend toujours votre réponse : "
-                              f"acceptez-vous d'être garant de la demande n°{loan.id} ?", _loan_link(loan),
-                              dedup_key=f"guarantee:{loan.id}:{today}", kind="loan.guarantee_request", loan=loan))
+        guarantor = loan.guarantor
+        if guarantor.active and guarantor.archived_at is None:
+            add("garants", notify([guarantor], f"{loan.borrower.full_name} attend toujours votre réponse : "
+                                  f"acceptez-vous d'être garant de la demande n°{loan.id} ?", _loan_link(loan),
+                                  dedup_key=f"guarantee:{loan.id}:{today}", kind="loan.guarantee_request", loan=loan))
+        else:  # garant parti entre-temps : personne ne répondra, un admin doit refuser ou annuler la demande
+            add("demandes", notify(admins(), f"La demande n°{loan.id} de {loan.borrower.full_name} attend l'accord "
+                                   f"de {guarantor.full_name}, qui n'a plus accès à l'appli : refusez-la ou "
+                                   "annulez-la.", _loan_link(loan), dedup_key=f"pending:{loan.id}:{today}",
+                                   kind="loan.pending", loan=loan))
 
     # Stocks bas : une relance par semaine.
     week = today.isocalendar()

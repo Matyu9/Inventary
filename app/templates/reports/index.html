@@ -37,8 +37,8 @@
   {% if values %}
   {{ bars(value_bars) }}
   <details><summary>Tableau</summary>
-  <table class="striped"><thead><tr><th>Catégorie</th><th>Objets</th><th>Valeur</th><th>Sans valeur renseignée</th></tr></thead>
-    <tbody>{% for r in values %}<tr><td>{{ r.category.name }}</td><td>{{ r.count }}</td><td>{{ r.value | euros }}</td><td>{{ r.unvalued }}</td></tr>{% endfor %}</tbody></table>
+  <div class="overflow-auto"><table class="striped"><thead><tr><th>Catégorie</th><th>Objets</th><th>Valeur</th><th>Sans valeur renseignée</th></tr></thead>
+    <tbody>{% for r in values %}<tr><td>{{ r.category.name }}</td><td>{{ r.count }}</td><td>{{ r.value | euros }}</td><td>{{ r.unvalued }}</td></tr>{% endfor %}</tbody></table></div>
   </details>
   {% else %}<p class="muted">Aucun objet.</p>{% endif %}
 </section>
@@ -55,8 +55,8 @@
   {% if compliance.total %}
   <p>{{ compliance.on_time }} prêt(s) rendu(s) à l'heure sur {{ compliance.total }} (marge de 24 h).</p>
   {% if compliance.late %}
-  <table class="striped"><thead><tr><th>Prêt</th><th>Emprunteur</th><th>Retour prévu</th><th>Rendu le</th></tr></thead>
-    <tbody>{% for l in compliance.late %}<tr><td><a href="{{ url_for('loans.detail', loan_id=l.id) }}">n°{{ l.id }}</a></td><td>{{ l.borrower.full_name }}</td><td>{{ l.end | date_fr }}</td><td>{{ l.returned_at | date_fr }}</td></tr>{% endfor %}</tbody></table>
+  <div class="overflow-auto"><table class="striped"><thead><tr><th>Prêt</th><th>Emprunteur</th><th>Retour prévu</th><th>Rendu le</th></tr></thead>
+    <tbody>{% for l in compliance.late %}<tr><td><a href="{{ url_for('loans.detail', loan_id=l.id) }}">n°{{ l.id }}</a></td><td>{{ l.borrower.full_name }}</td><td>{{ l.end | date_fr }}</td><td>{{ l.returned_at | date_fr }}</td></tr>{% endfor %}</tbody></table></div>
   {% endif %}
   {% else %}<p class="muted">Aucun prêt daté rendu sur la période.</p>{% endif %}
 </section>
@@ -64,12 +64,12 @@
 <section class="report">
   <div class="report-head"><h2>Gardes en cours par personne</h2><a href="{{ url_for('reports.export', name='gardes') }}">CSV</a></div>
   {% if custody %}
-  <table class="striped"><thead><tr><th>Emprunteur</th><th>Matériel</th><th>Depuis</th><th>Garant</th></tr></thead>
+  <div class="overflow-auto"><table class="striped"><thead><tr><th>Emprunteur</th><th>Matériel</th><th>Depuis</th><th>Garant</th></tr></thead>
     <tbody>{% for borrower, loans in custody %}{% for l in loans %}
     <tr><td>{% if loop.first %}{{ borrower.full_name }}{% if borrower.section %} <small class="muted">({{ borrower.section }})</small>{% endif %}{% endif %}</td>
         <td><a href="{{ url_for('loans.detail', loan_id=l.id) }}">{% for line in l.lines %}{{ line.kit.name if line.kit else line.item.code ~ " " ~ line.item.name }}{{ ", " if not loop.last }}{% endfor %}</a></td>
         <td>{{ l.start | date_fr }}</td><td>{{ l.guarantor.full_name if l.guarantor else "—" }}</td></tr>
-    {% endfor %}{% endfor %}</tbody></table>
+    {% endfor %}{% endfor %}</tbody></table></div>
   {% else %}<p class="muted">Aucune garde en cours.</p>{% endif %}
 </section>
 

@@ -445,6 +445,7 @@ progress { height: .6rem; border-radius: 999px; }
              border-radius: 999px; padding: 0 .45rem; }
 .report-card { border-left: 4px solid var(--warn); }
 .report-card.found { border-left-color: var(--ok); }
+.report-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem; overflow-wrap: anywhere; }
 .report-card blockquote { margin: .5rem 0; white-space: pre-line; }
 .login-card .brand { padding: 0 0 1.25rem; }
 .login-card h1 { font-size: 1.35rem; }

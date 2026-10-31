@@ -532,3 +532,11 @@ def test_import_uses_given_prefix(app, users, park):
     created, _, errors = run([["Hélicon", "Cuivres"]], ["Désignation", "Catégorie"], users, prefix="ABC")
     assert (created, errors) == (1, [])
     assert db.session.scalar(db.select(Item).filter_by(name="Hélicon")).code == "ABC-0001"
+
+
+def test_report_tables_scroll_on_small_screens(client, as_role, park):
+    """Sur téléphone, les tableaux des rapports défilent au lieu d'être coupés."""
+    as_role(A)
+    page = client.get("/rapports").text
+    assert '<table' in page
+    assert page.count('<table') == page.count('<div class="overflow-auto"><table')

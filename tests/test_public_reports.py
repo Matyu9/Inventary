@@ -119,8 +119,13 @@ def test_anonymous_problem_report(client, gear, users):
 def test_found_item_notifies_borrower_and_guarantor(client, gear, users):
     other_prof = make_user(P, email="autre.prof@ohn.test")
     lend(users, item=gear["sax"])
+    loan = db.session.scalar(db.select(Loan))
     send(client, gear["sax"], kind="trouve", message="Oublié dans le bus 12")
-    assert recipients("public.found") == {users[A].id, users[P].id, users[E].id, other_prof.id}
+    assert recipients("public.found") == {users[A].id, users[P].id, other_prof.id}
+    # L'emprunteur n'a pas accès aux signalements : sa notification mène à son prêt.
+    assert recipients("public.found_loan") == {users[E].id}
+    notification = db.session.scalar(db.select(Notification).where(Notification.user_id == users[E].id))
+    assert notification.link == f"/prets/{loan.id}" and "retrouvé" in notification.message
 
 
 def test_found_item_inside_lent_kit_notifies_borrower(client, gear, users):
@@ -128,7 +133,7 @@ def test_found_item_inside_lent_kit_notifies_borrower(client, gear, users):
     db.session.commit()
     lend(users, kit=gear["kit"])
     send(client, gear["sax"], kind="trouve", message="Sur un banc")
-    assert users[E].id in recipients("public.found")
+    assert users[E].id in recipients("public.found_loan")
 
 
 def test_problem_report_does_not_notify_borrower(client, gear, users):
@@ -284,3 +289,32 @@ def test_static_urls_are_versioned(client, gear):
     page = client.get(f"/q/{gear['sax'].qr_token}").text
     assert re.search(r'/static/css/app\.css\?v=\d+', page)
     assert client.get(re.search(r'/static/css/app\.css\?v=\d+', page).group(0)).status_code == 200
+
+
+def test_borrower_link_opens_and_email_points_to_loan(client, gear, users, app, monkeypatch):
+    app.config.update(SMTP_HOST="smtp.test", SMTP_FROM="inventaire@ohn.test")
+    sent = []
+    monkeypatch.setattr(mailer, "send", lambda to, subject, text, html=None: sent.append((to, subject, text)))
+    loan = lend(users, item=gear["sax"])
+    send(client, gear["sax"], kind="trouve", message="Au gymnase")
+    mail = next(s for s in sent if s[0] == users[E].email)
+    assert "Votre matériel a été retrouvé : OHN-0001 Saxophone alto" in mail[1]
+    assert f"/prets/{loan.id}" in mail[2] and "/signalements" not in mail[2]
+    login(client, users[E])
+    assert client.get(f"/prets/{loan.id}").status_code == 200
+
+
+def test_contact_rendered_as_link(client, as_role, gear):
+    send(client, gear["sax"], contact="06 12 34 56 78")
+    send(client, gear["kit"], contact="cam@ex.fr", ip="10.0.0.9")
+    send(client, gear["kit"], contact="<b>gras</b>", ip="10.0.0.8")
+    as_role(A)
+    page = client.get("/signalements").text
+    assert 'href="tel:0612345678"' in page and 'href="mailto:cam@ex.fr"' in page
+    assert "<b>gras</b>" not in page and "&lt;b&gt;gras&lt;/b&gt;" in page
+
+
+def test_email_preview_found_loan(client, as_role, gear):
+    as_role(A)
+    r = client.get("/parametres/emails/public.found_loan/apercu")
+    assert r.status_code == 200 and "Voir le prêt" in r.text

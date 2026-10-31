@@ -146,7 +146,7 @@ def preview_email(kind):
     report = None
     if kind.startswith("public."):
         report = sample.report if sample and sample.report else PublicReport(
-            kind=PublicReport.TROUVE if kind == "public.found" else PublicReport.PROBLEME, item=item,
+            kind=PublicReport.TROUVE if kind.startswith("public.found") else PublicReport.PROBLEME, item=item,
             message="(texte laissé par la personne qui a scanné le QR code)", name="Camille",
             contact="06 00 00 00 00", created_at=datetime.now())
         item = None

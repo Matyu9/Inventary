@@ -138,7 +138,10 @@ erDiagram
 
 Les points importants :
 
-- **`User`** représente à la fois les comptes et les simples fiches emprunteur. `active` décide si la personne peut se connecter. `oidc_sub` et `role_from_oidc` servent à la connexion OIDC.
+- **`User`** représente à la fois les comptes et les simples fiches emprunteur. `active` décide si la personne peut se connecter. `oidc_sub` et `role_from_oidc` servent à la connexion OIDC. `archived_at` marque une fiche archivée (sans accès, masquée des listes), `last_login_at` la dernière connexion, `avatar` la photo de profil (dans `UPLOAD_DIR/avatars/`, nom aléatoire).
+- **`LoginSession`** : une ligne par appareil connecté (navigateur, IP, dernière activité, mise à jour au plus toutes les 5 minutes). La supprimer déconnecte l'appareil.
+- **`AccountToken`** : liens à usage unique envoyés par email (invitation, mot de passe oublié, changement d'email). Seule l'empreinte SHA-256 du jeton est stockée ; un nouveau lien du même type annule le précédent.
+- **Cycle de vie** ([services/people.py](../app/services/people.py)) : la suppression et la fusion parcourent toutes les clés étrangères vers `user.id` trouvées dans le modèle. Une nouvelle table qui référence les personnes est donc prise en compte automatiquement (bloque la suppression, suit la fusion).
 - **`Item`** a deux modes de suivi (`tracking`) :
   - `individuel` : un objet physique, avec `quantity` = 1 ;
   - `quantite` : un lot, avec `quantity` = stock. Le mode de consommation (`consumption_mode`) distingue alors le `consomme` (distribué) du `retournable` (prêté puis rendu).

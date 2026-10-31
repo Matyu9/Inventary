@@ -26,6 +26,7 @@ def create_app(config_class=Config):
     init_oidc(app)
 
     from . import models  # noqa: F401  (enregistre les modèles pour Alembic)
+    from .blueprints.account import bp as account_bp
     from .blueprints.audits import bp as audits_bp
     from .blueprints.auth import bp as auth_bp
     from .blueprints.calendar import bp as calendar_bp
@@ -56,6 +57,7 @@ def create_app(config_class=Config):
     app.register_blueprint(loans_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(roles_bp)
+    app.register_blueprint(account_bp)
     app.register_blueprint(kits_bp)
     app.register_blueprint(consumables_bp)
     app.register_blueprint(maintenance_bp)

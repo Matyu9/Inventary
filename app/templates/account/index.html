@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% from "partials/_form.html" import field %}
+{% from "partials/_avatar.html" import avatar %}
+{% block title %}Mon compte{% endblock %}
+{% block content %}
+<div class="person profile-head">
+  {{ avatar(current_user, "large") }}
+  <div>
+    <h1>Mon compte</h1>
+    <p class="muted">{{ current_user.role_label }}{% if current_user.section %} · {{ current_user.section }}{% endif %}</p>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <section class="card">
+    <h2>Profil</h2>
+    <form method="post" action="{{ url_for('account.index') }}" novalidate>
+      {{ profile.hidden_tag() }}
+      <div class="grid"><div>{{ field(profile.first_name, autocomplete="given-name") }}</div><div>{{ field(profile.last_name, autocomplete="family-name") }}</div></div>
+      {{ field(profile.phone, autocomplete="tel") }}
+      <button type="submit">Enregistrer</button>
+    </form>
+    <h3>Photo de profil</h3>
+    <div class="actions">
+      <form method="post" action="{{ url_for('account.set_avatar') }}" enctype="multipart/form-data" class="avatar-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="photo" accept="image/*" aria-label="Photo de profil" required>
+        <button type="submit" class="secondary small">{{ "Changer" if current_user.avatar else "Ajouter" }}</button>
+      </form>
+      {% if current_user.avatar %}
+      <form method="post" action="{{ url_for('account.remove_avatar') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="link-button">Retirer</button>
+      </form>
+      {% endif %}
+    </div>
+    <small class="muted">Recadrée en carré. Visible des autres membres connectés à l'appli.</small>
+  </section>
+
+  <section class="card">
+    <h2>Connexion</h2>
+    <dl class="props">
+      <dt>Email</dt><dd>{{ current_user.email or "—" }}</dd>
+      {% if pending %}<dt>En attente</dt><dd>{{ pending.email }} <small class="muted">(lien de confirmation envoyé)</small></dd>{% endif %}
+      <dt>Mot de passe</dt><dd>{% if current_user.password_hash %}<a href="{{ url_for('auth.password') }}">Changer mon mot de passe</a>{% else %}aucun : connexion via le fournisseur d'identité{% endif %}</dd>
+    </dl>
+    {% if smtp %}
+    <details {{ "open" if email_form.errors }}>
+      <summary>Changer d'adresse email</summary>
+      <form method="post" action="{{ url_for('account.change_email') }}" novalidate>
+        {{ email_form.hidden_tag() }}
+        {{ field(email_form.email, autocomplete="email") }}
+        {% if current_user.password_hash %}{{ field(email_form.password, autocomplete="current-password") }}{% endif %}
+        <small class="muted">Un lien de confirmation est envoyé à la nouvelle adresse ; l'ancienne reste active d'ici là.</small>
+        <button type="submit" class="secondary">Envoyer le lien de confirmation</button>
+      </form>
+    </details>
+    {% else %}
+    <p class="muted small">Pour changer d'adresse email, demandez à un responsable de l'association.</p>
+    {% endif %}
+  </section>
+</div>
+
+<h2 id="sessions">Mes appareils connectés</h2>
+<p class="muted">Un appareil que vous ne reconnaissez pas ? Déconnectez-le, puis changez votre mot de passe.</p>
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Appareil</th><th>Adresse IP</th><th>Connecté le</th><th>Dernière activité</th><th></th></tr></thead>
+  <tbody>
+  {% for s in sessions %}
+  <tr>
+    <td>{{ device_label(s.user_agent) }}{% if s.id == current_user.session_token %} <span class="badge account-actif">cet appareil</span>{% endif %}</td>
+    <td><small>{{ s.ip or "—" }}</small></td>
+    <td><small>{{ s.created_at | datetime_fr }}</small></td>
+    <td><small>{{ (s.last_seen_at or s.created_at) | datetime_fr }}</small></td>
+    <td class="actions">{% if s.id != current_user.session_token %}
+      <form method="post" action="{{ url_for('account.revoke_session', session_id=s.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="link-button">Déconnecter</button>
+      </form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% if sessions | length > 1 %}
+<div class="actions">
+  <form method="post" action="{{ url_for('account.revoke_others') }}" onsubmit="return confirm('Déconnecter tous vos autres appareils ?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="secondary outline">Déconnecter mes autres appareils</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

@@ -183,6 +183,11 @@ def compose_test(user):
                    "Ouvrir l'inventaire", current_app.config["BASE_URL"], "ok")
 
 
+def compose_account(user, subject, intro, button, url):
+    """Email lié au compte (invitation, mot de passe oublié…) : mêmes gabarits que les notifications."""
+    return _render(user, subject, intro, button, url, "brand")
+
+
 def _render(user, subject, intro, button, url, tone, recap_title=None, rows=(), lines=()):
     subject = _shorten(" ".join(subject.split()))  # pas de retour à la ligne dans un en-tête
     # Paragraphes séparés par une ligne vide ; un simple retour à la ligne est conservé dans le paragraphe.

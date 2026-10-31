@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% from "partials/_loan_rows.html" import loan_table %}
+{% from "partials/_avatar.html" import avatar %}
+{% block title %}{{ user.full_name }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('users.index') }}">← Personnes</a></p>
+<div class="page-head">
+  <div class="person">
+    {{ avatar(user, "large") }}
+    <div>
+    <h1>{{ user.full_name }}</h1>
+    <p class="muted">{{ user.role_label }}{% if user.section %} · {{ user.section }}{% endif %}{% if user.member_status %} · {{ user.member_status }}{% endif %}
+      <span class="badge account-{{ status }}">{{ statuses[status] }}</span></p>
+    </div>
+  </div>
+  <div class="actions">
+    {% if can(current_user, "loan.request") and not user.archived_at %}<a href="{{ url_for('loans.create', borrower_id=user.id) }}" role="button">Prêter</a>{% endif %}
+    {% if manage %}<a href="{{ url_for('users.edit', user_id=user.id) }}" role="button" class="secondary">Modifier</a>{% endif %}
+  </div>
+</div>
+
+<div class="detail-grid">
+  <section class="card">
+    <h2>Coordonnées</h2>
+    <dl class="props">
+      <dt>Email</dt><dd>{% if user.email %}<a href="mailto:{{ user.email }}">{{ user.email }}</a>{% else %}—{% endif %}</dd>
+      <dt>Téléphone</dt><dd>{% if user.phone %}<a href="tel:{{ user.phone }}">{{ user.phone }}</a>{% else %}—{% endif %}</dd>
+      <dt>Pupitre / classe</dt><dd>{{ user.section or "—" }}</dd>
+      <dt>Fiche créée le</dt><dd>{{ user.created_at | date_fr }}</dd>
+      {% if user.archived_at %}<dt>Archivée le</dt><dd>{{ user.archived_at | date_fr }}</dd>{% endif %}
+    </dl>
+  </section>
+  <section class="card">
+    <h2>Accès</h2>
+    <dl class="props">
+      <dt>Statut</dt><dd>{{ statuses[status] }}</dd>
+      <dt>Connexion</dt><dd>{% if user.oidc_sub %}Fournisseur d'identité{% if user.password_hash %} et mot de passe{% endif %}{% elif user.password_hash %}Mot de passe{% else %}—{% endif %}</dd>
+      <dt>Dernière connexion</dt><dd>{{ user.last_login_at | datetime_fr if user.last_login_at else "jamais" }}</dd>
+      {% if user.role_from_oidc %}<dt>Rôle</dt><dd>suit les groupes OIDC</dd>{% endif %}
+    </dl>
+    {% if manage %}
+    <div class="actions">
+      {% if user.active and user.email and not user.archived_at %}
+      <form method="post" action="{{ url_for('users.invite', user_id=user.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="secondary outline small">{{ "Renvoyer l'invitation" if not user.password_hash else "Envoyer un lien de réinitialisation" }}</button>
+      </form>
+      {% endif %}
+      {% if user.email and not user.archived_at %}
+      <form method="post" action="{{ url_for('users.reset_password', user_id=user.id) }}" onsubmit="return confirm('Générer un mot de passe provisoire ? L\'ancien ne fonctionnera plus.')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="secondary outline small">Mot de passe provisoire</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+{% if manage %}
+<section class="card avatar-card">
+  <h2>Photo de profil</h2>
+  <div class="actions">
+    <form method="post" action="{{ url_for('users.set_avatar', user_id=user.id) }}" enctype="multipart/form-data" class="avatar-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="file" name="photo" accept="image/*" aria-label="Photo de profil" required>
+      <button type="submit" class="secondary small">{{ "Changer" if user.avatar else "Ajouter" }}</button>
+    </form>
+    {% if user.avatar %}
+    <form method="post" action="{{ url_for('users.remove_avatar', user_id=user.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="link-button">Retirer la photo</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<h2>Prêts</h2>
+{{ loan_table(loans, "Aucun prêt.") }}
+{% if guaranteed %}
+<h2>Prêts dont {{ user.first_name }} est garant</h2>
+{{ loan_table(guaranteed) }}
+{% endif %}
+
+{% if manage %}
+<h2 id="sessions">Appareils connectés</h2>
+{% if sessions %}
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Appareil</th><th>Adresse IP</th><th>Connecté le</th><th>Dernière activité</th><th></th></tr></thead>
+  <tbody>
+  {% for s in sessions %}
+  <tr>
+    <td>{{ device_label(s.user_agent) }}{% if s.id == current_user.session_token %} <small class="muted">(cet appareil)</small>{% endif %}</td>
+    <td><small>{{ s.ip or "—" }}</small></td>
+    <td><small>{{ s.created_at | datetime_fr }}</small></td>
+    <td><small>{{ (s.last_seen_at or s.created_at) | datetime_fr }}</small></td>
+    <td class="actions">{% if s.id != current_user.session_token %}
+      <form method="post" action="{{ url_for('users.revoke_session', user_id=user.id, session_id=s.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="link-button">Déconnecter</button>
+      </form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<div class="actions">
+  <form method="post" action="{{ url_for('users.revoke_sessions', user_id=user.id) }}" onsubmit="return confirm('Déconnecter tous ces appareils ?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="secondary outline small">Déconnecter {{ "mes autres appareils" if user.id == current_user.id else "tous les appareils" }}</button>
+  </form>
+</div>
+{% else %}
+<p class="muted">Aucune session ouverte.</p>
+{% endif %}
+
+<h2>Journal</h2>
+{% if activities %}
+<ul class="timeline">
+  {% for a in activities %}
+  <li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user and a.user_id != user.id %} · par {{ a.user.full_name }}{% endif %}</small><br>{{ a.message }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">Rien pour l'instant.</p>
+{% endif %}
+
+<section class="card danger-zone">
+  <h2>Gestion de la fiche</h2>
+  <div class="actions">
+    {% if user.archived_at %}
+    <form method="post" action="{{ url_for('users.unarchive', user_id=user.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="secondary">Sortir des archives</button>
+    </form>
+    {% elif user.id != current_user.id %}
+    <form method="post" action="{{ url_for('users.archive', user_id=user.id) }}" onsubmit="return confirm('Archiver {{ user.full_name }} ? La personne perd son accès ; son historique est conservé.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="secondary outline">Archiver</button>
+    </form>
+    {% endif %}
+    <a href="{{ url_for('users.merge', user_id=user.id) }}" role="button" class="secondary outline">Fusionner avec une autre fiche…</a>
+    {% if deletable and user.id != current_user.id %}
+    <form method="post" action="{{ url_for('users.delete', user_id=user.id) }}" onsubmit="return confirm('Supprimer définitivement la fiche de {{ user.full_name }} ?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="contrast outline">Supprimer</button>
+    </form>
+    {% endif %}
+  </div>
+  <p class="muted small">Archiver coupe l'accès et masque la fiche des listes, sans rien perdre. Supprimer n'est
+    possible que pour une fiche sans aucun historique. Fusionner rassemble deux fiches d'une même personne.</p>
+</section>
+{% endif %}
+{% endblock %}

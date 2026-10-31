@@ -88,9 +88,33 @@ def test_custom_roles_migration_keeps_linked_rows(migrated_app):
                      "PRAGMA integrity_check", "PRAGMA foreign_key_check")
     assert counts == [[(1,)], [(1,)], [("ok",)], []]
 
-    downgrade(MIGRATIONS, revision="-1")
+    downgrade(MIGRATIONS, revision="c4d8e1f2a6b9")  # avant les rôles personnalisés
     users, sessions = run_sql(path, "SELECT role FROM user", "SELECT count(*) FROM login_session")
     assert users == [("emprunteur",)] and sessions == [(1,)]
     with pytest.raises(sqlite3.IntegrityError):
         run_sql(path, "UPDATE user SET role = 'regie' WHERE id = 1")
+    upgrade(MIGRATIONS)
+
+
+def test_account_management_migration_keeps_linked_rows(migrated_app):
+    """Ajouter les colonnes de `user` et `login_session` ne recrée pas `user` : les données liées restent."""
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="d5f9a2b3c7e1")
+    run_sql(path,
+            "INSERT INTO user (id, first_name, last_name, email, role, active, ical_token) "
+            "VALUES (1, 'Alice', 'Martin', 'alice@ohn.test', 'admin', 1, 'tok')",
+            "INSERT INTO login_session (id, user_id, created_at) VALUES ('session-1', 1, '2026-10-31')",
+            "INSERT INTO activity (user_id, action, message) VALUES (1, 'test', 'référence user')")
+    upgrade(MIGRATIONS)
+    rows = run_sql(path, "SELECT id, last_login_at, archived_at FROM user",
+                   "SELECT id, last_seen_at, user_agent, ip FROM login_session",
+                   "SELECT user_id, target_user_id FROM activity", "PRAGMA foreign_key_check")
+    assert rows == [[(1, None, None)], [("session-1", None, None, None)], [(1, None)], []]
+    run_sql(path, "INSERT INTO account_token (id, user_id, purpose, created_at, expires_at) "
+                  "VALUES ('h', 1, 'invite', '2026-10-31', '2026-11-07')",
+            "UPDATE activity SET target_user_id = 1")
+    downgrade(MIGRATIONS, revision="d5f9a2b3c7e1")
+    users, sessions, activity = run_sql(path, "SELECT id FROM user", "SELECT id FROM login_session",
+                                        "SELECT user_id FROM activity")
+    assert users == [(1,)] and sessions == [("session-1",)] and activity == [(1,)]
     upgrade(MIGRATIONS)

@@ -26,6 +26,7 @@ Inspirée de [Shelf.nu](https://www.shelf.nu/), elle est **entièrement en fran�
 - **Calendrier**, avec un flux iCal personnel pour Google Agenda, Outlook ou Apple Calendrier.
 - **Rappels automatiques** : retards, retours, entretiens, stocks bas. Ils s'affichent dans l'appli, et partent aussi par email si un serveur SMTP est configuré.
 - **Rapports** (valeur du parc pour l'assurance et l'AG, utilisation, retards, gardes, coûts d'entretien) et **import / export** CSV ou Excel.
+- **Comptes** : invitations et mot de passe oublié par email, espace « Mon compte » avec les appareils connectés, fiche détaillée de chaque personne, archivage, fusion de doublons et actions groupées.
 - **Connexion OIDC** facultative (Authentik, Keycloak, Google, Microsoft…), avec rôles déduits des groupes.
 - Interface **adaptée au téléphone**, installable comme une application (PWA).
 

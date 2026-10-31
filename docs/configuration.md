@@ -29,7 +29,7 @@ La page **Paramètres** de l'appli (admins) affiche les principales valeurs en c
 
 ## Emails (facultatif)
 
-Les emails sont activés dès que `SMTP_HOST` et un expéditeur (`SMTP_FROM` ou `SMTP_USER`) sont renseignés. Sans eux, les notifications restent dans l'appli.
+Les emails sont activés dès que `SMTP_HOST` et un expéditeur (`SMTP_FROM` ou `SMTP_USER`) sont renseignés. Sans eux, les notifications restent dans l'appli, les liens d'invitation s'affichent à l'admin pour qu'il les transmette, et « Mot de passe oublié » et le changement d'email par la personne elle-même sont indisponibles. `BASE_URL` doit être l'adresse publique : elle sert à construire les liens des emails.
 
 | Variable | Défaut | Description |
 |---|---|---|

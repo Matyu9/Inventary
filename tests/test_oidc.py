@@ -545,7 +545,7 @@ def test_no_remember_by_default(oclient, idp):
 
 def test_oidc_only_account_has_no_password_page(oclient, idp):
     oidc_login(oclient, idp, ALICE)
-    assert 'href="/mot-de-passe"' not in me(oclient).text
+    assert 'href="/mot-de-passe"' not in oclient.get("/mon-compte").text
     r = oclient.get("/mot-de-passe", follow_redirects=True)
     assert "pas de mot de passe" in r.text
 
@@ -553,7 +553,7 @@ def test_oidc_only_account_has_no_password_page(oclient, idp):
 def test_linked_account_with_password_keeps_password_page(oclient, idp):
     make_user(Role.PROF, email="alice@ohn.test")
     oidc_login(oclient, idp, ALICE)
-    assert 'href="/mot-de-passe"' in me(oclient).text
+    assert 'href="/mot-de-passe"' in oclient.get("/mon-compte").text
 
 
 def test_password_login_still_works_alongside(oclient, idp):
@@ -640,6 +640,33 @@ def test_role_groups_alone_enable_sync(tmp_path, monkeypatch):
         oidc_login(client, idp, {**ALICE, "groups": []})
         db.session.refresh(user)
         assert user.role == Role.EMPRUNTEUR
+    finally:
+        db.session.remove()
+        db.drop_all()
+        ctx.pop()
+
+
+def test_oidc_only_access_without_password_or_link(tmp_path, monkeypatch):
+    app, ctx, idp = make_oidc_app(tmp_path, monkeypatch, OIDC_ONLY=True)
+    try:
+        client = app.test_client()
+        admin = make_user(Role.ADMIN, email="admin@ohn.test")
+        from app.services import sessions
+        with app.test_request_context():
+            sessions.start(admin)
+            cookie_user = admin.get_id()
+        with client.session_transaction() as s:
+            s["_user_id"] = cookie_user
+            s["_fresh"] = True
+        r = client.post("/utilisateurs/nouveau", data={
+            "first_name": "Léa", "last_name": "Durand", "email": "lea@ohn.test", "member_status": "",
+            "role": Role.EMPRUNTEUR, "active": "y"})
+        assert "Se connecter avec Authentik" in r.text and "/lien/" not in r.text
+        assert db.session.scalar(db.select(db.func.count()).select_from(User).filter_by(email="lea@ohn.test")) == 1
+        assert client.get("/mot-de-passe-oublie").status_code in (302, 404)
+        client.post("/deconnexion")
+        assert client.get("/mot-de-passe-oublie").status_code == 404
+        assert "mot-de-passe-oublie" not in client.get("/connexion").text
     finally:
         db.session.remove()
         db.drop_all()

@@ -143,9 +143,22 @@ body.app { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr)
 .who { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
 .who strong { font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .who small { color: var(--text-3); font-size: .75rem; }
+a.who { color: inherit; text-decoration: none; }
+a.who:hover strong { text-decoration: underline; }
 .avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2);
           border: 1px solid var(--border); color: var(--text-2); font-size: .78rem; font-weight: 650; flex: none; }
 .avatar.small { width: 32px; height: 32px; }
+.avatar { overflow: hidden; flex: none; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar.tiny { width: 24px; height: 24px; font-size: .62rem; }
+.avatar.large { width: 96px; height: 96px; font-size: 2rem; }
+.person { display: flex; align-items: center; gap: .6rem; }
+.page-head .person, .profile-head { gap: 1rem; }
+.profile-head { margin-bottom: 1.25rem; }
+.profile-head h1 { margin-bottom: .2rem; }
+.avatar-form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.avatar-form input[type=file] { margin: 0; width: auto; flex: 1 1 12rem; }
+.avatar-card { margin-bottom: 1.5rem; }
 
 .topbar {
   position: sticky; top: 0; z-index: 20; height: var(--topbar-h); display: flex; align-items: center; gap: .75rem;
@@ -233,6 +246,11 @@ body.guest .error-card { margin: 0 auto; }
 .status-valide { background: var(--info-bg); color: var(--info); border-color: transparent; }
 .status-en_cours { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
 .status-refuse, .status-annule, .status-rendu { color: var(--text-3); }
+.account-actif { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.account-invite, .account-jamais { background: var(--info-bg); color: var(--info); border-color: transparent; }
+.account-sans_acces, .account-archive { color: var(--text-3); }
+.danger-zone { margin-top: 2rem; }
+.card .props + .actions { margin-top: 1rem; }
 .badge.overdue { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
 .tag { display: inline-block; padding: .05rem .5rem; margin: .1rem .15rem; border-radius: 4px; font-size: .74rem; font-weight: 550;
        background: var(--brand-soft); color: var(--brand); }

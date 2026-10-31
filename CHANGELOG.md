@@ -16,11 +16,19 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 - **Vérification du matériel d'un prêt** (« Rien oublié ? ») : sur un prêt validé ou en cours, on scanne tout ce qu'on a en main (en fin de concert, avant de quitter la salle). La page montre les manquants et les pointés, se met à jour quand plusieurs personnes scannent en même temps, gère les kits et les objets en quantité, et permet de pointer à la main.
 - **Liste du matériel à imprimer** pour chaque prêt : feuille A4 avec cases « Départ » et « Retour », contenu des kits, lieux de rangement, signatures et QR code vers la vérification.
 - **Rôles sur mesure** (menu Rôles, admin) : créer des rôles (« Régisseur », « Secrétariat »…) en cochant leurs droits, dupliquer un rôle existant, renommer les rôles de base et modifier les droits du Professeur et de l'Emprunteur. L'Administrateur garde toujours tous les droits. Chaque rôle peut indiquer des groupes OIDC dont les membres le reçoivent à la connexion.
+- **Gestion des comptes** :
+  - **Invitations** : ouvrir l'accès envoie un lien par email pour choisir son mot de passe (valable 7 jours, à usage unique). Sans email configuré, le lien s'affiche pour être transmis. Le mot de passe provisoire reste disponible depuis la fiche.
+  - **Mot de passe oublié** depuis la page de connexion : lien de réinitialisation par email (1 heure), sans révéler si le compte existe, avec limitation des demandes.
+  - **Mon compte** : profil, changement d'email confirmé par un lien envoyé à la nouvelle adresse (l'ancienne est prévenue), mot de passe, et liste des appareils connectés avec déconnexion à distance.
+  - **Fiche détaillée** d'une personne : coordonnées, statut et dernière connexion, prêts, appareils connectés, journal.
+  - **Photos de profil** : chacun ajoute la sienne dans Mon compte, les gestionnaires de comptes depuis la fiche. Recadrées en carré (256 px, sans métadonnées EXIF), elles remplacent les initiales dans le menu, la liste des personnes et les fiches, et ne sont servies qu'aux personnes connectées.
+  - **Cycle de vie** : archiver une personne qui part (historique conservé), supprimer une fiche jamais utilisée, fusionner deux doublons (avec suggestions), actions groupées (ouvrir ou couper l'accès, archiver, changer de rôle) et filtre par statut.
 - **Icônes Papicons** (association Papillon, licence MIT) dans toute l'appli.
 - **« Enregistrer et créer un autre »** à la création d'un objet : le formulaire suivant reprend la catégorie et le lieu, pour enchaîner les saisies.
 
 ### Sécurité
 
+- Un gestionnaire de comptes qui n'est pas administrateur ne peut plus générer de mot de passe provisoire pour un compte administrateur (ce qui permettait de le prendre).
 - Seul un administrateur peut donner ou retirer le rôle d'administrateur, modifier le compte d'un admin ou gérer les rôles.
 - **Sessions révocables** : la déconnexion invalide le cookie de l'appareil, même copié ailleurs. Un changement de mot de passe déconnecte les autres appareils. La réinitialisation par un admin et la désactivation déconnectent tous les appareils. Chacun devra se reconnecter une fois après la mise à jour.
 - L'export CSV d'un inventaire physique neutralise les formules (nom d'objet commençant par `=`, `+`, `-` ou `@`), comme les autres exports.

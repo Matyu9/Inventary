@@ -5,6 +5,7 @@ Ce guide décrit l'inventaire écran par écran. Il s'adresse aux trois rôles :
 ## Sommaire
 
 - [Se connecter](#se-connecter)
+- [Mon compte](#mon-compte)
 - [Les trois rôles](#les-trois-rôles)
 - [Le tableau de bord](#le-tableau-de-bord)
 - [L'inventaire](#linventaire)
@@ -43,12 +44,22 @@ Ce guide décrit l'inventaire écran par écran. Il s'adresse aux trois rôles :
 
 ![Page de connexion](images/connexion.png)
 
-- **Avec email et mot de passe.** Le compte est créé par un administrateur, qui vous communique un **mot de passe provisoire**. À la première connexion, l'appli demande d'en choisir un nouveau, d'au moins 8 caractères. Vous pourrez le changer plus tard via le menu de votre avatar, en haut à droite, puis **Mot de passe**.
+- **Avec email et mot de passe.** Le compte est créé par un administrateur. Vous recevez une **invitation** par email (ou l'admin vous transmet le lien) : le lien, valable 7 jours, permet de choisir votre mot de passe, d'au moins 8 caractères. Si l'admin vous a plutôt donné un **mot de passe provisoire**, l'appli demande d'en choisir un nouveau à la première connexion. Vous pourrez le changer plus tard dans [Mon compte](#mon-compte).
 - **Avec le compte de l'association** : si le bouton « Se connecter avec … » est affiché, la connexion passe par le fournisseur d'identité de l'association (Authentik, Google…). Voir [la doc OIDC](oidc-authentik.md#comptes-et-rôles) pour le rattachement des comptes.
 - Après 8 échecs en 15 minutes, la connexion est bloquée quelques minutes pour cet email ou cette adresse.
 - **Rester connecté** garde la session ouverte sur cet appareil. À éviter sur un ordinateur partagé.
 
-Mot de passe oublié : demandez à un administrateur de générer un nouveau mot de passe provisoire.
+**Mot de passe oublié ?** Le lien sous le formulaire de connexion envoie un email de réinitialisation (valable 1 heure, utilisable une seule fois). Choisir un nouveau mot de passe déconnecte vos autres appareils. Si l'envoi d'emails n'est pas configuré, demandez à un administrateur un nouveau lien ou un mot de passe provisoire.
+
+## Mon compte
+
+Cliquez sur votre nom (en bas du menu) ou sur votre avatar, puis **Mon compte** :
+
+- **Profil** : prénom, nom et téléphone ;
+- **Photo de profil** : recadrée en carré, elle remplace vos initiales dans le menu et apparaît dans la liste des personnes et sur votre fiche. Elle n'est visible que des personnes connectées à l'appli ;
+- **Changer d'adresse email** : un lien de confirmation part vers la nouvelle adresse, et l'ancienne reste active tant qu'il n'a pas été suivi. L'ancienne adresse reçoit ensuite un message de prévenance. Votre mot de passe actuel est demandé ;
+- **Changer mon mot de passe** ;
+- **Mes appareils connectés** : navigateur, adresse IP, date de connexion et dernière activité de chaque appareil. Déconnectez un appareil que vous ne reconnaissez pas, ou tous vos autres appareils d'un coup.
 
 ## Les trois rôles
 
@@ -390,13 +401,20 @@ Les lignes en erreur sont ignorées, les autres importées. Les dates (`15/03/20
 ![Liste des personnes](images/utilisateurs.png)
 
 - **Les profs** peuvent créer des **fiches emprunteur**, sans accès à l'appli, pour pouvoir leur prêter du matériel.
+- La liste montre le **statut** de chaque personne (actif, jamais connecté, invitation en attente, sans accès, archivé) et sa **dernière connexion**. Un filtre par statut complète le filtre par rôle ; les fiches archivées n'apparaissent qu'avec le filtre « Archivé ».
+- Un clic sur un nom ouvre la **fiche détaillée** : coordonnées, accès, prêts en cours et passés, prêts dont la personne est garante. Les gestionnaires de comptes y voient aussi les **appareils connectés** (avec déconnexion un par un ou tous d'un coup) et le **journal** des actions faites par la personne ou la concernant.
 - **Les admins** créent et modifient tous les comptes :
   - **Rôle** : administrateur, professeur, emprunteur ou un [rôle sur mesure](#rôles-sur-mesure).
-  - **Peut se connecter** : ouvre l'accès, ce qui demande un email. L'appli génère alors un **mot de passe provisoire**, affiché **une seule fois**. Transmettez-le à la personne, qui devra le changer à sa première connexion.
-  - **Nouveau mot de passe provisoire** : en cas d'oubli.
-  - Décocher **Peut se connecter** coupe l'accès immédiatement, y compris pour une personne déjà connectée. L'historique et les prêts sont conservés.
+  - **Peut se connecter** : ouvre l'accès, ce qui demande un email. L'appli envoie une **invitation** : un lien valable 7 jours pour choisir son mot de passe. Sans email configuré (ou si l'envoi échoue), le lien s'affiche **une seule fois** pour que vous le transmettiez.
+  - Depuis la fiche : **Renvoyer l'invitation** (ou **Envoyer un lien de réinitialisation** si la personne a déjà un mot de passe), et **Mot de passe provisoire** en dernier recours, à transmettre de vive voix. Un nouveau lien annule le précédent.
+  - Décocher **Peut se connecter** coupe l'accès immédiatement, y compris pour une personne déjà connectée, et annule les liens en attente. L'historique et les prêts sont conservés.
+- **Actions groupées** : cochez des personnes dans la liste, puis **Ouvrir l'accès** (avec invitation par email), **Couper l'accès**, **Archiver** ou **Changer le rôle**. Les personnes qui ne s'y prêtent pas (sans email, avec des prêts en cours, votre propre compte…) sont ignorées et listées.
+- **Gestion de la fiche** (en bas de la fiche détaillée) :
+  - **Archiver** : pour une personne qui quitte l'association. Elle perd son accès et disparaît des listes et des choix (emprunteur, garant), mais tout son historique reste. Impossible tant qu'elle a des prêts en cours ou à venir, comme emprunteuse ou garante. **Sortir des archives** la remet dans les listes, sans accès.
+  - **Supprimer** : seulement pour une fiche sans aucun historique (créée par erreur, par exemple).
+  - **Fusionner** : deux fiches pour la même personne (créée deux fois, ou fiche emprunteur puis compte). La fiche choisie est conservée et récupère les prêts, notes, entretiens, notifications et le journal de l'autre, ainsi que l'email, le téléphone, le pupitre ou la photo qui lui manquent. L'appli propose les doublons probables (même nom, email ou téléphone).
 - Un admin ne peut pas retirer ses propres droits d'administrateur, pour éviter de se retrouver sans aucun admin.
-- Seul un admin peut donner ou retirer le rôle d'administrateur, ou modifier le compte d'un admin.
+- Seul un admin peut donner ou retirer le rôle d'administrateur, ou modifier, archiver ou réinitialiser le compte d'un admin.
 
 Avec la connexion OIDC et des groupes configurés, les rôles peuvent aussi venir du fournisseur d'identité : voir [Rôles d'après les groupes](oidc-authentik.md#rôles-daprès-les-groupes).
 

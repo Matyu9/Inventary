@@ -73,10 +73,18 @@ class User(UserMixin, TimestampMixin, db.Model):
     oidc_sub = db.Column(db.String(255), unique=True, index=True)
     # Rôle attribué d'après les groupes OIDC (et non par un admin) : il suit les groupes.
     role_from_oidc = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+    last_login_at = db.Column(db.DateTime)
+    # Fiche archivée : plus d'accès, masquée des listes et des choix, historique conservé.
+    archived_at = db.Column(db.DateTime)
+    avatar = db.Column(db.String(255))  # photo de profil, relative à UPLOAD_DIR (avatars/….jpg)
 
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def initials(self):
+        return f"{self.first_name[:1]}{self.last_name[:1]}".upper()
 
     @property
     def is_active(self):  # utilisé par Flask-Login
@@ -112,6 +120,28 @@ class LoginSession(db.Model):
     id = db.Column(db.String(64), primary_key=True)  # jeton secret
     user_id = db.Column(db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    last_seen_at = db.Column(db.DateTime)
+    user_agent = db.Column(db.String(255))
+    ip = db.Column(db.String(45))
+
+    user = db.relationship("User")
+
+
+class AccountToken(db.Model):
+    """Lien à usage unique envoyé par email : invitation, mot de passe oublié, changement d'email.
+
+    Seule l'empreinte SHA-256 du jeton est stockée : une fuite de la base ne donne aucun lien valable.
+    """
+    INVITE = "invite"
+    RESET = "reset"
+    EMAIL = "email"
+
+    id = db.Column(db.String(64), primary_key=True)  # empreinte du jeton
+    user_id = db.Column(db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    purpose = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(255))  # nouvelle adresse, pour un changement d'email
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    expires_at = db.Column(db.DateTime, nullable=False)
 
     user = db.relationship("User")
 
@@ -123,6 +153,8 @@ def load_user(user_id):
     if login is None or str(login.user_id) != user_id:
         return None
     login.user.session_token = token
+    from .services.sessions import touch
+    touch(login)
     return login.user
 
 
@@ -559,8 +591,11 @@ class Activity(db.Model):
     loan_id = db.Column(db.ForeignKey("loan.id", ondelete="CASCADE"))
     changes = db.Column(db.JSON)  # {champ: [ancien, nouveau]}
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now(), index=True)
+    # Personne concernée par l'action (compte créé, rôle changé…), à distinguer de son auteur `user_id`.
+    target_user_id = db.Column(db.ForeignKey("user.id", ondelete="SET NULL"), index=True)
 
-    user = db.relationship("User")
+    user = db.relationship("User", foreign_keys=[user_id])
+    target_user = db.relationship("User", foreign_keys=[target_user_id])
 
 
 class Notification(db.Model):

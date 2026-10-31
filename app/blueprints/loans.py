@@ -50,7 +50,8 @@ class LoanForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        people = db.session.scalars(db.select(User).order_by(User.last_name, User.first_name)).all()
+        people = db.session.scalars(db.select(User).where(User.archived_at.is_(None))
+                                    .order_by(User.last_name, User.first_name)).all()
         self.borrower_id.choices = [(0, "— choisir —")] + [(u.id, user_label(u)) for u in people]
         if can(current_user, "loan.validate"):
             guarantors = holders("loan.guarantee")

@@ -9,7 +9,8 @@ from datetime import datetime
 from flask import url_for
 
 from ..extensions import db
-from ..models import (ConsumptionMode, Item, ItemStatus, Kit, Loan, LoanLine, LoanStatus, LoanType, StockMovement)
+from ..models import (ConsumptionMode, Item, ItemStatus, Kit, Loan, LoanLine, LoanStatus, LoanType, StockMovement,
+                      get_live)
 from .activity import log
 from .notify import admins, notify
 
@@ -295,7 +296,7 @@ def build_lines(item_ids, quantities, kit_ids):
     """Construit les lignes à partir du formulaire ; ignore les identifiants inconnus."""
     lines = []
     for item_id in dict.fromkeys(item_ids):
-        item = db.session.get(Item, item_id)
+        item = get_live(Item, item_id)
         if item is None:
             continue
         qty = quantities.get(item_id, 1) if item.is_quantity else 1
@@ -303,7 +304,7 @@ def build_lines(item_ids, quantities, kit_ids):
             raise LoanError(f"Quantité invalide pour {item.code}.")
         lines.append(LoanLine(item=item, quantity=qty))
     for kit_id in dict.fromkeys(kit_ids):
-        kit = db.session.get(Kit, kit_id)
+        kit = get_live(Kit, kit_id)
         if kit is None:
             continue
         if not kit.items:

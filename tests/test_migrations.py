@@ -118,3 +118,26 @@ def test_account_management_migration_keeps_linked_rows(migrated_app):
                                         "SELECT user_id FROM activity")
     assert users == [(1,)] and sessions == [("session-1",)] and activity == [(1,)]
     upgrade(MIGRATIONS)
+
+
+def test_trash_migration_keeps_linked_rows(migrated_app):
+    """Les colonnes de la corbeille s'ajoutent sans recréer `item` ni `kit` (référencées par les photos, prêts…)."""
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="f3b7d9e1a2c4")
+    run_sql(path,
+            "INSERT INTO category (id, name, type) VALUES (1, 'Bois', 'materiel')",
+            "INSERT INTO kit (id, name, qr_token) VALUES (1, 'Valise', 'k1')",
+            "INSERT INTO item (id, code, name, category_id, condition, status, qr_token, tracking, quantity, kit_id) "
+            "VALUES (1, 'OHN-0001', 'Sax', 1, 'bon', 'disponible', 'i1', 'individuel', 1, 1)",
+            "INSERT INTO photo (item_id, filename, thumbnail) VALUES (1, 'p.jpg', 'p_t.jpg')")
+    upgrade(MIGRATIONS, revision="a9d3e5f7b2c8")
+    items, kits, photos, fk_errors = run_sql(
+        path, "SELECT id, kit_id, deleted_at, deleted_by_id FROM item",
+        "SELECT id, deleted_at, trashed_item_ids FROM kit", "SELECT item_id FROM photo", "PRAGMA foreign_key_check")
+    assert items == [(1, 1, None, None)] and kits == [(1, None, None)]
+    assert photos == [(1,)] and fk_errors == []
+    downgrade(MIGRATIONS, revision="f3b7d9e1a2c4")
+    items, photos, columns = run_sql(path, "SELECT id, kit_id FROM item", "SELECT item_id FROM photo",
+                                     "SELECT name FROM pragma_table_info('item') WHERE name = 'deleted_at'")
+    assert items == [(1, 1)] and photos == [(1,)] and columns == []
+    upgrade(MIGRATIONS)

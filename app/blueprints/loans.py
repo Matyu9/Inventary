@@ -9,7 +9,8 @@ from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
 from ..extensions import db, fold_contains
 from ..forms import FrDecimalField, amount_range
-from ..models import (Activity, Condition, Item, ItemStatus, Kit, Loan, LoanLine, LoanStatus, LoanType, Role, User)
+from ..models import (Activity, Condition, Item, ItemStatus, Kit, Loan, LoanLine, LoanStatus, LoanType, Role, User,
+                      get_live)
 from ..permissions import can, ensure, holders, require
 from ..services import loan_checks as checks
 from ..services import loans as svc
@@ -81,10 +82,10 @@ def selected_lines():
     kit_ids = source.getlist("kit_ids", type=int) + source.getlist("kit_id", type=int)
     rows = []
     for item_id in dict.fromkeys(item_ids):
-        if item := db.session.get(Item, item_id):
+        if item := get_live(Item, item_id):
             rows.append({"item": item, "qty": source.get(f"qty_{item_id}", 1, type=int)})
     for kit_id in dict.fromkeys(kit_ids):
-        if kit := db.session.get(Kit, kit_id):
+        if kit := get_live(Kit, kit_id):
             rows.append({"kit": kit})
     return rows
 

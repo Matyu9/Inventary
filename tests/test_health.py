@@ -37,7 +37,7 @@ def test_admin_gets_json(as_role, client, healthy):
     assert data["status"] in (health.OK, health.WARN)
     assert data["version"]
     names = {c["name"] for c in data["checks"]}
-    assert names == {"database", "migrations", "storage", "scheduler", "email"}
+    assert names == {"database", "migrations", "storage", "scheduler", "email", "trash"}
     by_name = {c["name"]: c for c in data["checks"]}
     assert by_name["migrations"]["status"] == health.OK
     assert by_name["scheduler"]["status"] == health.OK
@@ -151,3 +151,14 @@ def test_size_formatting():
     assert health._size(512) == "512 o"
     assert health._size(2048) == "2.0 Ko"
     assert health._size(5 * 1024 ** 3) == "5.0 Go"
+
+
+def test_trash_count(app, users):
+    from app.models import Category, Item
+    from app.services import trash
+    assert health.check_trash()["message"] == "Vide"
+    item = Item(code="OHN-0001", name="Sax", category=Category(name="Bois"))
+    db.session.add(item)
+    trash.trash_item(item, users[A])
+    db.session.commit()
+    assert health.check_trash()["message"].startswith("1 élément,")

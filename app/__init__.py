@@ -46,6 +46,7 @@ def create_app(config_class=Config):
     from .blueprints.scan import bp as scan_bp
     from .blueprints.settings import bp as settings_bp
     from .blueprints.transfer import bp as transfer_bp
+    from .blueprints.trash import bp as trash_bp
     from .blueprints.users import bp as users_bp
     from .cli import register_cli
     from .filters import register_filters
@@ -70,6 +71,7 @@ def create_app(config_class=Config):
     app.register_blueprint(audits_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(transfer_bp)
+    app.register_blueprint(trash_bp)
     register_cli(app)
     register_filters(app)
 

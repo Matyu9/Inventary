@@ -108,8 +108,10 @@ def edit_category(category_id):
 @require("item.delete")
 def delete_category(category_id):
     category = db.session.get(Category, category_id) or abort(404)
-    if category.items:
-        flash("Cette catégorie contient des objets : elle ne peut pas être supprimée.", "error")
+    used = db.session.scalar(db.select(Item.id).where(Item.category_id == category.id).limit(1)
+                             .execution_options(include_deleted=True))
+    if used:
+        flash("Cette catégorie contient des objets (corbeille comprise) : elle ne peut pas être supprimée.", "error")
     else:
         log("category.delete", f"Catégorie supprimée : {category.name}")
         db.session.delete(category)

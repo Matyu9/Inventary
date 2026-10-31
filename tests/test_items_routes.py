@@ -448,7 +448,13 @@ def test_admin_deletes_item_and_photos(client, as_role, app, ref):
     client.post(f"/objets/{item.id}/notes", data={"text": "note"})
     r = client.post(f"/objets/{item.id}/supprimer")
     assert r.status_code == 302
+    # D'abord la corbeille : masqué, mais photos et notes conservées.
     assert db.session.scalar(db.select(db.func.count(Item.id))) == 0
+    assert db.session.scalar(db.select(db.func.count(Note.id))) == 1
+    assert all(f.exists() for f in files)
+    # Puis la suppression définitive efface tout.
+    client.post(f"/corbeille/objets/{item.id}/supprimer")
+    assert db.session.scalar(db.select(db.func.count(Item.id)).execution_options(include_deleted=True)) == 0
     assert db.session.scalar(db.select(db.func.count(Note.id))) == 0
     assert not any(f.exists() for f in files)
 

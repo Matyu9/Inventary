@@ -12,7 +12,7 @@
     {% if can(current_user, "loan.request") and kit.items %}<a href="{{ url_for('loans.create', kit_id=kit.id) }}" role="button">Prêter / réserver</a>{% endif %}
     {% if can(current_user, "item.edit") %}<a href="{{ url_for('kits.edit', kit_id=kit.id) }}" role="button" class="secondary">Modifier</a>{% endif %}
     {% if can(current_user, "item.delete") %}
-    <form method="post" action="{{ url_for('kits.delete', kit_id=kit.id) }}" onsubmit="return confirm('Supprimer ce kit ? Les objets restent dans l\'inventaire.')">
+    <form method="post" action="{{ url_for('kits.delete', kit_id=kit.id) }}" onsubmit="return confirm('Mettre ce kit à la corbeille ? Les objets restent dans l\'inventaire. Il pourra être restauré pendant 30 jours.')">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="contrast outline">Supprimer</button>
     </form>

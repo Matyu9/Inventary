@@ -4,7 +4,7 @@ from flask import (Blueprint, Response, abort, current_app, flash, redirect, ren
 from flask_login import current_user, login_required
 
 from ..extensions import db
-from ..models import Item, Kit, Loan, LoanLine, LoanStatus
+from ..models import Item, Kit, Loan, LoanLine, LoanStatus, get_live
 from ..permissions import can, require
 from ..services.items import search_items
 from ..services.qr import find_by_token, qr_svg, qr_url, resolve_scan
@@ -65,7 +65,7 @@ def lookup():
 @bp.route("/objets/<int:item_id>/qr.svg")
 @require("inventory.view")
 def item_qr(item_id):
-    item = db.session.get(Item, item_id) or abort(404)
+    item = get_live(Item, item_id) or abort(404)
     svg = qr_svg(qr_url(item.qr_token))
     return Response(svg, mimetype="image/svg+xml",
                     headers={"Content-Disposition": f'inline; filename="{item.code}.svg"'})
@@ -74,7 +74,7 @@ def item_qr(item_id):
 @bp.route("/kits/<int:kit_id>/qr.svg")
 @require("inventory.view")
 def kit_qr(kit_id):
-    kit = db.session.get(Kit, kit_id) or abort(404)
+    kit = get_live(Kit, kit_id) or abort(404)
     return Response(qr_svg(qr_url(kit.qr_token)), mimetype="image/svg+xml",
                     headers={"Content-Disposition": f'inline; filename="kit-{kit.id}.svg"'})
 

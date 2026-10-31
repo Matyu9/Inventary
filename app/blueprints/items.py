@@ -10,9 +10,10 @@ from wtforms.validators import DataRequired, Length, NumberRange, Optional
 from ..extensions import db
 from ..forms import FrDecimalField, amount_range
 from ..models import (Activity, Category, CategoryType, ConsumptionMode, Condition, Item, ItemStatus,
-                      LoanLine, Location, Note, Photo, Tag, Tracking)
+                      LoanLine, Location, Note, Photo, Tag, Tracking, get_live)
 from ..permissions import can, ensure, require
 from ..services import items as svc
+from ..services import trash
 from ..services.activity import diff, log
 from ..services.photos import InvalidImage, delete_photo_files, save_photo
 from .auth import safe_next
@@ -88,7 +89,7 @@ def tag_names():
 
 
 def get_item(item_id):
-    return db.session.get(Item, item_id) or abort(404)
+    return get_live(Item, item_id) or abort(404)
 
 
 # ---------------------------------------------------------------------------
@@ -150,7 +151,7 @@ def bulk():
 def custom_fields_partial():
     """Fragment HTMX : champs perso de la catégorie choisie."""
     category_id = request.args.get("category_id", type=int)
-    item = db.session.get(Item, request.args.get("item_id", type=int) or 0)
+    item = get_live(Item, request.args.get("item_id", type=int) or 0)
     values = {v.field_id: v.value for v in item.custom_values} if item else {}
     return render_template("items/_custom_fields.html", fields=svc.fields_for_category(category_id),
                            values=values, errors={})
@@ -296,17 +297,14 @@ def retire(item_id):
 @require("item.delete")
 def delete(item_id):
     item = get_item(item_id)
-    if db.session.scalar(db.select(LoanLine.id).where(LoanLine.item_id == item.id).limit(1)):
-        flash("Cet objet a un historique de prêts : réformez-le plutôt que de le supprimer.", "error")
+    try:
+        trash.trash_item(item, current_user)
+    except trash.TrashError as exc:
+        flash(str(exc), "error")
         return redirect(url_for(".detail", item_id=item.id))
-    for photo in item.photos:
-        delete_photo_files(photo)
-    code = item.code
-    db.session.delete(item)
-    svc.prune_tags()
-    log("item.delete", f"Suppression de {code}")
     db.session.commit()
-    flash(f"Objet {code} supprimé.", "success")
+    flash(f"Objet {item.code} mis à la corbeille : il peut être restauré pendant {trash.RETENTION_DAYS} jours.",
+          "success")
     return redirect(url_for(".index"))
 
 

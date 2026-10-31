@@ -9,7 +9,7 @@ from wtforms.validators import DataRequired, Length, NumberRange, Optional, Vali
 
 from ..extensions import db
 from ..forms import FrDecimalField, amount_range
-from ..models import Item, ItemStatus, Maintenance, Reminder, User
+from ..models import Item, ItemStatus, Maintenance, Reminder, User, get_live
 from ..permissions import can, ensure, holders, require
 from ..services.activity import log
 
@@ -58,7 +58,7 @@ def _errors(form):
 @bp.route("/objets/<int:item_id>/entretiens", methods=["POST"])
 @require("maintenance.edit")
 def add(item_id):
-    item = db.session.get(Item, item_id) or abort(404)
+    item = get_live(Item, item_id) or abort(404)
     form = MaintenanceForm()
     if not form.validate():
         _errors(form)
@@ -96,7 +96,7 @@ def delete(maintenance_id):
 @bp.route("/objets/<int:item_id>/rappels", methods=["POST"])
 @require("reminder.edit")
 def add_reminder(item_id):
-    item = db.session.get(Item, item_id) or abort(404)
+    item = get_live(Item, item_id) or abort(404)
     form = ReminderForm()
     if not form.validate():
         _errors(form)

@@ -6,6 +6,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ### Ajouté
 
+- **Corbeille** (bouton en haut de l'inventaire et des kits, admin) : un objet ou un kit supprimé y reste 30 jours, invisible partout ailleurs, puis il est effacé automatiquement. On peut le restaurer tel quel (un kit récupère ses objets) ou le supprimer définitivement. Seul un administrateur peut vider la corbeille.
 - **État de l'installation** (Paramètres, admin) : page `/sante` et sa version JSON `/health` qui vérifient la base, les migrations, l'espace disque, le passage des rappels automatiques et les emails. Réponse `503` en cas de problème, `404` pour qui ne gère pas les paramètres.
 - **Déconnecter tout le monde** (Paramètres, admin) : ferme toutes les sessions sauf la sienne, y compris celles ouvertes avec « Rester connecté ». La page affiche aussi le nombre de sessions ouvertes.
 - **Pages d'erreur** soignées (400, 403, 404, 405, 413, 429, 500), avec un message en français et un lien de retour. Une page expirée (CSRF) l'explique clairement. La page 500 donne une référence à retrouver dans les logs et n'affiche aucun détail technique.

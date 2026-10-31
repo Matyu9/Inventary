@@ -129,10 +129,19 @@ def check_email():
                   f"{pending} email{'s' if pending > 1 else ''} en attente")
 
 
+def check_trash():
+    from . import trash
+
+    n = trash.count()
+    return _check("trash", "Corbeille", OK, f"{n} élément{'s' if n > 1 else ''}, effacé{'s' if n > 1 else ''} "
+                  f"{trash.RETENTION_DAYS} jours après la suppression" if n else "Vide")
+
+
 def report(now=None):
     from .. import __version__
 
-    checks = [check_database(), check_migrations(), check_storage(), check_scheduler(now), check_email()]
+    checks = [check_database(), check_migrations(), check_storage(), check_scheduler(now), check_email(),
+              check_trash()]
     statuses = {c["status"] for c in checks}
     status = ERROR if ERROR in statuses else WARN if WARN in statuses else OK
     return {"status": status, "version": __version__,

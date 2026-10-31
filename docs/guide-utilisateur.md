@@ -14,6 +14,7 @@ Ce guide décrit l'inventaire écran par écran. Il s'adresse aux trois rôles :
   - [Statuts et états](#statuts-et-états)
   - [Photos, notes, entretiens, rappels](#photos-notes-entretiens-rappels)
   - [Réformer ou supprimer](#réformer-ou-supprimer)
+  - [La corbeille](#la-corbeille)
   - [Actions groupées](#actions-groupées)
 - [Lieux, catégories, tags et champs personnalisés](#lieux-catégories-tags-et-champs-personnalisés)
 - [Kits](#kits)
@@ -151,7 +152,19 @@ Un objet **en entretien** ou **réformé** ne peut pas être prêté.
 Réservé aux **admins**.
 
 - **Réformer** retire l'objet du parc sans perdre son historique. C'est l'action normale pour un instrument vendu, perdu ou hors d'usage. Un objet actuellement prêté ne peut pas être réformé. **Réintégrer** le remet en service.
-- **Supprimer** efface la fiche. C'est possible seulement si l'objet n'a **jamais été prêté** : sinon, réformez-le.
+- **Supprimer** met l'objet à la **corbeille**. C'est possible seulement si l'objet n'a **jamais été prêté** (sinon, réformez-le) et s'il n'est pas sorti en ce moment.
+
+### La corbeille
+
+Bouton **Corbeille** en haut de l'inventaire et de la page Kits (admins). Un objet ou un kit supprimé y reste **30 jours** :
+
+- tant qu'il est dans la corbeille, il n'apparaît nulle part (inventaire, recherche, lieux, rapports, exports, inventaires physiques) et son QR code ne mène plus à rien. Son code reste réservé ;
+- **Restaurer** le remet exactement comme avant, avec ses photos, notes et entretiens. Un kit restauré récupère ses objets, sauf ceux qui ont rejoint un autre kit entre-temps ;
+- **Supprimer définitivement** l'efface tout de suite, avec ses photos et son historique ;
+- au bout de 30 jours, il est effacé automatiquement au passage des rappels ;
+- **Vider la corbeille** efface tout d'un coup. Seul un administrateur peut le faire.
+
+Les pointages d'un inventaire physique ne sont pas conservés pour un objet mis à la corbeille. Une catégorie ne peut pas être supprimée tant qu'un objet de la corbeille en fait partie.
 
 ### Actions groupées
 
@@ -179,7 +192,7 @@ Cochez des objets dans la liste pour :
 - La composition ne peut pas changer pendant un prêt en cours.
 - Un kit a son propre QR code. Le scanner pendant un inventaire physique compte tous ses objets.
 - Les consommables ne peuvent pas entrer dans un kit.
-- Seuls les admins suppriment un kit, et seulement s'il n'a jamais été prêté : sinon, retirez-en les objets si besoin.
+- Seuls les admins suppriment un kit, et seulement s'il n'a jamais été prêté : sinon, retirez-en les objets si besoin. Le kit part à la [corbeille](#la-corbeille) et ses objets restent dans l'inventaire.
 
 ## Consommables et stock
 
@@ -463,7 +476,7 @@ Droits par défaut des rôles de base (modifiables dans l'écran [Rôles](#rôle
 |---|:---:|:---:|:---:|
 | Voir l'inventaire, les kits, les lieux | ✅ | ✅ | — |
 | Créer et modifier objets, kits, lieux, catégories, photos, tags | ✅ | ✅ | — |
-| Réformer ou supprimer un objet ; supprimer un kit, un lieu, une catégorie | ✅ | — | — |
+| Réformer ou supprimer un objet ; supprimer un kit, un lieu, une catégorie ; restaurer depuis la corbeille | ✅ | — | — |
 | Ajouter une note | ✅ | ✅ | — |
 | Supprimer une note | ✅ | ses notes | — |
 | Enregistrer un entretien, un rappel | ✅ | ✅ | — |

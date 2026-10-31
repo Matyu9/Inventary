@@ -2,7 +2,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_login import current_user
 
 from ..extensions import db
-from ..models import Item, StockMovement, Tracking
+from ..models import Item, StockMovement, Tracking, get_live
 from ..permissions import require
 from ..services import stock
 
@@ -14,7 +14,7 @@ bp = Blueprint("consumables", __name__)
 def index():
     items = db.session.scalars(db.select(Item).where(Item.tracking == Tracking.QUANTITE).order_by(Item.name)).all()
     items.sort(key=lambda i: (not i.is_low_stock, i.name.lower()))
-    movements = db.session.scalars(db.select(StockMovement).order_by(StockMovement.created_at.desc(),
+    movements = db.session.scalars(db.select(StockMovement).join(StockMovement.item).order_by(StockMovement.created_at.desc(),
                                                                       StockMovement.id.desc()).limit(30)).all()
     return render_template("consumables/index.html", items=items, movements=movements, reasons=stock.REASONS)
 
@@ -22,7 +22,7 @@ def index():
 @bp.route("/objets/<int:item_id>/stock", methods=["POST"])
 @require("stock.move")
 def move(item_id):
-    item = db.session.get(Item, item_id) or abort(404)
+    item = get_live(Item, item_id) or abort(404)
     try:
         delta = stock.move(item, request.form.get("reason"), request.form.get("amount", type=int), current_user,
                            request.form.get("comment"))

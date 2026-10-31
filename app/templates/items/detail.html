@@ -16,7 +16,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="secondary outline">{{ "Réintégrer" if item.status == "réformé" else "Réformer" }}</button>
     </form>
-    <form method="post" action="{{ url_for('items.delete', item_id=item.id) }}" onsubmit="return confirm('Supprimer définitivement {{ item.code }} ?')">
+    <form method="post" action="{{ url_for('items.delete', item_id=item.id) }}" onsubmit="return confirm('Mettre {{ item.code }} à la corbeille ? Il pourra être restauré pendant 30 jours.')">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="contrast outline">Supprimer</button>
     </form>

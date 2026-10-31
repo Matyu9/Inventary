@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from ..extensions import db
 from ..models import (Item, Loan, LoanStatus, LoanType, Maintenance, Reminder, Tracking)
-from . import mailer
+from . import mailer, trash
 from .notify import admins, notify
 
 
@@ -14,7 +14,7 @@ def _loan_link(loan):
 def due_maintenances(until):
     """Échéances d'entretien jusqu'à `until`, en ne gardant que l'entretien le plus récent de chaque objet."""
     latest = {}
-    for m in db.session.scalars(db.select(Maintenance).order_by(Maintenance.date, Maintenance.id)):
+    for m in db.session.scalars(db.select(Maintenance).join(Maintenance.item).order_by(Maintenance.date, Maintenance.id)):
         latest[m.item_id] = m
     due = [m for m in latest.values() if m.next_due is not None and m.next_due <= until]
     return sorted(due, key=lambda m: m.next_due)
@@ -29,7 +29,7 @@ def run(now=None):
         counts[kind] = counts.get(kind, 0) + len(created)
 
     # Rappels manuels arrivés à échéance.
-    for reminder in db.session.scalars(db.select(Reminder).where(Reminder.sent.is_(False), Reminder.due_date <= today)):
+    for reminder in db.session.scalars(db.select(Reminder).join(Reminder.item).where(Reminder.sent.is_(False), Reminder.due_date <= today)):
         recipients = reminder.recipients or admins()
         add("rappels", notify(recipients, f"Rappel — {reminder.item.code} {reminder.item.name} : {reminder.message}",
                               f"/objets/{reminder.item_id}", kind="item.reminder", item=reminder.item))
@@ -88,8 +88,11 @@ def run(now=None):
                              f"/objets/{item.id}", dedup_key=f"lowstock:{item.id}:{week[0]}-{week[1]}",
                              kind="item.low_stock", item=item))
 
+    purged = trash.purge_expired(now)
     db.session.commit()
     emails = mailer.deliver_pending()
     total = sum(counts.values())
     detail = ", ".join(f"{k} : {v}" for k, v in counts.items() if v)
-    return f"{total} notification(s) créée(s){' (' + detail + ')' if detail else ''}, {emails} email(s) envoyé(s)."
+    cleaned = f", {purged} élément(s) de la corbeille effacé(s)" if purged else ""
+    return (f"{total} notification(s) créée(s){' (' + detail + ')' if detail else ''}, {emails} email(s) envoyé(s)"
+            f"{cleaned}.")

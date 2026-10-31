@@ -4,7 +4,8 @@ import uuid
 from datetime import date, datetime
 
 from flask_login import UserMixin
-from sqlalchemy import CheckConstraint, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, UniqueConstraint, event, func
+from sqlalchemy.orm import Session, declared_attr, with_loader_criteria
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .extensions import db, login_manager
@@ -18,6 +19,37 @@ class TimestampMixin:
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now())
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now(),
                            onupdate=datetime.now)
+
+
+class TrashableMixin:
+    """Objet ou kit mis à la corbeille (`deleted_at` renseigné) : masqué de toutes les requêtes, cf. _hide_trash."""
+    deleted_at = db.Column(db.DateTime, index=True)
+
+    @declared_attr
+    def deleted_by_id(cls):
+        return db.Column(db.ForeignKey("user.id", ondelete="SET NULL"))
+
+    @declared_attr
+    def deleted_by(cls):
+        return db.relationship("User", foreign_keys=[cls.deleted_by_id])
+
+
+def get_live(model, obj_id):
+    """db.session.get() hors corbeille : l'identity map peut encore contenir un élément tout juste supprimé."""
+    obj = db.session.get(model, obj_id) if obj_id is not None else None
+    return obj if obj is not None and obj.deleted_at is None else None
+
+
+@event.listens_for(Session, "do_orm_execute")
+def _hide_trash(state):
+    """Ajoute « pas dans la corbeille » à chaque SELECT (relations comprises).
+
+    Seule la corbeille lit les éléments supprimés, avec `execution_options(include_deleted=True)`. Les rechargements
+    d'attributs (is_column_load) ne sont pas filtrés : un objet tout juste mis à la corbeille reste lisible.
+    """
+    if state.is_select and not state.is_column_load and not state.execution_options.get("include_deleted"):
+        state.statement = state.statement.options(
+            with_loader_criteria(TrashableMixin, lambda cls: cls.deleted_at.is_(None), include_aliases=True))
 
 
 # ---------------------------------------------------------------------------
@@ -278,18 +310,20 @@ class ConsumptionMode:
     RETOURNABLE = "retournable"  # prêté en quantité et rendu (pupitres, câbles…)
 
 
-class Kit(TimestampMixin, db.Model):
+class Kit(TrashableMixin, TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text)
     location_id = db.Column(db.ForeignKey("location.id", ondelete="SET NULL"))
     qr_token = db.Column(db.String(32), unique=True, nullable=False, default=_token)
+    # Objets détachés à la mise à la corbeille : remis dans le kit s'il est restauré.
+    trashed_item_ids = db.Column(db.JSON)
 
     location = db.relationship("Location")
     items = db.relationship("Item", back_populates="kit", order_by="Item.code")
 
 
-class Item(TimestampMixin, db.Model):
+class Item(TrashableMixin, TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(20), unique=True, nullable=False)
     name = db.Column(db.String(160), nullable=False)
@@ -344,7 +378,9 @@ class Item(TimestampMixin, db.Model):
 
     @staticmethod
     def next_code(prefix):
-        codes = db.session.scalars(db.select(Item.code).where(Item.code.startswith(f"{prefix}-", autoescape=True)))
+        # Les codes des objets en corbeille restent réservés (ils peuvent être restaurés).
+        codes = db.session.scalars(db.select(Item.code).where(Item.code.startswith(f"{prefix}-", autoescape=True))
+                                   .execution_options(include_deleted=True))
         numbers = [int(c.rsplit("-", 1)[1]) for c in codes if c.rsplit("-", 1)[1].isdigit()]
         return f"{prefix}-{max(numbers, default=0) + 1:04d}"
 

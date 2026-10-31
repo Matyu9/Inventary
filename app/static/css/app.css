@@ -445,6 +445,7 @@ progress { height: .6rem; border-radius: 999px; }
              border-radius: 999px; padding: 0 .45rem; }
 .report-card { border-left: 4px solid var(--warn); }
 .report-card.found { border-left-color: var(--ok); }
+.report-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem; overflow-wrap: anywhere; }
 .report-card blockquote { margin: .5rem 0; white-space: pre-line; }
 .login-card .brand { padding: 0 0 1.25rem; }
 .login-card h1 { font-size: 1.35rem; }
@@ -499,6 +500,7 @@ progress { height: .6rem; border-radius: 999px; }
   table.responsive td[data-label=""]::before { content: none; }
   table.responsive tbody td, table.responsive tbody tr:hover td, table.responsive.striped tbody tr:nth-child(odd) td { background: transparent; }
   table.responsive .quick-move { flex: 1; min-width: 0; margin-top: .35rem; }
+  table.responsive td.actions { justify-content: flex-end; padding-top: .35rem; }
   table.responsive .quick-move select { flex: 1; min-width: 0; }
   .hbars li { grid-template-columns: 1fr auto; }
   .hbar-track { grid-column: 1 / -1; order: 3; }

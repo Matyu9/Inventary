@@ -97,6 +97,14 @@ def test_list_shows_builtin_roles(client, as_role):
         assert name in r.text
 
 
+def test_roles_list_becomes_cards_on_mobile(client, as_role):
+    """Sur mobile, « Modifier » et « Dupliquer » étaient hors de l'écran."""
+    as_role(A)
+    html = client.get("/roles").text
+    assert '<table class="striped responsive">' in html
+    assert html.count('data-label="Personnes"') == 3 and 'data-label="" class="actions"' in html
+
+
 def test_create_role(client, as_role):
     as_role(A)
     r = client.post("/roles/nouveau", data=role_form(

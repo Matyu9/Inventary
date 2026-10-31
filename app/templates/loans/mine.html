@@ -4,7 +4,8 @@
 {% block content %}
 <div class="page-head">
   <h1>Mes prêts</h1>
-  {% if can_request_loan() %}<a href="{{ url_for('loans.create') }}" role="button">Demander du matériel</a>{% endif %}
+  {% if can(current_user, "loan.request") %}<a href="{{ url_for('loans.create') }}" role="button">Nouvelle demande</a>
+  {% elif can_request_loan() %}<a href="{{ url_for('loans.create') }}" role="button">Demander du matériel</a>{% endif %}
 </div>
 {{ loan_table(as_borrower, "Vous n'avez jamais emprunté de matériel.") }}
 {% if to_confirm %}

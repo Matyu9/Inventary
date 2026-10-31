@@ -23,6 +23,9 @@ class Config:
     # Derrière un reverse proxy (Caddy, Traefik, nginx) : faire confiance à X-Forwarded-*.
     TRUST_PROXY = os.environ.get("TRUST_PROXY", "0") == "1"
     SESSION_COOKIE_SAMESITE = "Lax"
+    # Jeton CSRF valable toute la session (et non 1 h) : un formulaire resté ouvert sur un téléphone, comme celui
+    # d'un QR code, ne doit pas échouer à l'envoi. Il reste lié à la session et protégé par SameSite.
+    WTF_CSRF_TIME_LIMIT = None
     SESSION_COOKIE_SECURE = BASE_URL.startswith("https://")
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
     REMEMBER_COOKIE_SAMESITE = "Lax"

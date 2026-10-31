@@ -9,18 +9,18 @@
   </div>
   <a href="{{ url_for('roles.create') }}" role="button">+ Nouveau rôle</a>
 </div>
-<div class="overflow-auto"><table class="striped">
+<div class="overflow-auto"><table class="striped responsive">
   <thead><tr><th>Rôle</th><th>Droits</th><th>Groupes OIDC</th><th>Personnes</th><th></th></tr></thead>
   <tbody>
   {% for r in roles %}
   {% set members = counts.get(r.key, 0) %}
   <tr>
-    <td><strong>{{ r.name }}</strong>{% if r.builtin %} <small class="muted">(de base)</small>{% endif %}
-      {% if r.description %}<br><small class="muted">{{ r.description }}</small>{% endif %}</td>
-    <td>{{ "Tous" if r.key == "admin" else (r.permissions | length) ~ " / " ~ total }}</td>
-    <td><small>{{ r.oidc_groups or "—" }}</small></td>
-    <td><a href="{{ url_for('users.index', role=r.key) }}">{{ members }}</a></td>
-    <td class="actions">
+    <td data-label="Rôle"><span><strong>{{ r.name }}</strong>{% if r.builtin %} <small class="muted">(de base)</small>{% endif %}
+      {% if r.description %}<br><small class="muted">{{ r.description }}</small>{% endif %}</span></td>
+    <td data-label="Droits">{{ "Tous" if r.key == "admin" else (r.permissions | length) ~ " / " ~ total }}</td>
+    <td data-label="Groupes OIDC"><small>{{ r.oidc_groups or "—" }}</small></td>
+    <td data-label="Personnes"><a href="{{ url_for('users.index', role=r.key) }}">{{ members }}</a></td>
+    <td data-label="" class="actions">
       <a href="{{ url_for('roles.edit', key=r.key) }}">Modifier</a>
       {% if r.key != "admin" %}<a href="{{ url_for('roles.create', depuis=r.key) }}">Dupliquer</a>{% endif %}
       {% if not r.builtin %}

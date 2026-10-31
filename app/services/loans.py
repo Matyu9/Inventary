@@ -70,9 +70,12 @@ def _usage(start, end, statuses, exclude_loan_id=None):
     return used, holders
 
 
-def _describe(loan):
+def _describe(loan, show_people=True):
+    """« réservation n°3 du 01/11/2026 au 02/11/2026 pour Léa Martin » ; sans le nom pour qui ne voit pas
+    tous les prêts (un emprunteur ne doit pas apprendre qui emprunte quoi)."""
     period = f"du {loan.start:%d/%m/%Y}" + (f" au {loan.end:%d/%m/%Y}" if loan.end else " (sans date de fin)")
-    return f"{loan.type_label.lower()} n°{loan.id} {period} pour {loan.borrower.full_name}"
+    who = f" pour {loan.borrower.full_name}" if show_people else ""
+    return f"{loan.type_label.lower()} n°{loan.id} {period}{who}"
 
 
 def requested_needs(lines):
@@ -97,7 +100,7 @@ def requested_needs(lines):
     return needs
 
 
-def check_availability(lines, start, end, exclude_loan_id=None):
+def check_availability(lines, start, end, exclude_loan_id=None, show_people=True):
     """Renvoie (problèmes bloquants, avertissements). Les avertissements signalent des demandes concurrentes."""
     needs = requested_needs(lines)
     problems, warnings = [], []
@@ -118,9 +121,9 @@ def check_availability(lines, start, end, exclude_loan_id=None):
             if item.is_quantity:
                 problems.append(f"{label} : {capacity - used[item_id]} disponible(s) sur la période, {qty} demandé(s).")
             else:
-                problems.append(f"{label} est déjà pris : " + " ; ".join(_describe(l) for l in holders[item_id]) + ".")
+                problems.append(f"{label} est déjà pris : " + " ; ".join(_describe(l, show_people) for l in holders[item_id]) + ".")
         elif pending_used[item_id] + used[item_id] + qty > capacity:
-            warnings.append(f"{label} est aussi demandé dans : " + " ; ".join(_describe(l) for l in pending[item_id]) + ".")
+            warnings.append(f"{label} est aussi demandé dans : " + " ; ".join(_describe(l, show_people) for l in pending[item_id]) + ".")
     return problems, warnings
 
 
@@ -142,7 +145,7 @@ def _validate_period(loan_type, start, end):
 
 
 def create_request(*, loan_type, borrower, guarantor, requested_by, start, end, lines, title=None,
-                   comment=None, deposit_amount=None, awaiting_guarantor=False):
+                   comment=None, deposit_amount=None, awaiting_guarantor=False, show_people=True):
     """Crée une demande. Refuse si le matériel est déjà pris ; renvoie (prêt, avertissements).
 
     `awaiting_guarantor` : demande d'un emprunteur pour lui-même, que le garant doit d'abord accepter.
@@ -154,7 +157,7 @@ def create_request(*, loan_type, borrower, guarantor, requested_by, start, end, 
     if awaiting_guarantor and guarantor.id == borrower.id:
         raise LoanError("Le garant doit être une autre personne que l'emprunteur.")
     _validate_period(loan_type, start, end)
-    problems, warnings = check_availability(lines, start, end)
+    problems, warnings = check_availability(lines, start, end, show_people=show_people)
     if problems:
         raise LoanError(" ".join(problems))
     loan = Loan(type=loan_type, borrower=borrower, guarantor=guarantor, requested_by=requested_by, start=start,

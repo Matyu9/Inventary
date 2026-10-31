@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 
 from ..extensions import db
-from ..models import AuditScan, Item, ItemStatus, Kit, LoanLine
+from ..models import AuditScan, Item, ItemStatus, Kit, Loan, LoanLine, LoanStatus
 from .activity import log
 from .documents import delete_document_files
 from .items import prune_tags
@@ -74,6 +74,12 @@ def trash_kit(kit, user):
     for item in list(kit.items):
         item.kit = None
         log("kit.remove", f"Retiré du kit « {kit.name} » (kit mis à la corbeille)", item=item, user=user)
+    # Objets du kit déjà dans la corbeille : détachés aussi, sinon une fois restaurés ils resteraient liés à un
+    # kit invisible (et ne pourraient plus être prêtés seuls).
+    for item in db.session.scalars(db.select(Item).where(Item.kit_id == kit.id, Item.deleted_at.is_not(None))
+                                   .execution_options(include_deleted=True)):
+        item.kit_id = None
+        kit.trashed_item_ids.append(item.id)
     kit.deleted_at, kit.deleted_by = datetime.now(), user
     log("kit.trash", f"Kit mis à la corbeille : {kit.name}", kit=kit, user=user)
 
@@ -82,7 +88,12 @@ def restore_kit(kit, user):
     """Restaure le kit et y remet ses anciens objets, sauf ceux entrés entre-temps dans un autre kit."""
     kit.deleted_at, kit.deleted_by = None, None
     ids = kit.trashed_item_ids or []
-    back = db.session.scalars(db.select(Item).where(Item.id.in_(ids), Item.kit_id.is_(None))).all() if ids else []
+    # Comme pour un ajout à la main : pas un objet entré dans un autre kit, ni un objet prêté seul entre-temps.
+    lent = (db.select(LoanLine.id).join(Loan).where(
+        LoanLine.item_id == Item.id, LoanLine.returned_at.is_(None),
+        Loan.status.in_((LoanStatus.DEMANDE, LoanStatus.VALIDE, LoanStatus.EN_COURS))).exists())
+    back = db.session.scalars(db.select(Item).where(Item.id.in_(ids), Item.kit_id.is_(None), ~lent)).all() \
+        if ids else []
     for item in back:
         item.kit = kit
         log("kit.add", f"Remis dans le kit « {kit.name} » (kit restauré)", item=item, user=user)

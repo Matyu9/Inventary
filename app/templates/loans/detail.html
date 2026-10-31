@@ -20,6 +20,10 @@
     {% if loan.status == "valide" and can(current_user, "loan.checkout", loan) %}
       {{ post_button("loans.checkout", "Remettre le matériel") }}
     {% endif %}
+    {% if loan.status in ("valide", "en_cours") and can(current_user, "loan.verify") %}
+      <a href="{{ url_for('loans.verify', loan_id=loan.id) }}" role="button" class="{{ '' if loan.status == 'en_cours' else 'secondary' }}">Vérifier le matériel</a>
+    {% endif %}
+    <a href="{{ url_for('loans.checklist', loan_id=loan.id) }}" role="button" class="secondary outline" target="_blank">Liste à imprimer</a>
     {% if loan.status in ("demande", "valide") and can(current_user, "loan.cancel", loan) %}
       {{ post_button("loans.cancel", "Annuler", "secondary outline", "Annuler ce prêt ?") }}
     {% endif %}

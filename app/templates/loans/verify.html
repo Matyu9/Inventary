@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Vérification — prêt n°{{ loan.id }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="muted crumbs"><a href="{{ url_for('loans.detail', loan_id=loan.id) }}">Prêt n°{{ loan.id }}</a> › vérification</p>
+    <h1>Rien oublié ?</h1>
+    <small class="muted">{{ loan.title or loan.type_label }} · {{ loan.borrower.full_name }} — scannez tout ce que vous avez en main avant de partir.</small>
+  </div>
+  <div class="actions">
+    <a href="{{ url_for('loans.checklist', loan_id=loan.id) }}" role="button" class="secondary outline" target="_blank">Liste à imprimer</a>
+    <form method="post" action="{{ url_for('loans.verify_reset', loan_id=loan.id) }}" onsubmit="return confirm('Effacer le pointage et recommencer ?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="secondary outline">Recommencer</button>
+    </form>
+  </div>
+</div>
+
+<article>
+  <form id="loan-check-form" data-camera-button="loan-check-camera" method="post" action="{{ url_for('loans.verify_scan', loan_id=loan.id) }}"
+        hx-post="{{ url_for('loans.verify_scan', loan_id=loan.id) }}" hx-target="#scan-feedback" hx-swap="afterbegin"
+        hx-on::after-request="if (event.detail.successful) { this.code.value = ''; this.code.focus(); }">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset role="group">
+      <input name="code" placeholder="Code ({{ code_prefix }}-0042) ou lecture d'une douchette" aria-label="Code" autocomplete="off" autofocus required>
+      <button type="submit">Valider</button>
+    </fieldset>
+  </form>
+  <div id="scan-reader"></div>
+  <button type="button" id="loan-check-camera" class="secondary">Scanner avec la caméra</button>
+  <p id="scan-status" class="muted" aria-live="polite"></p>
+  <div id="scan-feedback" aria-live="polite"></div>
+</article>
+
+{% with oob = false %}{% include "loans/_verify_list.html" %}{% endwith %}
+
+<script src="{{ url_for('static', filename='vendor/html5-qrcode.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/audit_scan.js') }}"></script>
+{% endblock %}

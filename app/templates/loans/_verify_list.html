@@ -1,0 +1,37 @@
+{# Rafraîchi toutes les 10 s : plusieurs personnes peuvent scanner le même prêt en même temps. #}
+<section id="loan-check-list" hx-get="{{ url_for('loans.verify_state', loan_id=loan.id) }}" hx-trigger="every 10s" hx-swap="outerHTML"
+         {% if oob %}hx-swap-oob="true"{% endif %}>
+  <progress value="{{ progress.done }}" max="{{ progress.total or 1 }}"></progress>
+  {% if progress.total and not progress.missing %}
+  <div class="flash flash-success" role="status"><strong>Tout est là ✓</strong> — {{ progress.total }} objet{{ "s" if progress.total > 1 }} pointé{{ "s" if progress.total > 1 }}. Vous pouvez partir.</div>
+  {% else %}
+  <p><strong>{{ progress.done }}</strong> pointé{{ "s" if progress.done > 1 }} sur {{ progress.total }} · <span class="{{ 'error' if progress.missing }}">{{ progress.missing | length }} manquant{{ "s" if progress.missing | length > 1 }}</span></p>
+  {% endif %}
+  <div class="grid">
+    <div>
+      <h2>Manquants ({{ progress.missing | length }})</h2>
+      <ul class="compact">{% for r in progress.missing %}
+        <li>{{ r.item.code }} {{ r.item.name }}{% if r.qty > 1 %} <strong>{{ r.count }}/{{ r.qty }}</strong>{% endif %}
+          {% if r.kit %}<small class="muted">kit {{ r.kit.name }}</small>{% endif %}
+          <form method="post" action="{{ url_for('loans.verify_mark', loan_id=loan.id, item_id=r.item.id) }}" class="inline"
+                hx-post="{{ url_for('loans.verify_mark', loan_id=loan.id, item_id=r.item.id) }}" hx-target="#loan-check-list" hx-swap="outerHTML">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="link-button small" aria-label="Pointer {{ r.item.code }} à la main">{{ "Tout compté" if r.qty > 1 else "Pointer" }}</button>
+          </form></li>
+      {% else %}<li class="muted">Aucun.</li>{% endfor %}</ul>
+    </div>
+    <div>
+      <h2>Pointés ({{ progress.done }})</h2>
+      <ul class="compact">{% for r in progress.rows if r.done %}
+        <li><span class="badge status-en_cours">✓</span> {{ r.item.code }} {{ r.item.name }}{% if r.qty > 1 %} × {{ r.qty }}{% endif %}
+          {% if r.check.checked_by %}<small class="muted">{{ r.check.checked_by.full_name }}, {{ r.check.checked_at.strftime("%H:%M") }}</small>{% endif %}
+          <form method="post" action="{{ url_for('loans.verify_mark', loan_id=loan.id, item_id=r.item.id) }}" class="inline"
+                hx-post="{{ url_for('loans.verify_mark', loan_id=loan.id, item_id=r.item.id) }}" hx-target="#loan-check-list" hx-swap="outerHTML">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="retirer">
+            <button type="submit" class="link-button small" aria-label="Retirer le pointage de {{ r.item.code }}">✕</button>
+          </form></li>
+      {% else %}<li class="muted">Rien pour l'instant.</li>{% endfor %}</ul>
+    </div>
+  </div>
+</section>

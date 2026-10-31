@@ -294,6 +294,43 @@ def test_audit_scanning_flow(page_for):
     assert not admin.errors
 
 
+def test_loan_verification_flow(page_for):
+    """Fin de concert : on scanne le matériel du prêt jusqu'à « Tout est là », puis on ouvre la liste imprimable."""
+    admin = page_for("admin")
+    admin.goto("/prets/nouveau?item_id=2&kit_id=1")
+    admin.check("input[value=reservation]")
+    pick_borrower(admin, "TEST Emma")
+    admin.fill("#title", "Concert vérif e2e")
+    admin.fill("#start", local_dt(40))
+    admin.fill("#end", local_dt(41))
+    admin.check("#auto_validate")
+    admin.wait_for_selector("#availability .flash-success")
+    admin.click("button:has-text('Envoyer la demande')")
+    admin.wait_for_selector("text=Prêt enregistré et validé.")
+    admin.click("button:has-text('Remettre le matériel')")
+    admin.wait_for_selector("text=Remise enregistrée.")
+    admin.click("a:has-text('Vérifier le matériel')")
+    admin.wait_for_selector("text=Rien oublié ?")
+    code = "#loan-check-form input[name=code]"
+    admin.fill(code, "OHN-0002")
+    admin.press(code, "Enter")
+    admin.wait_for_selector("#scan-feedback >> text=pointé ✓")
+    assert admin.locator(code).input_value() == ""
+    admin.fill(code, "OHN-0001")
+    admin.press(code, "Enter")
+    admin.wait_for_selector("#scan-feedback >> text=ne fait pas partie de ce prêt")
+    assert "Tout est là" not in admin.inner_text("#loan-check-list")
+    admin.fill(code, "OHN-0003")
+    admin.press(code, "Enter")
+    admin.wait_for_selector("#loan-check-list >> text=Tout est là ✓")
+    with admin.expect_popup() as popup:
+        admin.click("a:has-text('Liste à imprimer')")
+    sheet = popup.value
+    sheet.wait_for_load_state()
+    assert "Kit Sono" in sheet.inner_text("table") and "OHN-0002" in sheet.inner_text("table")
+    assert not admin.errors
+
+
 def test_link_buttons_keep_link_size(page_for):
     """Pico met `button[type=submit] { width: 100% }` : le « ✕ » d'un scan prenait toute la ligne (et débordait)."""
     page = page_for("admin", mobile=True)

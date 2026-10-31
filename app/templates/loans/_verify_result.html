@@ -1,0 +1,9 @@
+{% if error %}
+<div class="flash flash-error" role="alert">{{ error }}</div>
+{% endif %}
+{% for item, result, count, qty in results %}
+<div class="flash {{ 'flash-success' if result == 'pointe' else ('flash-error' if result == 'hors_pret' else 'flash-warning') }}">
+  <strong>{{ item.code }}</strong> {{ item.name }} — {{ labels[result] }}{% if qty > 1 %} ({{ count }}/{{ qty }}){% endif %}
+</div>
+{% endfor %}
+{% with oob = true %}{% include "loans/_verify_list.html" %}{% endwith %}

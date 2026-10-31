@@ -419,6 +419,7 @@ class Loan(TimestampMixin, db.Model):
     requested_by = db.relationship("User", foreign_keys=[requested_by_id])
     validated_by = db.relationship("User", foreign_keys=[validated_by_id])
     lines = db.relationship("LoanLine", back_populates="loan", cascade="all, delete-orphan")
+    checks = db.relationship("LoanCheck", back_populates="loan", cascade="all, delete-orphan")
 
     __table_args__ = (
         CheckConstraint(type.in_(LoanType.ALL), name="ck_loan_type"),
@@ -457,6 +458,25 @@ class LoanLine(db.Model):
     __table_args__ = (
         CheckConstraint("(item_id IS NULL) != (kit_id IS NULL)", name="ck_line_item_xor_kit"),
         CheckConstraint("quantity > 0", name="ck_line_quantity"),
+    )
+
+
+class LoanCheck(db.Model):
+    """Objet d'un prêt pointé lors d'une vérification (ex. avant de quitter la salle de concert)."""
+    id = db.Column(db.Integer, primary_key=True)
+    loan_id = db.Column(db.ForeignKey("loan.id", ondelete="CASCADE"), nullable=False)
+    item_id = db.Column(db.ForeignKey("item.id", ondelete="CASCADE"), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)  # objets suivis en quantité : nombre compté
+    checked_by_id = db.Column(db.ForeignKey("user.id", ondelete="SET NULL"))
+    checked_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now())
+
+    loan = db.relationship("Loan", back_populates="checks")
+    item = db.relationship("Item")
+    checked_by = db.relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("loan_id", "item_id"),
+        CheckConstraint("quantity > 0", name="ck_loan_check_quantity"),
     )
 
 

@@ -228,6 +228,7 @@ def checkout(loan, user):
             line.returned_at = now  # distribué : rien à rendre
     loan.status = LoanStatus.EN_COURS
     loan.checked_out_at = now
+    loan.checks.clear()  # le pointage de préparation est fait : la prochaine vérification repart de zéro
     log("loan.checkout", "Matériel remis", loan=loan, user=user)
     if all(line.returned_at for line in loan.lines):
         _close(loan, user, now)

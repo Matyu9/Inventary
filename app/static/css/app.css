@@ -143,9 +143,22 @@ body.app { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr)
 .who { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
 .who strong { font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .who small { color: var(--text-3); font-size: .75rem; }
+a.who { color: inherit; text-decoration: none; }
+a.who:hover strong { text-decoration: underline; }
 .avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2);
           border: 1px solid var(--border); color: var(--text-2); font-size: .78rem; font-weight: 650; flex: none; }
 .avatar.small { width: 32px; height: 32px; }
+.avatar { overflow: hidden; flex: none; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar.tiny { width: 24px; height: 24px; font-size: .62rem; }
+.avatar.large { width: 96px; height: 96px; font-size: 2rem; }
+.person { display: flex; align-items: center; gap: .6rem; }
+.page-head .person, .profile-head { gap: 1rem; }
+.profile-head { margin-bottom: 1.25rem; }
+.profile-head h1 { margin-bottom: .2rem; }
+.avatar-form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.avatar-form input[type=file] { margin: 0; width: auto; flex: 1 1 12rem; }
+.avatar-card { margin-bottom: 1.5rem; }
 
 .topbar {
   position: sticky; top: 0; z-index: 20; height: var(--topbar-h); display: flex; align-items: center; gap: .75rem;
@@ -230,9 +243,18 @@ body.guest .error-card { margin: 0 auto; }
          font-weight: 600; background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); white-space: nowrap; }
 .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .8; }
 .status-demande { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.status-attente_garant { background: var(--brand-soft); color: var(--brand); border-color: transparent; }
 .status-valide { background: var(--info-bg); color: var(--info); border-color: transparent; }
 .status-en_cours { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
 .status-refuse, .status-annule, .status-rendu { color: var(--text-3); }
+.account-actif { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.account-invite, .account-jamais { background: var(--info-bg); color: var(--info); border-color: transparent; }
+.account-sans_acces, .account-archive { color: var(--text-3); }
+.health-ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.health-warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.health-error { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
+.danger-zone { margin-top: 2rem; }
+.card .props + .actions { margin-top: 1rem; }
 .badge.overdue { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
 .tag { display: inline-block; padding: .05rem .5rem; margin: .1rem .15rem; border-radius: 4px; font-size: .74rem; font-weight: 550;
        background: var(--brand-soft); color: var(--brand); }
@@ -303,6 +325,13 @@ input[type=file]::file-selector-button { background: var(--surface-2); color: va
 .gallery figure { margin: 0; }
 .gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 .gallery figcaption { font-size: .78rem; color: var(--text-3); }
+.documents { list-style: none; padding: 0; margin: 0 0 1rem; }
+.documents li { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--border); }
+.documents li > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.documents form { margin: 0; }
+.doc-ext { flex: none; min-width: 3rem; padding: .2rem .35rem; border-radius: var(--radius-sm); text-align: center;
+           font-size: .7rem; font-weight: 700; background: var(--brand-soft); color: var(--brand); }
+.doc-count { white-space: nowrap; }
 .photo-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: .5rem; margin-top: 1rem; }
 .photo-form > * { margin: 0; }
 .qr-block { display: flex; gap: 1rem; align-items: center; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .9rem; }
@@ -386,6 +415,8 @@ progress { height: .6rem; border-radius: 999px; }
 .hbar:hover { filter: brightness(1.12); }
 .hbar-value { font-variant-numeric: tabular-nums; font-size: .88rem; color: var(--text); font-weight: 550; }
 .mapping-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0 1rem; }
+.perm-grid label { display: flex; gap: .1rem; align-items: baseline; }
+.perm-grid input { flex: none; }
 
 /* Tableau de bord */
 .hello { margin-bottom: 1.25rem; }
@@ -403,6 +434,18 @@ progress { height: .6rem; border-radius: 999px; }
 
 /* Connexion */
 .login-card { padding: 2rem; }
+.report-form { margin-bottom: .75rem; }
+.report-form > summary { width: 100%; }
+.report-form form { margin-top: .75rem; }
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.inline-form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.inline-form > * { margin: 0; }
+.inline-form input[type=text] { flex: 1 1 14rem; }
+.nav-count { margin-left: auto; font-size: .72rem; font-weight: 700; background: var(--warn-bg); color: var(--warn);
+             border-radius: 999px; padding: 0 .45rem; }
+.report-card { border-left: 4px solid var(--warn); }
+.report-card.found { border-left-color: var(--ok); }
+.report-card blockquote { margin: .5rem 0; white-space: pre-line; }
 .login-card .brand { padding: 0 0 1.25rem; }
 .login-card h1 { font-size: 1.35rem; }
 .login-or { display: flex; align-items: center; gap: .75rem; margin: 1.25rem 0; }

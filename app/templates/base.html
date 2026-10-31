@@ -1,4 +1,5 @@
 {% from "partials/_icons.html" import icon %}
+{% from "partials/_avatar.html" import avatar %}
 {%- macro navlink(endpoint, label, icon_name, prefixes=none) -%}
   {%- set active = request.endpoint and (request.endpoint == endpoint or (prefixes and request.endpoint.split(".")[0] in prefixes)) -%}
   <a href="{{ url_for(endpoint) }}" class="nav-link{{ ' active' if active }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name) }}<span>{{ label }}</span></a>
@@ -41,6 +42,9 @@
       {{ navlink("locations.index", "Lieux", "map-pin", ["locations"]) }}
       {{ navlink("referentiel.categories", "Catégories", "tag") }}
       <p class="nav-title">Suivi</p>
+      {% if can(current_user, "report.handle") %}{% set reports_count = pending_reports_count() %}
+      <a href="{{ url_for('public_reports.index') }}" class="nav-link{{ ' active' if request.endpoint and request.endpoint.startswith('public_reports.') }}">{{ icon("alert") }}<span>Signalements</span>{% if reports_count %}<span class="nav-count" aria-label="{{ reports_count }} à traiter">{{ reports_count }}</span>{% endif %}</a>
+      {% endif %}
       {% if can(current_user, "audit.scan") %}{{ navlink("audits.index", "Inventaires", "clipboard", ["audits"]) }}{% endif %}
       {% if can(current_user, "report.view") %}{{ navlink("reports.index", "Rapports", "chart", ["reports"]) }}{% endif %}
       {% if can(current_user, "export") %}{{ navlink("transfer.index", "Import / export", "transfer", ["transfer"]) }}{% endif %}
@@ -48,13 +52,14 @@
       {% if can(current_user, "borrower.create") or can(current_user, "settings.manage") %}
       <p class="nav-title">Administration</p>
       {% if can(current_user, "borrower.create") %}{{ navlink("users.index", "Personnes", "users", ["users"]) }}{% endif %}
+      {% if current_user.is_admin %}{{ navlink("roles.index", "Rôles", "key", ["roles"]) }}{% endif %}
       {% if can(current_user, "customfield.manage") %}{{ navlink("referentiel.custom_fields", "Champs perso", "sliders") }}{% endif %}
       {% if can(current_user, "settings.manage") %}{{ navlink("settings.index", "Paramètres", "settings", ["settings"]) }}{% endif %}
       {% endif %}
     </nav>
     <div class="sidebar-user">
-      <span class="avatar" aria-hidden="true">{{ current_user.first_name[:1] }}{{ current_user.last_name[:1] }}</span>
-      <span class="who"><strong>{{ current_user.full_name }}</strong><small>{{ current_user.role_label }}</small></span>
+      {{ avatar(current_user) }}
+      <a href="{{ url_for('account.index') }}" class="who"><strong>{{ current_user.full_name }}</strong><small>{{ current_user.role_label }}</small></a>
     </div>
   </aside>
   <div class="scrim" data-close-nav hidden></div>
@@ -72,10 +77,10 @@
       {% set unread = unread_notifications() %}
       <a href="{{ url_for('users.notifications') }}" class="icon-button bell" aria-label="Notifications{{ ' (' ~ unread ~ ' non lues)' if unread }}">{{ icon("bell") }}{% if unread %}<span class="bell-count">{{ unread }}</span>{% endif %}</a>
       <details class="dropdown user-menu">
-        <summary aria-label="Mon compte"><span class="avatar small">{{ current_user.first_name[:1] }}{{ current_user.last_name[:1] }}</span></summary>
+        <summary aria-label="Mon compte">{{ avatar(current_user, "small") }}</summary>
         <ul dir="rtl">
           <li><small>{{ current_user.full_name }} · {{ current_user.role_label }}</small></li>
-          {% if current_user.password_hash %}<li><a href="{{ url_for('auth.password') }}">Mot de passe</a></li>{% endif %}
+          <li><a href="{{ url_for('account.index') }}">Mon compte</a></li>
           {% if can(current_user, "settings.manage") %}<li><a href="{{ url_for('settings.index') }}">Paramètres</a></li>{% endif %}
           <li>
             <form method="post" action="{{ url_for('auth.logout') }}">

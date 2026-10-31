@@ -8,6 +8,8 @@ from .errors import register_error_handlers
 from .extensions import csrf, db, login_manager, migrate
 from .services.oidc import init_oidc
 
+__version__ = "0.1.0"
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -26,25 +28,33 @@ def create_app(config_class=Config):
     init_oidc(app)
 
     from . import models  # noqa: F401  (enregistre les modèles pour Alembic)
+    from .blueprints.account import bp as account_bp
     from .blueprints.audits import bp as audits_bp
     from .blueprints.auth import bp as auth_bp
     from .blueprints.calendar import bp as calendar_bp
     from .blueprints.consumables import bp as consumables_bp
     from .blueprints.dashboard import bp as dashboard_bp
+    from .blueprints.documents import bp as documents_bp
+    from .blueprints.health import bp as health_bp
     from .blueprints.items import bp as items_bp
     from .blueprints.kits import bp as kits_bp
     from .blueprints.loans import bp as loans_bp
     from .blueprints.locations import bp as locations_bp
+    from .blueprints.public_reports import bp as public_reports_bp
     from .blueprints.maintenance import bp as maintenance_bp
     from .blueprints.referentiel import bp as referentiel_bp
     from .blueprints.reports import bp as reports_bp
+    from .blueprints.roles import bp as roles_bp
     from .blueprints.scan import bp as scan_bp
     from .blueprints.settings import bp as settings_bp
     from .blueprints.transfer import bp as transfer_bp
+    from .blueprints.trash import bp as trash_bp
     from .blueprints.users import bp as users_bp
     from .cli import register_cli
     from .filters import register_filters
+    from .models import Document
     from .permissions import can
+    from .services import documents
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -54,20 +64,27 @@ def create_app(config_class=Config):
     app.register_blueprint(scan_bp)
     app.register_blueprint(loans_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(roles_bp)
+    app.register_blueprint(account_bp)
     app.register_blueprint(kits_bp)
+    app.register_blueprint(documents_bp)
     app.register_blueprint(consumables_bp)
     app.register_blueprint(maintenance_bp)
     app.register_blueprint(calendar_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(health_bp)
     app.register_blueprint(audits_bp)
+    app.register_blueprint(public_reports_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(transfer_bp)
+    app.register_blueprint(trash_bp)
     register_cli(app)
     register_filters(app)
 
     @app.context_processor
     def inject_globals():
-        return {"can": can, "asso_name": app.config["ASSO_NAME"], "code_prefix": app.config["ITEM_CODE_PREFIX"]}
+        return {"can": can, "asso_name": app.config["ASSO_NAME"], "code_prefix": app.config["ITEM_CODE_PREFIX"],
+                "document_kinds": Document.KINDS, "document_accept": documents.ACCEPT}
 
     @app.after_request
     def security_headers(response):

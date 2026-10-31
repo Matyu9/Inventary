@@ -4,7 +4,8 @@ import uuid
 from datetime import date, datetime
 
 from flask_login import UserMixin
-from sqlalchemy import CheckConstraint, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, UniqueConstraint, event, func
+from sqlalchemy.orm import Session, declared_attr, with_loader_criteria
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .extensions import db, login_manager
@@ -20,16 +21,70 @@ class TimestampMixin:
                            onupdate=datetime.now)
 
 
+class TrashableMixin:
+    """Objet ou kit mis à la corbeille (`deleted_at` renseigné) : masqué de toutes les requêtes, cf. _hide_trash."""
+    deleted_at = db.Column(db.DateTime, index=True)
+
+    @declared_attr
+    def deleted_by_id(cls):
+        return db.Column(db.ForeignKey("user.id", ondelete="SET NULL"))
+
+    @declared_attr
+    def deleted_by(cls):
+        return db.relationship("User", foreign_keys=[cls.deleted_by_id])
+
+
+def get_live(model, obj_id):
+    """db.session.get() hors corbeille : l'identity map peut encore contenir un élément tout juste supprimé."""
+    obj = db.session.get(model, obj_id) if obj_id is not None else None
+    return obj if obj is not None and obj.deleted_at is None else None
+
+
+@event.listens_for(Session, "do_orm_execute")
+def _hide_trash(state):
+    """Ajoute « pas dans la corbeille » à chaque SELECT (relations comprises).
+
+    Seule la corbeille lit les éléments supprimés, avec `execution_options(include_deleted=True)`. Les rechargements
+    d'attributs (is_column_load) ne sont pas filtrés : un objet tout juste mis à la corbeille reste lisible.
+    """
+    if state.is_select and not state.is_column_load and not state.execution_options.get("include_deleted"):
+        state.statement = state.statement.options(
+            with_loader_criteria(TrashableMixin, lambda cls: cls.deleted_at.is_(None), include_aliases=True))
+
+
 # ---------------------------------------------------------------------------
 # Utilisateurs
 # ---------------------------------------------------------------------------
 
-class Role:
+class Role(db.Model):
+    """Rôle attribuable aux personnes, avec ses droits (cochés dans l'écran « Rôles »).
+
+    Les trois rôles de base existent toujours (non supprimables) ; l'administrateur a tous les droits
+    quelle que soit sa liste, pour qu'on ne puisse pas se retirer l'accès à l'appli.
+    """
     ADMIN = "admin"
     PROF = "prof"
     EMPRUNTEUR = "emprunteur"
-    ALL = (ADMIN, PROF, EMPRUNTEUR)
-    LABELS = {ADMIN: "Administrateur", PROF: "Professeur", EMPRUNTEUR: "Emprunteur"}
+    BUILTIN = (ADMIN, PROF, EMPRUNTEUR)
+    DEFAULT_NAMES = {ADMIN: "Administrateur", PROF: "Professeur", EMPRUNTEUR: "Emprunteur"}
+
+    key = db.Column(db.String(20), primary_key=True)
+    name = db.Column(db.String(80), nullable=False, unique=True)
+    description = db.Column(db.String(255))
+    permissions = db.Column(db.JSON, nullable=False, default=list)
+    # Groupes OIDC (séparés par des virgules) dont les membres reçoivent ce rôle à la connexion.
+    oidc_groups = db.Column(db.String(255))
+
+    @property
+    def builtin(self):
+        return self.key in self.BUILTIN
+
+    @property
+    def oidc_group_list(self):
+        return [g.strip() for g in (self.oidc_groups or "").split(",") if g.strip()]
+
+    def __repr__(self):
+        return f"<Role {self.key}>"
 
 
 class User(UserMixin, TimestampMixin, db.Model):
@@ -50,12 +105,18 @@ class User(UserMixin, TimestampMixin, db.Model):
     oidc_sub = db.Column(db.String(255), unique=True, index=True)
     # Rôle attribué d'après les groupes OIDC (et non par un admin) : il suit les groupes.
     role_from_oidc = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
-
-    __table_args__ = (CheckConstraint(role.in_(Role.ALL), name="ck_user_role"),)
+    last_login_at = db.Column(db.DateTime)
+    # Fiche archivée : plus d'accès, masquée des listes et des choix, historique conservé.
+    archived_at = db.Column(db.DateTime)
+    avatar = db.Column(db.String(255))  # photo de profil, relative à UPLOAD_DIR (avatars/….jpg)
 
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def initials(self):
+        return f"{self.first_name[:1]}{self.last_name[:1]}".upper()
 
     @property
     def is_active(self):  # utilisé par Flask-Login
@@ -66,12 +127,9 @@ class User(UserMixin, TimestampMixin, db.Model):
         return self.role == Role.ADMIN
 
     @property
-    def is_prof(self):
-        return self.role == Role.PROF
-
-    @property
     def role_label(self):
-        return Role.LABELS[self.role]
+        role = db.session.get(Role, self.role)
+        return role.name if role else Role.DEFAULT_NAMES.get(self.role, self.role)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -94,6 +152,28 @@ class LoginSession(db.Model):
     id = db.Column(db.String(64), primary_key=True)  # jeton secret
     user_id = db.Column(db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    last_seen_at = db.Column(db.DateTime)
+    user_agent = db.Column(db.String(255))
+    ip = db.Column(db.String(45))
+
+    user = db.relationship("User")
+
+
+class AccountToken(db.Model):
+    """Lien à usage unique envoyé par email : invitation, mot de passe oublié, changement d'email.
+
+    Seule l'empreinte SHA-256 du jeton est stockée : une fuite de la base ne donne aucun lien valable.
+    """
+    INVITE = "invite"
+    RESET = "reset"
+    EMAIL = "email"
+
+    id = db.Column(db.String(64), primary_key=True)  # empreinte du jeton
+    user_id = db.Column(db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    purpose = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(255))  # nouvelle adresse, pour un changement d'email
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    expires_at = db.Column(db.DateTime, nullable=False)
 
     user = db.relationship("User")
 
@@ -105,6 +185,8 @@ def load_user(user_id):
     if login is None or str(login.user_id) != user_id:
         return None
     login.user.session_token = token
+    from .services.sessions import touch
+    touch(login)
     return login.user
 
 
@@ -228,18 +310,22 @@ class ConsumptionMode:
     RETOURNABLE = "retournable"  # prêté en quantité et rendu (pupitres, câbles…)
 
 
-class Kit(TimestampMixin, db.Model):
+class Kit(TrashableMixin, TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text)
     location_id = db.Column(db.ForeignKey("location.id", ondelete="SET NULL"))
     qr_token = db.Column(db.String(32), unique=True, nullable=False, default=_token)
+    # Objets détachés à la mise à la corbeille : remis dans le kit s'il est restauré.
+    trashed_item_ids = db.Column(db.JSON)
 
     location = db.relationship("Location")
     items = db.relationship("Item", back_populates="kit", order_by="Item.code")
+    documents = db.relationship("Document", back_populates="kit", cascade="all, delete-orphan",
+                                order_by="Document.created_at.desc()")
 
 
-class Item(TimestampMixin, db.Model):
+class Item(TrashableMixin, TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(20), unique=True, nullable=False)
     name = db.Column(db.String(160), nullable=False)
@@ -268,6 +354,8 @@ class Item(TimestampMixin, db.Model):
     kit = db.relationship("Kit", back_populates="items")
     tags = db.relationship("Tag", secondary=item_tags, order_by="Tag.name")
     photos = db.relationship("Photo", back_populates="item", cascade="all, delete-orphan", order_by="Photo.id")
+    documents = db.relationship("Document", back_populates="item", cascade="all, delete-orphan",
+                                order_by="Document.created_at.desc()")
     notes = db.relationship("Note", back_populates="item", cascade="all, delete-orphan",
                             order_by="Note.created_at.desc()")
     maintenances = db.relationship("Maintenance", back_populates="item", cascade="all, delete-orphan",
@@ -294,7 +382,9 @@ class Item(TimestampMixin, db.Model):
 
     @staticmethod
     def next_code(prefix):
-        codes = db.session.scalars(db.select(Item.code).where(Item.code.startswith(f"{prefix}-", autoescape=True)))
+        # Les codes des objets en corbeille restent réservés (ils peuvent être restaurés).
+        codes = db.session.scalars(db.select(Item.code).where(Item.code.startswith(f"{prefix}-", autoescape=True))
+                                   .execution_options(include_deleted=True))
         numbers = [int(c.rsplit("-", 1)[1]) for c in codes if c.rsplit("-", 1)[1].isdigit()]
         return f"{prefix}-{max(numbers, default=0) + 1:04d}"
 
@@ -323,6 +413,41 @@ class Photo(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now())
 
     item = db.relationship("Item", back_populates="photos")
+
+
+class Document(db.Model):
+    """Fichier joint à un objet ou à un kit : facture, notice, certificat…"""
+    KINDS = {"facture": "Facture", "devis": "Devis", "notice": "Notice", "garantie": "Garantie",
+             "certificat": "Certificat", "assurance": "Assurance", "autre": "Autre"}
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.ForeignKey("item.id", ondelete="CASCADE"), index=True)
+    kit_id = db.Column(db.ForeignKey("kit.id", ondelete="CASCADE"), index=True)
+    title = db.Column(db.String(160), nullable=False)
+    kind = db.Column(db.String(20), nullable=False, default="autre")
+    filename = db.Column(db.String(255), nullable=False)  # chemin relatif à UPLOAD_DIR (nom aléatoire)
+    original_name = db.Column(db.String(255), nullable=False)
+    mime = db.Column(db.String(120), nullable=False)
+    size = db.Column(db.Integer, nullable=False)
+    uploaded_by_id = db.Column(db.ForeignKey("user.id", ondelete="SET NULL"))
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now())
+
+    item = db.relationship("Item", back_populates="documents")
+    kit = db.relationship("Kit", back_populates="documents")
+    uploaded_by = db.relationship("User")
+
+    __table_args__ = (
+        CheckConstraint("(item_id IS NULL) != (kit_id IS NULL)", name="ck_document_item_xor_kit"),
+        CheckConstraint(kind.in_(KINDS), name="ck_document_kind"),
+    )
+
+    @property
+    def kind_label(self):
+        return self.KINDS.get(self.kind, self.kind)
+
+    @property
+    def extension(self):
+        return self.filename.rsplit(".", 1)[-1].upper()
 
 
 class Note(db.Model):
@@ -413,6 +538,8 @@ class Loan(TimestampMixin, db.Model):
     deposit_returned = db.Column(db.Boolean, nullable=False, default=False)
     comment = db.Column(db.Text)
     refusal_reason = db.Column(db.String(255))
+    # Demande faite par l'emprunteur lui-même : le garant choisi doit l'accepter avant que l'admin la valide.
+    awaiting_guarantor = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
 
     borrower = db.relationship("User", foreign_keys=[borrower_id])
     guarantor = db.relationship("User", foreign_keys=[guarantor_id])
@@ -433,8 +560,19 @@ class Loan(TimestampMixin, db.Model):
         return self.status == LoanStatus.EN_COURS and self.end is not None and self.end < datetime.now()
 
     @property
+    def is_awaiting_guarantor(self):
+        return self.status == LoanStatus.DEMANDE and self.awaiting_guarantor
+
+    @property
     def status_label(self):
+        if self.is_awaiting_guarantor:
+            return "En attente du garant"
         return "En retard" if self.is_overdue else LoanStatus.LABELS[self.status]
+
+    @property
+    def status_css(self):
+        """Classe du badge : comme le statut, avec une couleur à part pour l'attente du garant."""
+        return "attente_garant" if self.is_awaiting_guarantor else self.status
 
     @property
     def type_label(self):
@@ -528,6 +666,53 @@ class AuditScan(db.Model):
 
 
 # ---------------------------------------------------------------------------
+# Signalements envoyés depuis la page publique d'un QR code
+# ---------------------------------------------------------------------------
+
+class PublicReport(db.Model):
+    PROBLEME, TROUVE = "probleme", "trouve"
+    KINDS = {PROBLEME: "Problème signalé", TROUVE: "Objet trouvé"}
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.ForeignKey("item.id", ondelete="CASCADE"), index=True)
+    kit_id = db.Column(db.ForeignKey("kit.id", ondelete="CASCADE"), index=True)
+    kind = db.Column(db.String(20), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    name = db.Column(db.String(120))  # facultatifs : la personne peut rester anonyme
+    contact = db.Column(db.String(160))
+    reported_by_id = db.Column(db.ForeignKey("user.id", ondelete="SET NULL"))  # si connectée
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now(), index=True)
+    handled_at = db.Column(db.DateTime)
+    handled_by_id = db.Column(db.ForeignKey("user.id", ondelete="SET NULL"))
+    handled_note = db.Column(db.String(500))
+
+    item = db.relationship("Item")
+    kit = db.relationship("Kit")
+    reported_by = db.relationship("User", foreign_keys=[reported_by_id])
+    handled_by = db.relationship("User", foreign_keys=[handled_by_id])
+
+    __table_args__ = (
+        CheckConstraint("(item_id IS NULL) != (kit_id IS NULL)", name="ck_public_report_item_xor_kit"),
+        CheckConstraint(kind.in_(KINDS), name="ck_public_report_kind"),
+    )
+
+    @property
+    def target(self):
+        return self.item or self.kit
+
+    @property
+    def target_label(self):
+        target = self.target
+        if target is None:
+            return ""
+        return f"{target.code} {target.name}" if isinstance(target, Item) else f"Kit {target.name}"
+
+    @property
+    def kind_label(self):
+        return self.KINDS[self.kind]
+
+
+# ---------------------------------------------------------------------------
 # Journal d'activité et notifications
 # ---------------------------------------------------------------------------
 
@@ -541,8 +726,11 @@ class Activity(db.Model):
     loan_id = db.Column(db.ForeignKey("loan.id", ondelete="CASCADE"))
     changes = db.Column(db.JSON)  # {champ: [ancien, nouveau]}
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now, server_default=func.now(), index=True)
+    # Personne concernée par l'action (compte créé, rôle changé…), à distinguer de son auteur `user_id`.
+    target_user_id = db.Column(db.ForeignKey("user.id", ondelete="SET NULL"), index=True)
 
-    user = db.relationship("User")
+    user = db.relationship("User", foreign_keys=[user_id])
+    target_user = db.relationship("User", foreign_keys=[target_user_id])
 
 
 class Notification(db.Model):
@@ -554,6 +742,7 @@ class Notification(db.Model):
     kind = db.Column(db.String(30))
     loan_id = db.Column(db.ForeignKey("loan.id", ondelete="SET NULL"))
     item_id = db.Column(db.ForeignKey("item.id", ondelete="SET NULL"))
+    report_id = db.Column(db.ForeignKey("public_report.id", ondelete="SET NULL"))
     read = db.Column(db.Boolean, nullable=False, default=False)
     # Clé de déduplication pour les rappels automatiques (ex. "overdue:12:2026-10-30").
     dedup_key = db.Column(db.String(120), unique=True)
@@ -563,6 +752,7 @@ class Notification(db.Model):
     user = db.relationship("User")
     loan = db.relationship("Loan")
     item = db.relationship("Item")
+    report = db.relationship("PublicReport")
 
 
 class EmailTemplate(db.Model):

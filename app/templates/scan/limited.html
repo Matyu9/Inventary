@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "scan/_report_form.html" import report_forms with context %}
 {% block title %}{{ obj.code if obj.code is defined else obj.name }}{% endblock %}
 {% block content %}
 <article class="narrow">
@@ -8,8 +9,9 @@
     <p>Cet objet vous est actuellement prêté.</p>
     <ul>{% for l in loans %}<li>{{ l.type_label }} depuis le {{ l.start | date_fr }}{% if l.end %}, retour prévu le {{ l.end | date_fr }}{% endif %}</li>{% endfor %}</ul>
   {% else %}
-    <p>Ce matériel appartient à {{ asso_name }}. Si vous l'avez trouvé, merci de le rapporter à un responsable.</p>
+    <p>Ce matériel appartient à {{ asso_name }}. Si vous l'avez trouvé, merci de le signaler ci-dessous.</p>
   {% endif %}
+  {{ report_forms(form, token, show_identity=false) }}
   <a href="{{ url_for('dashboard.index') }}">Mes prêts</a>
 </article>
 {% endblock %}

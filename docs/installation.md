@@ -163,7 +163,7 @@ ou, dans l'appli, **Paramètres → Lancer les rappels maintenant**. Chaque rapp
 
 ## Sauvegarde et restauration
 
-Tout est dans `data/` : `inventaire.db` (la base) et `uploads/` (les photos).
+Tout est dans `data/` : `inventaire.db` (la base) et `uploads/` (photos et documents joints).
 
 ### Sauvegarder
 
@@ -259,6 +259,8 @@ docker compose ps                 # état des services (healthy / unhealthy)
 docker compose logs -f app        # requêtes et erreurs de l'appli
 docker compose logs -f scheduler  # résultat de chaque passage des rappels
 ```
+
+Dans l'appli, **Paramètres → État de l'installation** (`/sante`) fait le point : base accessible et en mode WAL, migrations à jour, dossier `data/uploads` accessible en écriture et espace disque libre (alerte sous 1 Go), dernier passage du planificateur (alerte au-delà d'une heure), emails en attente. La même chose existe en JSON sur `/health`, pour un outil de supervision connecté avec un compte admin : la réponse est `200` si tout va bien ou s'il y a seulement des points à surveiller, `503` en cas de problème. Ces deux pages renvoient `404` aux personnes qui ne gèrent pas les paramètres. Le healthcheck Docker, lui, interroge la page de connexion et n'a pas besoin de compte.
 
 | Symptôme | Piste |
 |---|---|

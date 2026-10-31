@@ -32,7 +32,7 @@ def ctx(app):
         cymbale = Item(code="OHN-0006", name="Cymbale", category=bois, kit=kit)
         db.session.add_all([sax, flute, cable, reeds, kit, caisse, cymbale])
         db.session.commit()
-        users = {r: make_user(r) for r in Role.ALL}
+        users = {r: make_user(r) for r in Role.BUILTIN}
         yield dict(sax=sax, flute=flute, cable=cable, reeds=reeds, kit=kit, caisse=caisse, cymbale=cymbale, **users)
 
 

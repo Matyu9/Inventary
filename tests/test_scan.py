@@ -68,10 +68,10 @@ def test_resolve_scan(items, text_fn, expected):
 # Lien des QR (/q/<jeton>)
 # ---------------------------------------------------------------------------
 
-def test_qr_link_requires_login_and_returns_after(client, users, items):
+def test_qr_link_public_page_offers_login_and_returns_after(client, users, items):
     url = f"/q/{items['sax'].qr_token}"
     r = client.get(url)
-    assert r.status_code == 302 and "/connexion" in r.headers["Location"] and "next=" in r.headers["Location"]
+    assert r.status_code == 200 and "/connexion?next=" in r.text  # page publique, avec un lien de connexion
     r = client.post(f"/connexion?next={url}", data={"email": users[P].email, "password": "motdepasse"})
     assert r.headers["Location"] == url
     r = client.get(url)
@@ -88,8 +88,8 @@ def test_qr_link_redirects_staff_to_item(client, as_role, items, role):
 def test_qr_link_borrower_gets_limited_page(client, as_role, items):
     as_role(E)
     r = client.get(f"/q/{items['sax'].qr_token}")
-    assert r.status_code == 200 and "Saxophone alto" in r.text and "rapporter" in r.text
-    assert "/objets/" not in r.text
+    assert r.status_code == 200 and "Saxophone alto" in r.text and "le signaler" in r.text
+    assert "trouvé cet objet" in r.text and "/objets/" not in r.text
 
 
 def test_qr_link_borrower_sees_own_loan(client, as_role, items, users):

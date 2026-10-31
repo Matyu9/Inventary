@@ -4,8 +4,8 @@ from ..extensions import db
 from ..models import Activity
 
 
-def log(action, message, *, item=None, kit=None, loan=None, changes=None, user=None):
-    """Ajoute une entrée au journal d'activité (sans commit)."""
+def log(action, message, *, item=None, kit=None, loan=None, changes=None, user=None, target=None):
+    """Ajoute une entrée au journal d'activité (sans commit). `target` : la personne concernée, s'il y en a une."""
     if user is None and current_user and current_user.is_authenticated:
         user = current_user
     entry = Activity(
@@ -16,6 +16,7 @@ def log(action, message, *, item=None, kit=None, loan=None, changes=None, user=N
         kit_id=kit.id if kit else None,
         loan_id=loan.id if loan else None,
         changes=changes or None,
+        target_user_id=target.id if target else None,
     )
     db.session.add(entry)
     return entry

@@ -72,7 +72,7 @@ def events():
             "extendedProps": {"status": loan.status_label, "openEnded": loan.end is None},
         })
     if can(current_user, "inventory.view"):
-        for m in db.session.scalars(db.select(Maintenance).where(
+        for m in db.session.scalars(db.select(Maintenance).join(Maintenance.item).where(
                 Maintenance.next_due >= start.date(), Maintenance.next_due < end.date())):
             data.append({"id": f"maint-{m.id}", "title": f"Entretien : {m.item.code} {m.item.name}",
                          "start": m.next_due.isoformat(), "allDay": True, "color": "#7b5ea7",

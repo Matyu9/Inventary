@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Fusionner {{ source.full_name }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('users.detail', user_id=source.id) }}">← {{ source.full_name }}</a></p>
+<article class="narrow wide">
+  <h1>Fusionner un doublon</h1>
+  <p>La fiche <strong>{{ source.full_name }}</strong>{% if source.email %} ({{ source.email }}){% endif %} va être
+    <strong>supprimée</strong> : ses prêts, notes, entretiens, notifications et son journal passent à la fiche choisie
+    ci-dessous. La fiche conservée garde son rôle et son accès, et récupère l'email, le téléphone ou le pupitre qui
+    lui manquent.</p>
+  <form method="post" onsubmit="return confirm('Fusionner définitivement ? Cette action ne peut pas être annulée.')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="target_id">Fiche à conserver</label>
+    <select id="target_id" name="target_id" required>
+      <option value="">— choisir —</option>
+      {% if suggested %}
+      <optgroup label="Doublons probables">
+        {% for u in suggested %}<option value="{{ u.id }}">{{ u.last_name | upper }} {{ u.first_name }}{% if u.email %} · {{ u.email }}{% endif %}</option>{% endfor %}
+      </optgroup>
+      {% endif %}
+      <optgroup label="Toutes les fiches">
+        {% for u in candidates %}<option value="{{ u.id }}">{{ u.last_name | upper }} {{ u.first_name }}{% if u.email %} · {{ u.email }}{% endif %}{% if u.archived_at %} (archivée){% endif %}</option>{% endfor %}
+      </optgroup>
+    </select>
+    <button type="submit" class="contrast">Fusionner dans cette fiche</button>
+  </form>
+</article>
+{% endblock %}

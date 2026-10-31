@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Confirmer l'adresse email{% endblock %}
+{% block content %}
+<article class="login-card">
+  <h1>Nouvelle adresse email</h1>
+  {% if taken %}
+  <p>L'adresse <strong>{{ email }}</strong> est déjà utilisée par un autre compte : elle ne peut pas être attribuée
+    à {{ user.full_name }}.</p>
+  {% else %}
+  <p>Utiliser <strong>{{ email }}</strong> comme adresse du compte de {{ user.full_name }} ?
+    Elle servira aussi à vous connecter.</p>
+  <form method="post">
+    {{ form.hidden_tag() }}
+    <button type="submit" style="width: 100%">Confirmer l'adresse</button>
+  </form>
+  {% endif %}
+</article>
+{% endblock %}

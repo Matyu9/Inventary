@@ -11,11 +11,14 @@
   <div>
     <p class="muted crumbs">{% if can(current_user, "loan.list_all") %}<a href="{{ url_for('loans.index') }}">Prêts</a>{% else %}<a href="{{ url_for('loans.mine') }}">Mes prêts</a>{% endif %} › n°{{ loan.id }}</p>
     <h1>{{ loan.type_label }} n°{{ loan.id }}{% if loan.title %} — {{ loan.title }}{% endif %}</h1>
-    <span class="badge status-{{ loan.status }}{% if loan.is_overdue %} overdue{% endif %}">{{ loan.status_label }}</span>
+    <span class="badge status-{{ loan.status_css }}{% if loan.is_overdue %} overdue{% endif %}">{{ loan.status_label }}</span>
   </div>
   <div class="actions">
-    {% if loan.status == "demande" and can(current_user, "loan.validate") %}
+    {% if loan.status == "demande" and not loan.awaiting_guarantor and can(current_user, "loan.validate") %}
       {{ post_button("loans.validate", "Valider") }}
+    {% endif %}
+    {% if can(current_user, "loan.answer", loan) %}
+      {{ post_button("loans.guarantor_accept", "Accepter d'être garant") }}
     {% endif %}
     {% if loan.status == "valide" and can(current_user, "loan.checkout", loan) %}
       {{ post_button("loans.checkout", "Remettre le matériel") }}
@@ -29,6 +32,24 @@
     {% endif %}
   </div>
 </div>
+
+{% if loan.is_awaiting_guarantor %}
+<div class="flash flash-info" role="status">
+  {% if can(current_user, "loan.answer", loan) %}
+  {{ loan.borrower.full_name }} vous a choisi comme garant de cette demande. Si vous acceptez, elle partira à la
+  validation d'un administrateur ; vous serez alors responsable du matériel avec l'emprunteur.
+  <form method="post" action="{{ url_for('loans.guarantor_refuse', loan_id=loan.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset role="group">
+      <input name="reason" placeholder="Motif du refus (facultatif)" aria-label="Motif du refus" maxlength="255">
+      <button type="submit" class="contrast outline">Refuser</button>
+    </fieldset>
+  </form>
+  {% else %}
+  Cette demande attend l'accord de son garant, {{ loan.guarantor.full_name }}. Elle pourra ensuite être validée.
+  {% endif %}
+</div>
+{% endif %}
 
 {% if problems %}
 <div class="flash flash-error" role="alert"><strong>Conflit :</strong><ul>{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul></div>

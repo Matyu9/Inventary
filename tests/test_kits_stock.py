@@ -51,7 +51,7 @@ def loan_on(users, *, kit=None, item=None, status=LoanStatus.VALIDE):
     (lambda g: "/consommables", {A, P}),
 ])
 def test_access(client, as_role, gear, url_fn, allowed):
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         as_role(role)
         assert client.get(url_fn(gear)).status_code == (200 if role in allowed else 403), role
 
@@ -197,8 +197,9 @@ def test_delete_kit(client, as_role, gear):
     assert client.post(f"/kits/{gear['kit'].id}/supprimer").status_code == 403
     as_role(A)
     client.post(f"/kits/{gear['kit'].id}/supprimer")
-    assert db.session.get(Kit, gear["kit"].id) is None
-    db.session.refresh(gear["caisse"])
+    db.session.expire_all()
+    assert gear["kit"].deleted_at is not None  # à la corbeille
+    assert db.session.scalars(db.select(Kit)).all() == []
     assert gear["caisse"].kit is None
 
 

@@ -1,12 +1,14 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask_login import current_user
 from flask_wtf import FlaskForm
 from sqlalchemy import or_
 from wtforms import SelectField, StringField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional
 
 from ..extensions import db, fold_contains
-from ..models import Activity, Item, ItemStatus, Kit, Loan, LoanLine, LoanStatus
+from ..models import Activity, Item, ItemStatus, Kit, Loan, LoanLine, LoanStatus, get_live
 from ..permissions import require
+from ..services import trash
 from ..services.activity import log
 from .items import location_choices, none_if_zero
 
@@ -27,7 +29,7 @@ class KitForm(FlaskForm):
 
 
 def get_kit(kit_id):
-    return db.session.get(Kit, kit_id) or abort(404)
+    return get_live(Kit, kit_id) or abort(404)
 
 
 def kit_status(kit):
@@ -125,7 +127,7 @@ def candidates(kit_id):
 @require("item.edit")
 def add_item(kit_id):
     kit = get_kit(kit_id)
-    item = db.session.get(Item, request.form.get("item_id", type=int) or 0) or abort(404)
+    item = get_live(Item, request.form.get("item_id", type=int) or 0) or abort(404)
     if active_kit_loan(kit):
         flash("Ce kit fait l'objet d'un prêt en cours : sa composition ne peut pas changer.", "error")
     elif item.kit_id:
@@ -147,7 +149,7 @@ def add_item(kit_id):
 @require("item.edit")
 def remove_item(kit_id, item_id):
     kit = get_kit(kit_id)
-    item = db.session.get(Item, item_id)
+    item = get_live(Item, item_id)
     if item is None or item.kit_id != kit.id:
         abort(404)
     if active_kit_loan(kit):
@@ -165,16 +167,12 @@ def remove_item(kit_id, item_id):
 @require("item.delete")
 def delete(kit_id):
     kit = get_kit(kit_id)
-    if db.session.scalar(db.select(LoanLine.id).where(LoanLine.kit_id == kit.id).limit(1)):
-        flash("Ce kit a un historique de prêts : il ne peut pas être supprimé. Retirez-en les objets si besoin.",
-              "error")
+    try:
+        trash.trash_kit(kit, current_user)
+    except trash.TrashError as exc:
+        flash(str(exc), "error")
         return redirect(url_for(".detail", kit_id=kit.id))
-    for item in list(kit.items):
-        item.kit = None
-        log("kit.remove", f"Retiré du kit « {kit.name} » (kit supprimé)", item=item)
-    name = kit.name
-    db.session.delete(kit)
-    log("kit.delete", f"Kit supprimé : {name}")
     db.session.commit()
-    flash(f"Kit « {name} » supprimé.", "success")
+    flash(f"Kit « {kit.name} » mis à la corbeille : il peut être restauré pendant {trash.RETENTION_DAYS} jours.",
+          "success")
     return redirect(url_for(".index"))

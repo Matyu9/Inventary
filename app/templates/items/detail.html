@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ item.code }} — {{ item.name }}{% endblock %}
 {% block content %}
+{% set waiting = pending_reports_for(item) %}
+{% if waiting %}
+<div class="flash flash-warning" role="status">{{ waiting | length }} signalement{{ "s" if waiting | length > 1 }} à traiter
+  ({{ waiting[0].kind_label | lower }} : « {{ waiting[0].message | truncate(80) }} »).
+  <a href="{{ url_for('public_reports.index') }}">Voir les signalements</a></div>
+{% endif %}
 <div class="page-head">
   <div>
     <p class="muted crumbs"><a href="{{ url_for('items.index') }}">Inventaire</a> › {{ item.category.name }}</p>
@@ -16,7 +22,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="secondary outline">{{ "Réintégrer" if item.status == "réformé" else "Réformer" }}</button>
     </form>
-    <form method="post" action="{{ url_for('items.delete', item_id=item.id) }}" onsubmit="return confirm('Supprimer définitivement {{ item.code }} ?')">
+    <form method="post" action="{{ url_for('items.delete', item_id=item.id) }}" onsubmit="return confirm('Mettre {{ item.code }} à la corbeille ? Il pourra être restauré pendant 30 jours.')">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="contrast outline">Supprimer</button>
     </form>
@@ -103,6 +109,9 @@
   {% else %}<p class="muted">Aucun mouvement de stock.</p>{% endif %}
 </section>
 {% endif %}
+
+{% from "partials/_documents.html" import documents_section with context %}
+{{ documents_section("objets", item) }}
 
 <section id="loans">
   <h2>Prêts</h2>

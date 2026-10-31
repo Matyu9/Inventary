@@ -180,13 +180,14 @@ Cas particuliers :
 
 ### Rôles d'après les groupes
 
-Si `OIDC_ADMIN_GROUPS` ou `OIDC_PROF_GROUPS` est renseigné, le rôle est recalculé à chaque connexion :
+Les groupes se déclarent à deux endroits : `OIDC_ADMIN_GROUPS` et `OIDC_PROF_GROUPS` dans le `.env`, et le champ **Groupes OIDC** de chaque rôle (menu **Rôles** de l'inventaire, y compris pour les rôles sur mesure). Dès qu'un groupe est déclaré, le rôle est recalculé à chaque connexion :
 
 | Groupes de la personne | Rôle |
 |---|---|
-| un groupe de `OIDC_ADMIN_GROUPS` | Admin (l'emporte sur Prof) |
-| un groupe de `OIDC_PROF_GROUPS` | Prof |
-| aucun groupe configuré | Emprunteur, **sauf** si son rôle actuel a été choisi à la main par un admin de l'inventaire |
+| un groupe de l'Admin (`.env` ou écran Rôles) | Admin (l'emporte toujours) |
+| des groupes de plusieurs autres rôles | celui qui a **le plus de droits** |
+| un seul groupe déclaré | le rôle correspondant |
+| aucun groupe déclaré | Emprunteur, **sauf** si son rôle actuel a été choisi à la main par un admin de l'inventaire |
 
 Autrement dit :
 
@@ -194,7 +195,7 @@ Autrement dit :
 - un rôle **choisi par un admin** dans l'inventaire n'est jamais rétrogradé par Authentik. Il est seulement remplacé si la personne entre dans un groupe configuré ;
 - quand un admin modifie le rôle d'un utilisateur dans l'inventaire, ce rôle n'est plus géré par les groupes.
 
-Sans groupes configurés, les rôles se gèrent uniquement dans l'inventaire (**Utilisateurs → Modifier**).
+Sans groupes déclarés, les rôles se gèrent uniquement dans l'inventaire (**Personnes → Modifier**).
 
 > Le rôle est mis à jour **à la connexion**. Pour retirer un droit immédiatement, désactivez ou modifiez aussi le compte dans l'inventaire.
 

@@ -1,0 +1,7 @@
+{#- Photo de profil, ou initiales à défaut. Tailles : "" (34 px), "small" (32 px), "tiny" (24 px), "large" (96 px). -#}
+{% macro avatar(user, size="") -%}
+<span class="avatar{{ ' ' ~ size if size }}" aria-hidden="true">
+  {%- if user.avatar %}<img src="{{ url_for('users.avatar_file', name=user.avatar.rsplit('/', 1)[-1]) }}" alt="" loading="lazy">
+  {%- else %}{{ user.initials }}{% endif -%}
+</span>
+{%- endmacro %}

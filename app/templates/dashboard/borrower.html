@@ -6,6 +6,11 @@
   <h1>Bonjour {{ current_user.first_name }}</h1>
   <p>Le matériel que {{ asso_name }} vous prête.</p>
 </div>
+{% if can_request_loan() %}
+<div class="quick-actions">
+  <a href="{{ url_for('loans.create') }}" role="button">Demander du matériel</a>
+</div>
+{% endif %}
 <section class="card">
   <h2>Mes prêts en cours</h2>
   {{ loan_table(loans, "Vous n'avez aucun prêt en cours.") }}

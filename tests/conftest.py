@@ -2,6 +2,7 @@ import os
 from functools import partial
 
 from hypothesis import settings
+from sqlalchemy import text
 
 import pytest
 from werkzeug.security import generate_password_hash
@@ -27,10 +28,30 @@ def fast_hashing(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def reset_login_throttle():
-    from app.blueprints import auth
-    auth._failures.clear()
+    from app.services import throttle
+    throttle.reset_all()
     yield
-    auth._failures.clear()
+    throttle.reset_all()
+
+
+_HEADS = []
+
+
+def stamp(revisions):
+    """La base de test est créée sans Alembic (create_all) : on y inscrit la version voulue."""
+    db.session.execute(text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) PRIMARY KEY)"))
+    db.session.execute(text("DELETE FROM alembic_version"))
+    for rev in revisions:
+        db.session.execute(text("INSERT INTO alembic_version VALUES (:r)"), {"r": rev})
+    db.session.commit()
+
+
+def stamp_head():
+    """create_all produit le schéma le plus récent : la base est donc « à jour » pour la page de santé."""
+    if not _HEADS:
+        from app.services.health import migration_heads
+        _HEADS.extend(migration_heads()[1])
+    stamp(_HEADS)
 
 
 @pytest.fixture
@@ -43,6 +64,7 @@ def app(tmp_path):
     app = create_app(Cfg)
     with app.app_context():
         db.create_all()
+        stamp_head()
         yield app
         db.session.remove()
         db.drop_all()
@@ -64,7 +86,7 @@ def make_user(role, email=None, active=True, password="motdepasse"):
 
 @pytest.fixture
 def users(app):
-    return {r: make_user(r) for r in Role.ALL}
+    return {r: make_user(r) for r in Role.BUILTIN}
 
 
 def login(client, user, password="motdepasse"):

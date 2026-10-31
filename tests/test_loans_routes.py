@@ -63,15 +63,15 @@ def make_loan(users, *items, status=LoanStatus.DEMANDE, loan_type=LoanType.RESER
 
 @pytest.mark.parametrize("url,allowed", [
     ("/prets", {A, P}),
-    ("/prets/nouveau", {A, P}),
-    ("/prets/recherche-materiel?q=sax", {A, P}),
+    ("/prets/nouveau", {A, P, E}),  # l'emprunteur demande pour lui-même (loan.request_own)
+    ("/prets/recherche-materiel?q=sax", {A, P, E}),
     ("/mes-prets", {A, P, E}),
     ("/notifications", {A, P, E}),
     ("/utilisateurs", {A, P}),
     ("/utilisateurs/nouveau", {A, P}),
 ])
 def test_access(client, as_role, gear, url, allowed):
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         as_role(role)
         assert client.get(url).status_code == (200 if role in allowed else 403), (url, role)
 
@@ -285,9 +285,14 @@ def test_check_endpoint_warns_on_pending(client, as_role, users, gear):
     assert "aussi demandé" in r.text
 
 
-def test_borrower_cannot_use_fragments(client, as_role, gear):
-    as_role(E)
+def test_fragments_need_a_request_right(client, app, gear):
+    from app.models import Role as RoleModel
+    db.session.add(RoleModel(key="lecture", name="Lecture", permissions=["myloans.view"]))
+    db.session.commit()
+    login(client, make_user("lecture", email="lecture@ohn.test"))
     assert client.post("/prets/verifier", data={}).status_code == 403
+    assert client.get("/prets/recherche-materiel?q=sax").status_code == 403
+    assert client.get("/prets/nouveau").status_code == 403
 
 
 # ---------------------------------------------------------------------------

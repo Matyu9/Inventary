@@ -4,6 +4,7 @@ from flask import current_app
 
 from ..extensions import db
 from ..models import Role, User
+from ..permissions import permissions_of
 from .activity import log
 
 
@@ -34,15 +35,30 @@ def client():
 
 
 def role_from_groups(groups):
-    """Rôle donné par les groupes OIDC (le plus élevé l'emporte), None si aucun ne correspond."""
+    """Rôle donné par les groupes OIDC, None si aucun ne correspond.
+
+    Groupes du .env (OIDC_ADMIN_GROUPS, OIDC_PROF_GROUPS) et groupes saisis sur chaque rôle : l'administrateur
+    l'emporte, puis le rôle qui a le plus de droits.
+    """
     if isinstance(groups, str):
         groups = [groups]
     groups = set(groups or [])
-    if groups & set(current_app.config["OIDC_ADMIN_GROUPS"]):
+    config = current_app.config
+    candidates = set()
+    if groups & set(config["OIDC_ADMIN_GROUPS"]):
+        candidates.add(Role.ADMIN)
+    if groups & set(config["OIDC_PROF_GROUPS"]):
+        candidates.add(Role.PROF)
+    candidates |= {r.key for r in _roles_with_groups() if groups & set(r.oidc_group_list)}
+    if not candidates:
+        return None
+    if Role.ADMIN in candidates:
         return Role.ADMIN
-    if groups & set(current_app.config["OIDC_PROF_GROUPS"]):
-        return Role.PROF
-    return None
+    return max(sorted(candidates), key=lambda key: len(permissions_of(key)))
+
+
+def _roles_with_groups():
+    return db.session.scalars(db.select(Role).where(Role.oidc_groups.is_not(None), Role.oidc_groups != "")).all()
 
 
 def resolve_user(claims):
@@ -101,7 +117,7 @@ def _create(claims, sub, email):
 
 def _sync_role(user, claims):
     config = current_app.config
-    if not (config["OIDC_ADMIN_GROUPS"] or config["OIDC_PROF_GROUPS"]):
+    if not (config["OIDC_ADMIN_GROUPS"] or config["OIDC_PROF_GROUPS"] or _roles_with_groups()):
         return
     target = role_from_groups(claims.get(config["OIDC_GROUPS_CLAIM"]))
     if target is None:

@@ -26,6 +26,7 @@ Inspirée de [Shelf.nu](https://www.shelf.nu/), elle est **entièrement en fran�
 - **Calendrier**, avec un flux iCal personnel pour Google Agenda, Outlook ou Apple Calendrier.
 - **Rappels automatiques** : retards, retours, entretiens, stocks bas. Ils s'affichent dans l'appli, et partent aussi par email si un serveur SMTP est configuré.
 - **Rapports** (valeur du parc pour l'assurance et l'AG, utilisation, retards, gardes, coûts d'entretien) et **import / export** CSV ou Excel.
+- **Comptes** : invitations et mot de passe oublié par email, espace « Mon compte » avec les appareils connectés, fiche détaillée de chaque personne, archivage, fusion de doublons et actions groupées.
 - **Connexion OIDC** facultative (Authentik, Keycloak, Google, Microsoft…), avec rôles déduits des groupes.
 - Interface **adaptée au téléphone**, installable comme une application (PWA).
 
@@ -40,7 +41,7 @@ Inspirée de [Shelf.nu](https://www.shelf.nu/), elle est **entièrement en fran�
 | Supprimer ou réformer, comptes, import, paramètres, clôture d'inventaire | ✅ | — | — |
 | Mes prêts, calendrier, notifications | ✅ | ✅ | ✅ |
 
-Le détail des droits est dans le [guide d'utilisation](docs/guide-utilisateur.md#qui-peut-faire-quoi). Côté code, toutes les règles sont centralisées dans [app/permissions.py](app/permissions.py).
+Ce sont les droits **par défaut** : les droits du Prof et de l'Emprunteur se modifient dans l'écran **Rôles** (admin), qui permet aussi de créer des rôles sur mesure (« Régisseur », « Secrétariat »…). L'Admin garde toujours tous les droits. Le détail des droits est dans le [guide d'utilisation](docs/guide-utilisateur.md#qui-peut-faire-quoi). Côté code, toutes les règles sont centralisées dans [app/permissions.py](app/permissions.py).
 
 ## Démarrage rapide
 

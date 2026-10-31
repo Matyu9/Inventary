@@ -458,9 +458,12 @@ def test_shared_tag_kept_until_last_item_deleted(client, as_role):
     as_role(A)
     for item in (sax, flute):
         client.post(f"/objets/{item.id}/modifier", data=_item_form(item, tags="concert"))
-    client.post(f"/objets/{sax.id}/supprimer")
+    for item in (sax, flute):  # mise à la corbeille : les tags restent, au cas où l'objet serait restauré
+        client.post(f"/objets/{item.id}/supprimer")
     assert _tag_names() == ["concert"]
-    client.post(f"/objets/{flute.id}/supprimer")
+    client.post(f"/corbeille/objets/{sax.id}/supprimer")
+    assert _tag_names() == ["concert"]
+    client.post(f"/corbeille/objets/{flute.id}/supprimer")
     assert _tag_names() == []
 
 

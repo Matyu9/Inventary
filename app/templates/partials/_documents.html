@@ -1,0 +1,44 @@
+{#- Section « Documents » d'une fiche objet ou kit. kind : "objets" ou "kits". -#}
+{% macro documents_section(kind, owner) %}
+{% if can(current_user, "document.view") %}
+<section id="documents">
+  <h2>Documents</h2>
+  {% if owner.documents %}
+  <ul class="documents">
+    {% for d in owner.documents %}
+    <li>
+      <span class="doc-ext">{{ d.extension }}</span>
+      <div>
+        <a href="{{ url_for('documents.show', document_id=d.id, name=d.original_name) }}" target="_blank" rel="noopener">{{ d.title }}</a>
+        <br><small class="muted">{{ d.kind_label }} · {{ d.size | filesize }} · {{ d.created_at | date_fr }}{% if d.uploaded_by %} · {{ d.uploaded_by.full_name }}{% endif %}</small>
+      </div>
+      {% if can(current_user, "document.edit") %}
+      <form method="post" action="{{ url_for('documents.delete', document_id=d.id) }}" onsubmit="return confirm('Supprimer ce document ?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="link-button small">Supprimer</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">Aucun document (facture, notice, certificat…).</p>{% endif %}
+  {% if can(current_user, "document.edit") %}
+  <details>
+    <summary>Joindre un document</summary>
+    <form method="post" action="{{ url_for('documents.add', kind=kind, owner_id=owner.id) }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid">
+        <label>Fichier(s) <input type="file" name="documents" multiple required accept="{{ document_accept }}"></label>
+        <label>Type
+          <select name="kind">{% for key, label in document_kinds.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select>
+        </label>
+        <label>Titre (facultatif) <input type="text" name="title" maxlength="160" placeholder="ex. Facture d'achat 2024"></label>
+      </div>
+      <small class="muted">PDF, image, Word, Excel, OpenDocument ou texte, 16 Mo au plus.</small>
+      <button type="submit" class="secondary">Joindre</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% endif %}
+{% endmacro %}

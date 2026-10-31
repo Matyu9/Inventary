@@ -2,6 +2,12 @@
 {% from "partials/_loan_rows.html" import loan_table %}
 {% block title %}{{ kit.name }}{% endblock %}
 {% block content %}
+{% set waiting = pending_reports_for(kit) %}
+{% if waiting %}
+<div class="flash flash-warning" role="status">{{ waiting | length }} signalement{{ "s" if waiting | length > 1 }} à traiter
+  ({{ waiting[0].kind_label | lower }} : « {{ waiting[0].message | truncate(80) }} »).
+  <a href="{{ url_for('public_reports.index') }}">Voir les signalements</a></div>
+{% endif %}
 <div class="page-head">
   <div>
     <p class="muted crumbs"><a href="{{ url_for('kits.index') }}">Kits</a> › KIT-{{ "%03d" % kit.id }}</p>
@@ -12,7 +18,7 @@
     {% if can(current_user, "loan.request") and kit.items %}<a href="{{ url_for('loans.create', kit_id=kit.id) }}" role="button">Prêter / réserver</a>{% endif %}
     {% if can(current_user, "item.edit") %}<a href="{{ url_for('kits.edit', kit_id=kit.id) }}" role="button" class="secondary">Modifier</a>{% endif %}
     {% if can(current_user, "item.delete") %}
-    <form method="post" action="{{ url_for('kits.delete', kit_id=kit.id) }}" onsubmit="return confirm('Supprimer ce kit ? Les objets restent dans l\'inventaire.')">
+    <form method="post" action="{{ url_for('kits.delete', kit_id=kit.id) }}" onsubmit="return confirm('Mettre ce kit à la corbeille ? Les objets restent dans l\'inventaire. Il pourra être restauré pendant 30 jours.')">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="contrast outline">Supprimer</button>
     </form>
@@ -61,6 +67,9 @@
     </div>
   </section>
 </div>
+
+{% from "partials/_documents.html" import documents_section with context %}
+{{ documents_section("kits", kit) }}
 
 <section>
   <h2>Prêts</h2>

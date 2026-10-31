@@ -28,7 +28,12 @@ def index():
         db.select(Item.status, db.func.count()).group_by(Item.status)
     ).all())
     pending = db.session.scalars(
-        db.select(Loan).where(Loan.status == LoanStatus.DEMANDE).order_by(Loan.start)
+        db.select(Loan).where(Loan.status == LoanStatus.DEMANDE, Loan.awaiting_guarantor.is_(False))
+        .order_by(Loan.start)
+    ).all()
+    to_confirm = db.session.scalars(
+        db.select(Loan).where(Loan.status == LoanStatus.DEMANDE, Loan.awaiting_guarantor.is_(True),
+                              Loan.guarantor_id == current_user.id).order_by(Loan.start)
     ).all()
     overdue = db.session.scalars(
         db.select(Loan).where(Loan.status == LoanStatus.EN_COURS, Loan.end < now).order_by(Loan.end)
@@ -48,6 +53,6 @@ def index():
     ).all()
     return render_template(
         "dashboard/index.html",
-        counts=counts, statuses=ItemStatus.ALL, pending=pending, overdue=overdue,
+        counts=counts, statuses=ItemStatus.ALL, pending=pending, to_confirm=to_confirm, overdue=overdue,
         upcoming=upcoming, maintenances=maintenances, low_stock=low_stock,
     )

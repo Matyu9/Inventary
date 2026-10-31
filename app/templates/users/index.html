@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Personnes{% endblock %}
+{% from "partials/_avatar.html" import avatar %}
 {% block content %}
+{% set manage = can(current_user, "user.manage") %}
 <div class="page-head">
   <h1>Personnes</h1>
-  <a href="{{ url_for('users.create') }}" role="button">+ {{ "Nouvelle personne" if can(current_user, "user.manage") else "Nouvelle fiche emprunteur" }}</a>
+  <a href="{{ url_for('users.create') }}" role="button">+ {{ "Nouvelle personne" if manage else "Nouvelle fiche emprunteur" }}</a>
 </div>
 <form method="get" class="filters">
   <input type="search" name="q" value="{{ q }}" placeholder="Nom, email, pupitre…" aria-label="Recherche">
@@ -11,26 +13,54 @@
     <option value="">Tous les rôles</option>
     {% for key, label in labels.items() %}<option value="{{ key }}" {{ "selected" if role == key }}>{{ label }}</option>{% endfor %}
   </select>
+  <select name="statut" aria-label="Statut" onchange="this.form.submit()">
+    <option value="">Tous (hors archivés)</option>
+    {% for key, label in statuses.items() %}<option value="{{ key }}" {{ "selected" if status == key }}>{{ label }}</option>{% endfor %}
+  </select>
+  <noscript><button type="submit">Filtrer</button></noscript>
+</form>
+<form method="post" action="{{ url_for('users.bulk', **request.args) }}" id="bulk-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
 <div class="overflow-auto"><table class="striped">
-  <thead><tr><th>Nom</th><th>Rôle</th><th>Pupitre / classe</th><th>Contact</th><th>Accès</th><th>Prêts actifs</th><th></th></tr></thead>
+  <thead><tr>
+    {% if manage %}<th><input type="checkbox" aria-label="Tout sélectionner" onclick="document.querySelectorAll('input[name=user_ids]').forEach(c => c.checked = this.checked)"></th>{% endif %}
+    <th>Nom</th><th>Rôle</th><th>Pupitre / classe</th><th>Contact</th><th>Statut</th><th>Connexion</th><th>Prêts</th><th></th>
+  </tr></thead>
   <tbody>
   {% for u in users %}
+  {% set st = status_of(u, invited) %}
   <tr>
-    <td>{{ u.last_name | upper }} {{ u.first_name }}{% if u.member_status %} <small class="muted">({{ u.member_status }})</small>{% endif %}</td>
-    <td>{{ labels[u.role] }}</td>
+    {% if manage %}<td>{% if current_user.is_admin or not u.is_admin %}<input type="checkbox" name="user_ids" value="{{ u.id }}" form="bulk-form" aria-label="Sélectionner {{ u.full_name }}">{% endif %}</td>{% endif %}
+    <td><span class="person">{{ avatar(u, "tiny") }}<span><a href="{{ url_for('users.detail', user_id=u.id) }}">{{ u.last_name | upper }} {{ u.first_name }}</a>{% if u.member_status %} <small class="muted">({{ u.member_status }})</small>{% endif %}</span></span></td>
+    <td>{{ labels.get(u.role, u.role) }}</td>
     <td>{{ u.section or "—" }}</td>
     <td><small>{{ u.email or "" }}{% if u.phone %}<br>{{ u.phone }}{% endif %}</small></td>
-    <td>{{ "✓" if u.active else "—" }}</td>
+    <td><span class="badge account-{{ st }}">{{ statuses[st] }}</span></td>
+    <td><small>{{ u.last_login_at | datetime_fr if u.last_login_at else "—" }}</small></td>
     <td>{{ active_loans.get(u.id, 0) }}</td>
     <td class="actions">
-      {% if can(current_user, "loan.request") %}<a href="{{ url_for('loans.create', borrower_id=u.id) }}">Prêter</a>{% endif %}
-      {% if can(current_user, "user.manage") %}<a href="{{ url_for('users.edit', user_id=u.id) }}">Modifier</a>{% endif %}
+      {% if can(current_user, "loan.request") and not u.archived_at %}<a href="{{ url_for('loans.create', borrower_id=u.id) }}">Prêter</a>{% endif %}
+      {% if manage and (current_user.is_admin or not u.is_admin) %}<a href="{{ url_for('users.edit', user_id=u.id) }}">Modifier</a>{% endif %}
     </td>
   </tr>
   {% else %}
-  <tr><td colspan="7" class="muted">Personne ne correspond.</td></tr>
+  <tr><td colspan="9" class="muted">Personne ne correspond.</td></tr>
   {% endfor %}
   </tbody>
 </table></div>
+{% if manage and users %}
+<fieldset class="bulk">
+  <select name="action" form="bulk-form" aria-label="Action groupée">
+    {% for key, label in bulk_actions.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+  </select>
+  <select name="role" form="bulk-form" aria-label="Nouveau rôle (pour « Changer le rôle »)">
+    <option value="">— nouveau rôle —</option>
+    {% for key, label in role_choices %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+  </select>
+  <button type="submit" form="bulk-form" class="secondary"
+          onclick="return confirm('Appliquer l\'action aux personnes sélectionnées ?')">Appliquer à la sélection</button>
+</fieldset>
+<p class="muted small">« Ouvrir l'accès » envoie une invitation par email à ceux qui n'ont pas encore de mot de passe.</p>
+{% endif %}
 {% endblock %}

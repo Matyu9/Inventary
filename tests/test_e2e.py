@@ -19,6 +19,7 @@ from app.models import Category, Item, Kit, Location, Role, User  # noqa: E402
 
 pytestmark = pytest.mark.e2e
 PASSWORD = "motdepasse-e2e"
+APP = {}  # appli du serveur de test, pour lire la base depuis un test
 
 
 @pytest.fixture(scope="module")
@@ -51,6 +52,7 @@ def server(tmp_path_factory):
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
     app.config["BASE_URL"] = f"http://127.0.0.1:{httpd.server_port}"
+    APP["app"] = app
     yield app.config["BASE_URL"]
     httpd.shutdown()
 
@@ -386,3 +388,69 @@ def test_every_staff_page_without_js_errors(page_for):
         page.goto(path)
         assert page.locator("h1").count() >= 1, path
     assert not page.errors, page.errors
+
+
+def test_anonymous_report_from_qr_then_handled(browser, server, page_for):
+    """Une personne sans compte scanne le QR, signale un objet trouvé ; un prof le voit et le traite."""
+    from app.models import PublicReport
+    with APP["app"].app_context():
+        token = db.session.scalar(db.select(Item.qr_token).where(Item.code == "OHN-0002"))
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, base_url=server, locale="fr-FR")
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(f"/q/{token}")
+    assert "Flûte traversière" in page.inner_text("h1")
+    page.click("summary:has-text('trouvé cet objet')")
+    hp = page.locator("details[open] .hp input").bounding_box()
+    assert hp is None or hp["x"] + hp["width"] < 0  # piège à robots hors de l'écran
+    form = page.locator("details[open] form")
+    form.locator("textarea[name=message]").fill("Oubliée dans la salle des fêtes, déposée à l'accueil")
+    form.locator("input[name=name]").fill("Camille")
+    form.locator("button[type=submit]").click()
+    assert "bien été transmis" in page.locator(".flash-success").inner_text()
+    ctx.close()
+    assert errors == []
+    with APP["app"].app_context():
+        assert db.session.scalar(db.select(PublicReport.name).where(PublicReport.kind == "trouve")) == "Camille"
+
+    prof = page_for("prof")
+    prof.click(".sidebar a[href='/signalements']")
+    assert "Oubliée dans la salle des fêtes" in prof.inner_text("main")
+    prof.fill("input[name=note]", "Récupérée")
+    prof.click("text=Marquer comme traité")
+    assert "Aucun signalement à traiter" in prof.inner_text("main")
+
+
+def test_borrower_request_then_guarantor_accepts(page_for):
+    """L'emprunteur demande du matériel en choisissant son garant ; le prof accepte depuis son tableau de bord."""
+    borrower = page_for("emprunteur", mobile=True)
+    borrower.click("text=Demander du matériel")
+    borrower.wait_for_url(re.compile(r"/prets/nouveau"))
+    assert borrower.locator("#borrower_id").count() == 0
+    value = borrower.locator("#guarantor_id option", has_text="Paul").first.get_attribute("value")
+    borrower.select_option("#guarantor_id", value)
+    borrower.check("input[value=reservation]")
+    borrower.fill("#start", local_dt(20))
+    borrower.fill("#end", local_dt(21))
+    borrower.fill("#loan-form input[name=q]", "flûte")
+    borrower.wait_for_selector("#equipment-results >> text=OHN-0002")
+    borrower.click("#equipment-results button[data-add-line]")
+    borrower.wait_for_selector("#availability .flash-success")
+    borrower.click("button:has-text('Envoyer au garant')")
+    borrower.wait_for_selector("text=votre garant")
+    assert "En attente du garant" in borrower.locator(".page-head").inner_text()
+    loan_url = borrower.url
+    assert not borrower.errors
+
+    prof = page_for("prof")
+    assert "Demandes à confirmer comme garant" in prof.inner_text("main")
+    prof.goto(loan_url)
+    prof.click("button:has-text('être garant')")
+    prof.wait_for_selector("text=attend maintenant la validation")
+    assert "Demandé" in prof.locator(".page-head .badge").inner_text()
+
+    admin = page_for("admin")
+    admin.goto(loan_url)
+    admin.click(".page-head button:has-text('Valider')")
+    admin.wait_for_selector("text=Prêt validé.")

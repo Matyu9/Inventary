@@ -152,7 +152,7 @@ DATA_DIR=/tmp/copie .venv/bin/flask db upgrade
 ## Conventions
 
 - **Interface en français**, de même que les messages d'erreur, les commentaires et les docstrings. Les noms de code (variables, fonctions) sont en anglais. Les URL sont en français (`/prets/nouveau`).
-- **Droits** : toujours via `can()`, `@require` ou `ensure()` ([permissions.py](../app/permissions.py)), jamais en testant le rôle directement dans une vue ou un template. Un nouveau droit s'ajoute à `ROLE_PERMISSIONS` et à `tests/test_permissions.py`.
+- **Droits** : toujours via `can()`, `@require` ou `ensure()` ([permissions.py](../app/permissions.py)), jamais en testant le rôle directement dans une vue ou un template. Un nouveau droit s'ajoute à `PERMISSION_GROUPS` (avec son libellé), aux `DEFAULT_PERMISSIONS` des rôles de base qui l'ont, et à `tests/test_permissions.py`. Les rôles déjà enregistrés en base ne le reçoivent pas : prévoir une migration de données si besoin.
 - **Règles métier dans `services/`**, pas dans les routes. Un service lève une exception métier au message lisible par l'utilisateur, et **ne fait pas de commit**.
 - **Historique** : toute modification visible d'un objet, d'un kit ou d'un prêt écrit une entrée avec `activity.log(...)`, en précisant les changements (`changes={champ: [ancien, nouveau]}`) quand c'est utile.
 - **Notifications** : `notify(...)`. Pour un rappel périodique, ajoutez une `dedup_key` qui inclut la période.
@@ -166,7 +166,7 @@ DATA_DIR=/tmp/copie .venv/bin/flask db upgrade
 Liste de contrôle :
 
 1. **Modèle** (si besoin) : modifier [app/models.py](../app/models.py), générer la migration, la relire en pensant aux [pièges de SQLite](#pièges-de-sqlite), et tester l'aller-retour.
-2. **Droits** : ajouter l'action à `ROLE_PERMISSIONS`, avec son test.
+2. **Droits** : ajouter l'action à `PERMISSION_GROUPS` et aux `DEFAULT_PERMISSIONS`, avec son test.
 3. **Service** : la règle métier, avec ses exceptions et ses tests unitaires.
 4. **Route** : dans le blueprint du domaine, protégée par `@require` ; commit en fin de route ; réponse HTMX si pertinent.
 5. **Template** : boutons masqués avec `can(...)` ; vérifier l'affichage sur mobile (moins de 960 px).

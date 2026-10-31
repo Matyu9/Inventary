@@ -5,14 +5,16 @@ Ce guide décrit l'inventaire écran par écran. Il s'adresse aux trois rôles :
 ## Sommaire
 
 - [Se connecter](#se-connecter)
+- [Mon compte](#mon-compte)
 - [Les trois rôles](#les-trois-rôles)
 - [Le tableau de bord](#le-tableau-de-bord)
 - [L'inventaire](#linventaire)
   - [Fiche objet](#fiche-objet)
   - [Créer et modifier un objet](#créer-et-modifier-un-objet)
   - [Statuts et états](#statuts-et-états)
-  - [Photos, notes, entretiens, rappels](#photos-notes-entretiens-rappels)
+  - [Photos, documents, notes, entretiens, rappels](#photos-documents-notes-entretiens-rappels)
   - [Réformer ou supprimer](#réformer-ou-supprimer)
+  - [La corbeille](#la-corbeille)
   - [Actions groupées](#actions-groupées)
 - [Lieux, catégories, tags et champs personnalisés](#lieux-catégories-tags-et-champs-personnalisés)
 - [Kits](#kits)
@@ -28,6 +30,7 @@ Ce guide décrit l'inventaire écran par écran. Il s'adresse aux trois rôles :
   - [Récupérer le matériel](#récupérer-le-matériel)
   - [Prolonger, raccourcir, annuler](#prolonger-raccourcir-annuler)
 - [QR codes, étiquettes et scanner](#qr-codes-étiquettes-et-scanner)
+- [Signalements](#signalements)
 - [Inventaire physique](#inventaire-physique)
 - [Calendrier et abonnement iCal](#calendrier-et-abonnement-ical)
 - [Notifications et rappels automatiques](#notifications-et-rappels-automatiques)
@@ -43,18 +46,30 @@ Ce guide décrit l'inventaire écran par écran. Il s'adresse aux trois rôles :
 
 ![Page de connexion](images/connexion.png)
 
-- **Avec email et mot de passe.** Le compte est créé par un administrateur, qui vous communique un **mot de passe provisoire**. À la première connexion, l'appli demande d'en choisir un nouveau, d'au moins 8 caractères. Vous pourrez le changer plus tard via le menu de votre avatar, en haut à droite, puis **Mot de passe**.
+- **Avec email et mot de passe.** Le compte est créé par un administrateur. Vous recevez une **invitation** par email (ou l'admin vous transmet le lien) : le lien, valable 7 jours, permet de choisir votre mot de passe, d'au moins 8 caractères. Si l'admin vous a plutôt donné un **mot de passe provisoire**, l'appli demande d'en choisir un nouveau à la première connexion. Vous pourrez le changer plus tard dans [Mon compte](#mon-compte).
 - **Avec le compte de l'association** : si le bouton « Se connecter avec … » est affiché, la connexion passe par le fournisseur d'identité de l'association (Authentik, Google…). Voir [la doc OIDC](oidc-authentik.md#comptes-et-rôles) pour le rattachement des comptes.
 - Après 8 échecs en 15 minutes, la connexion est bloquée quelques minutes pour cet email ou cette adresse.
 - **Rester connecté** garde la session ouverte sur cet appareil. À éviter sur un ordinateur partagé.
 
-Mot de passe oublié : demandez à un administrateur de générer un nouveau mot de passe provisoire.
+**Mot de passe oublié ?** Le lien sous le formulaire de connexion envoie un email de réinitialisation (valable 1 heure, utilisable une seule fois). Choisir un nouveau mot de passe déconnecte vos autres appareils. Si l'envoi d'emails n'est pas configuré, demandez à un administrateur un nouveau lien ou un mot de passe provisoire.
+
+## Mon compte
+
+Cliquez sur votre nom (en bas du menu) ou sur votre avatar, puis **Mon compte** :
+
+- **Profil** : prénom, nom et téléphone ;
+- **Photo de profil** : recadrée en carré, elle remplace vos initiales dans le menu et apparaît dans la liste des personnes et sur votre fiche. Elle n'est visible que des personnes connectées à l'appli ;
+- **Changer d'adresse email** : un lien de confirmation part vers la nouvelle adresse, et l'ancienne reste active tant qu'il n'a pas été suivi. L'ancienne adresse reçoit ensuite un message de prévenance. Votre mot de passe actuel est demandé ;
+- **Changer mon mot de passe** ;
+- **Mes appareils connectés** : navigateur, adresse IP, date de connexion et dernière activité de chaque appareil. Déconnectez un appareil que vous ne reconnaissez pas, ou tous vos autres appareils d'un coup.
 
 ## Les trois rôles
 
 - **Administrateur** : gère tout, et il est le seul à **valider** les prêts, à supprimer, à gérer les comptes et les paramètres.
 - **Professeur** : gère l'inventaire au quotidien (objets, notes, entretiens, stock). Il **demande** les prêts pour ses élèves et s'en porte **garant**, puis remet et récupère le matériel des prêts dont il est garant.
-- **Emprunteur** : voit uniquement **ses** prêts, son calendrier et ses notifications. Un emprunteur peut aussi être une simple **fiche** sans accès à l'appli : un élève à qui on prête un instrument, mais qui ne se connecte pas.
+- **Emprunteur** : voit uniquement **ses** prêts, son calendrier et ses notifications. Il peut **demander du matériel pour lui-même** en choisissant un garant, qui doit accepter (voir [Demande d'un emprunteur](#demande-dun-emprunteur)). Un emprunteur peut aussi être une simple **fiche** sans accès à l'appli : un élève à qui on prête un instrument, mais qui ne se connecte pas.
+
+Ce sont les rôles de base. Un admin peut modifier leurs droits et créer d'autres rôles : voir [Rôles sur mesure](#rôles-sur-mesure).
 
 Le tableau complet est en fin de guide : [Qui peut faire quoi](#qui-peut-faire-quoi).
 
@@ -126,8 +141,9 @@ L'**état** décrit l'objet physique : neuf, bon, usé, à réparer, HS. Il peut
 
 Un objet **en entretien** ou **réformé** ne peut pas être prêté.
 
-### Photos, notes, entretiens, rappels
+### Photos, documents, notes, entretiens, rappels
 
+- **Documents** : section « Documents » des fiches objet et kit. Joignez une facture, un devis, une notice, une garantie, un certificat ou une attestation d'assurance : PDF, image, Word, Excel, OpenDocument ou texte, 16 Mo au plus. Choisissez le type et, si vous voulez, un titre. Les PDF et images s'ouvrent dans le navigateur, les autres fichiers se téléchargent. Un fichier dont le contenu ne correspond pas à son extension est refusé. Les documents ont leurs propres droits : par défaut, les profs les voient et en ajoutent, les emprunteurs non. Ils suivent l'objet à la corbeille et sont effacés avec lui.
 - **Photos** : choisissez une image, éventuellement depuis l'appareil photo du téléphone, avec une légende facultative. Les images sont redressées et réduites automatiquement.
 - **Notes** : remarques libres, datées et signées. Un prof peut supprimer ses propres notes, un admin toutes.
 - **Entretiens** : date, type (révision, réparation, nettoyage…), prestataire, coût, description et **date du prochain entretien**. On peut aussi mettre l'objet « en entretien » ou le rendre disponible au même moment. La date du prochain entretien alimente les rappels et le tableau de bord. Les coûts alimentent le rapport « Coûts d'entretien ».
@@ -138,7 +154,19 @@ Un objet **en entretien** ou **réformé** ne peut pas être prêté.
 Réservé aux **admins**.
 
 - **Réformer** retire l'objet du parc sans perdre son historique. C'est l'action normale pour un instrument vendu, perdu ou hors d'usage. Un objet actuellement prêté ne peut pas être réformé. **Réintégrer** le remet en service.
-- **Supprimer** efface la fiche. C'est possible seulement si l'objet n'a **jamais été prêté** : sinon, réformez-le.
+- **Supprimer** met l'objet à la **corbeille**. C'est possible seulement si l'objet n'a **jamais été prêté** (sinon, réformez-le) et s'il n'est pas sorti en ce moment.
+
+### La corbeille
+
+Bouton **Corbeille** en haut de l'inventaire et de la page Kits (admins). Un objet ou un kit supprimé y reste **30 jours** :
+
+- tant qu'il est dans la corbeille, il n'apparaît nulle part (inventaire, recherche, lieux, rapports, exports, inventaires physiques) et son QR code ne mène plus à rien. Son code reste réservé ;
+- **Restaurer** le remet exactement comme avant, avec ses photos, notes et entretiens. Un kit restauré récupère ses objets, sauf ceux qui ont rejoint un autre kit entre-temps ;
+- **Supprimer définitivement** l'efface tout de suite, avec ses photos et son historique ;
+- au bout de 30 jours, il est effacé automatiquement au passage des rappels ;
+- **Vider la corbeille** efface tout d'un coup. Seul un administrateur peut le faire.
+
+Les pointages d'un inventaire physique ne sont pas conservés pour un objet mis à la corbeille. Une catégorie ne peut pas être supprimée tant qu'un objet de la corbeille en fait partie.
 
 ### Actions groupées
 
@@ -166,7 +194,7 @@ Cochez des objets dans la liste pour :
 - La composition ne peut pas changer pendant un prêt en cours.
 - Un kit a son propre QR code. Le scanner pendant un inventaire physique compte tous ses objets.
 - Les consommables ne peuvent pas entrer dans un kit.
-- Seuls les admins suppriment un kit, et seulement s'il n'a jamais été prêté : sinon, retirez-en les objets si besoin.
+- Seuls les admins suppriment un kit, et seulement s'il n'a jamais été prêté : sinon, retirez-en les objets si besoin. Le kit part à la [corbeille](#la-corbeille) et ses objets restent dans l'inventaire.
 
 ## Consommables et stock
 
@@ -232,6 +260,17 @@ Le stock ne peut jamais devenir négatif. Avec un **seuil de stock bas**, les ad
 
 Les admins sont notifiés de la nouvelle demande.
 
+### Demande d'un emprunteur
+
+Un emprunteur connecté peut demander du matériel pour lui-même : bouton **Demander du matériel** sur son tableau de bord et dans « Mes prêts ».
+
+1. Il remplit le même formulaire, sans choisir d'emprunteur (c'est lui) ni de caution, et choisit **son garant** parmi les personnes qui peuvent l'être (un prof, par exemple). Un commentaire lui permet d'expliquer pour quoi faire.
+2. La demande apparaît « **En attente du garant** ». Seul le garant est prévenu : elle figure dans son tableau de bord et dans ses prêts, sous « Demandes à confirmer comme garant ».
+3. Le garant ouvre la demande et clique sur **Accepter d'être garant**, ou la **refuse** avec un motif facultatif. S'il refuse, l'emprunteur est prévenu et la demande passe à « Refusé ».
+4. Une fois acceptée, la demande suit le circuit normal : les admins sont prévenus, la valident ou la refusent, puis le matériel est remis.
+
+Tant que le garant n'a pas répondu, un admin ne peut pas valider la demande (il peut la refuser ou l'annuler), et le matériel n'est pas bloqué. Sans réponse au bout de 3 jours, le garant est relancé chaque jour. L'emprunteur peut annuler sa demande avant la remise. Dans la liste des prêts, ces demandes ont leur propre onglet, **Attente du garant**.
+
 ### Valider ou refuser
 
 Réservé aux **admins**, depuis le tableau de bord ou la fiche du prêt.
@@ -288,7 +327,8 @@ La vérification ne change rien au prêt : le retour au local s'enregistre toujo
 
 Chaque objet et chaque kit a un **QR code unique**. Il contient l'adresse publique de l'appli suivie d'un identifiant secret, par exemple `https://inventaire.exemple.fr/q/3f9a…`.
 
-- **Scanner avec l'appareil photo du téléphone** ouvre directement la fiche, après connexion si besoin. Un emprunteur qui scanne voit une fiche réduite et ses éventuels prêts sur cet objet.
+- **Scanner avec l'appareil photo du téléphone** ouvre directement la fiche pour les admins et les profs connectés. Un emprunteur connecté voit une fiche réduite et ses éventuels prêts sur cet objet.
+- **Sans compte**, n'importe qui (un parent, le gardien de la salle, une personne qui a trouvé l'instrument) voit une page publique : nom de l'association, nom et code de l'objet, et deux boutons, **Signaler un problème** et **J'ai trouvé cet objet**. Rien d'autre n'y apparaît (ni emplacement, ni valeur, ni n° de série, ni emprunteur). Un lien permet aux membres de se connecter pour voir la fiche complète. Voir [Signalements](#signalements).
 - **Page Scanner** (admins et profs) : scan avec la caméra, ou saisie d'un code (`INV-0042`), ou lecture par une douchette USB.
 - **Étiquettes** : depuis une fiche, un kit ou une sélection d'objets dans la liste. Trois formats de planches A4 adhésives (type Avery) sont proposés :
   - petit, 38 × 21 mm, 65 par page ;
@@ -300,6 +340,17 @@ Chaque objet et chaque kit a un **QR code unique**. Il contient l'adresse publiq
 > **Avant d'imprimer**, vérifiez que l'adresse publique (`BASE_URL`) est l'adresse définitive : elle est inscrite dans chaque QR code. L'appli prévient si elle vaut encore `localhost`.
 
 La caméra du navigateur exige une connexion **HTTPS**, sauf sur `localhost`.
+
+## Signalements
+
+**Menu Signalements** (admins et profs, droit « Traiter les signalements »). Les messages laissés depuis la page d'un QR code arrivent ici :
+
+- **Problème signalé** (« le tampon du sol fuit ») ou **Objet trouvé** (« oublié dans la salle des fêtes, déposé à l'accueil »), avec le nom et le contact laissés par la personne s'il y en a ;
+- chaque message prévient par notification (et par email si le SMTP est configuré) les personnes qui traitent les signalements. Pour un objet trouvé, l'emprunteur et le garant d'un prêt en cours sont prévenus aussi ;
+- une pastille dans le menu compte les signalements à traiter, et la fiche de l'objet ou du kit affiche un bandeau ;
+- **Marquer comme traité**, avec une note facultative (« tampon changé »), le range dans l'onglet **Traités**. **Rouvrir** le remet à traiter. Pour un problème, un lien mène aux entretiens de l'objet.
+
+Contre les abus, une même connexion peut envoyer 5 messages par heure, et un même objet en recevoir 10 par heure. Les signalements d'un objet mis à la corbeille ne s'affichent plus. Les textes des deux emails se modifient dans Paramètres → Emails.
 
 ## Inventaire physique
 
@@ -388,19 +439,46 @@ Les lignes en erreur sont ignorées, les autres importées. Les dates (`15/03/20
 ![Liste des personnes](images/utilisateurs.png)
 
 - **Les profs** peuvent créer des **fiches emprunteur**, sans accès à l'appli, pour pouvoir leur prêter du matériel.
+- La liste montre le **statut** de chaque personne (actif, jamais connecté, invitation en attente, sans accès, archivé) et sa **dernière connexion**. Un filtre par statut complète le filtre par rôle ; les fiches archivées n'apparaissent qu'avec le filtre « Archivé ».
+- Un clic sur un nom ouvre la **fiche détaillée** : coordonnées, accès, prêts en cours et passés, prêts dont la personne est garante. Les gestionnaires de comptes y voient aussi les **appareils connectés** (avec déconnexion un par un ou tous d'un coup) et le **journal** des actions faites par la personne ou la concernant.
 - **Les admins** créent et modifient tous les comptes :
-  - **Rôle** : administrateur, professeur ou emprunteur.
-  - **Peut se connecter** : ouvre l'accès, ce qui demande un email. L'appli génère alors un **mot de passe provisoire**, affiché **une seule fois**. Transmettez-le à la personne, qui devra le changer à sa première connexion.
-  - **Nouveau mot de passe provisoire** : en cas d'oubli.
-  - Décocher **Peut se connecter** coupe l'accès immédiatement, y compris pour une personne déjà connectée. L'historique et les prêts sont conservés.
+  - **Rôle** : administrateur, professeur, emprunteur ou un [rôle sur mesure](#rôles-sur-mesure).
+  - **Peut se connecter** : ouvre l'accès, ce qui demande un email. L'appli envoie une **invitation** : un lien valable 7 jours pour choisir son mot de passe. Sans email configuré (ou si l'envoi échoue), le lien s'affiche **une seule fois** pour que vous le transmettiez.
+  - Depuis la fiche : **Renvoyer l'invitation** (ou **Envoyer un lien de réinitialisation** si la personne a déjà un mot de passe), et **Mot de passe provisoire** en dernier recours, à transmettre de vive voix. Un nouveau lien annule le précédent.
+  - Décocher **Peut se connecter** coupe l'accès immédiatement, y compris pour une personne déjà connectée, et annule les liens en attente. L'historique et les prêts sont conservés.
+- **Actions groupées** : cochez des personnes dans la liste, puis **Ouvrir l'accès** (avec invitation par email), **Couper l'accès**, **Archiver** ou **Changer le rôle**. Les personnes qui ne s'y prêtent pas (sans email, avec des prêts en cours, votre propre compte…) sont ignorées et listées.
+- **Gestion de la fiche** (en bas de la fiche détaillée) :
+  - **Archiver** : pour une personne qui quitte l'association. Elle perd son accès et disparaît des listes et des choix (emprunteur, garant), mais tout son historique reste. Impossible tant qu'elle a des prêts en cours ou à venir, comme emprunteuse ou garante. **Sortir des archives** la remet dans les listes, sans accès.
+  - **Supprimer** : seulement pour une fiche sans aucun historique (créée par erreur, par exemple).
+  - **Fusionner** : deux fiches pour la même personne (créée deux fois, ou fiche emprunteur puis compte). La fiche choisie est conservée et récupère les prêts, notes, entretiens, notifications et le journal de l'autre, ainsi que l'email, le téléphone, le pupitre ou la photo qui lui manquent. L'appli propose les doublons probables (même nom, email ou téléphone).
 - Un admin ne peut pas retirer ses propres droits d'administrateur, pour éviter de se retrouver sans aucun admin.
+- Seul un admin peut donner ou retirer le rôle d'administrateur, ou modifier, archiver ou réinitialiser le compte d'un admin.
 
 Avec la connexion OIDC et des groupes configurés, les rôles peuvent aussi venir du fournisseur d'identité : voir [Rôles d'après les groupes](oidc-authentik.md#rôles-daprès-les-groupes).
 
+## Rôles sur mesure
+
+**Menu Rôles** (admins). La liste montre chaque rôle, son nombre de droits, ses groupes OIDC et le nombre de personnes qui l'ont.
+
+- **Nouveau rôle** : un nom (« Régisseur », « Secrétariat »…), une description facultative, puis les droits à cocher, regroupés par thème (inventaire, prêts, inventaires et rapports, administration).
+- **Dupliquer** part des droits d'un rôle existant : pratique pour créer « Prof principal » à partir de Professeur.
+- **Modifier** : on peut aussi renommer les rôles de base et changer les droits du Professeur et de l'Emprunteur. L'**Administrateur** garde toujours tous les droits.
+- **Supprimer** : seulement pour un rôle sur mesure que plus personne n'a. Les rôles de base ne se suppriment pas.
+- **Groupes OIDC** : les membres de ces groupes reçoivent le rôle à la connexion (voir [Rôles d'après les groupes](oidc-authentik.md#rôles-daprès-les-groupes)).
+
+Quelques droits ont un effet particulier :
+
+- **Être garant** : la personne apparaît dans la liste des garants, voit « Prêts dont je suis garant » et remet ou récupère le matériel des prêts dont elle est garante ;
+- **Ajouter des notes** et **Enregistrer des entretiens** permettent de supprimer les siens ; « … des autres » permet de supprimer ceux de tout le monde ;
+- **Gérer les comptes** donne accès à la modification des personnes, mais pas aux comptes administrateurs ni à l'écran Rôles, réservés aux admins.
+
+Un changement de droits s'applique immédiatement, y compris aux personnes déjà connectées.
+
 ## Paramètres
 
-**Menu Paramètres** (admins). La page affiche la configuration en cours : nom de l'association, adresse publique, préfixe des codes, état des emails. Elle propose deux actions :
+**Menu Paramètres** (admins). La page affiche la configuration en cours : nom de l'association, adresse publique, préfixe des codes, état des emails. Elle propose ces actions :
 
+- **État de l'installation**, qui vérifie la base de données, les migrations, l'espace disque, le passage des rappels automatiques et les emails (voir [Installation](installation.md#journaux-et-diagnostic)) ;
 - **M'envoyer un email de test**, pour vérifier la configuration SMTP ;
 - **Lancer les rappels maintenant**, sans attendre le prochain passage automatique.
 
@@ -417,11 +495,14 @@ Sur téléphone, une barre d'onglets en bas d'écran donne accès à l'accueil, 
 
 ## Qui peut faire quoi
 
+Droits par défaut des rôles de base (modifiables dans l'écran [Rôles](#rôles-sur-mesure)).
+
 | Action | Admin | Prof | Emprunteur |
 |---|:---:|:---:|:---:|
 | Voir l'inventaire, les kits, les lieux | ✅ | ✅ | — |
 | Créer et modifier objets, kits, lieux, catégories, photos, tags | ✅ | ✅ | — |
-| Réformer ou supprimer un objet ; supprimer un kit, un lieu, une catégorie | ✅ | — | — |
+| Voir, ajouter et supprimer les documents joints (factures, notices…) | ✅ | ✅ | — |
+| Réformer ou supprimer un objet ; supprimer un kit, un lieu, une catégorie ; restaurer depuis la corbeille | ✅ | — | — |
 | Ajouter une note | ✅ | ✅ | — |
 | Supprimer une note | ✅ | ses notes | — |
 | Enregistrer un entretien, un rappel | ✅ | ✅ | — |
@@ -429,8 +510,10 @@ Sur téléphone, une barre d'onglets en bas d'écran donne accès à l'accueil, 
 | Mouvements de stock | ✅ | ✅ | — |
 | Champs personnalisés | ✅ | — | — |
 | Créer une fiche emprunteur (sans accès) | ✅ | ✅ | — |
-| Gérer les comptes, rôles et accès | ✅ | — | — |
-| Demander un prêt | ✅ | ✅ (garant) | — |
+| Gérer les comptes et les accès | ✅ | — | — |
+| Créer et modifier les rôles | ✅ (toujours) | — | — |
+| Demander un prêt | ✅ | ✅ (garant) | pour lui-même, avec un garant |
+| Accepter ou refuser d'être garant d'une demande d'emprunteur | — | s'il a été choisi | — |
 | Voir tous les prêts | ✅ | ✅ | ses prêts |
 | Valider ou refuser un prêt, modifier sa date de fin | ✅ | — | — |
 | Remettre et récupérer le matériel | ✅ | s'il est garant | — |
@@ -438,6 +521,8 @@ Sur téléphone, une barre d'onglets en bas d'écran donne accès à l'accueil, 
 | Imprimer la liste du matériel d'un prêt | ✅ | ✅ | ses prêts |
 | Annuler un prêt (avant la remise) | ✅ | s'il l'a demandé ou en est garant | — |
 | Scanner, imprimer des étiquettes | ✅ | ✅ | — |
+| Traiter les signalements reçus par QR code | ✅ | ✅ | — |
+| Signaler un problème ou un objet trouvé depuis un QR code | ✅ | ✅ | ✅ (et sans compte) |
 | Scanner pendant un inventaire physique | ✅ | ✅ | — |
 | Ouvrir, clôturer, supprimer un inventaire physique | ✅ | — | — |
 | Rapports et export | ✅ | ✅ | — |

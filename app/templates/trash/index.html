@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Corbeille{% endblock %}
+{% macro row_actions(kind, obj, label) %}
+  <div class="actions">
+    <form method="post" action="{{ url_for('trash.restore', kind=kind, obj_id=obj.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="secondary">Restaurer</button>
+    </form>
+    <form method="post" action="{{ url_for('trash.purge', kind=kind, obj_id=obj.id) }}"
+          onsubmit="return confirm('Supprimer définitivement {{ label }} ? Ses photos et son historique seront effacés.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="contrast outline">Supprimer définitivement</button>
+    </form>
+  </div>
+{% endmacro %}
+{% macro deleted_cells(obj) %}
+  <td data-label="Supprimé">{{ obj.deleted_at | datetime_fr }}{% if obj.deleted_by %}<br><small class="muted">par {{ obj.deleted_by.full_name }}</small>{% endif %}</td>
+  {% set left = days_left(obj) %}
+  <td data-label="Effacé dans">{% if left %}{{ left }} jour{{ "s" if left > 1 }}{% else %}au prochain passage{% endif %}</td>
+{% endmacro %}
+{% block content %}
+<div class="page-head">
+  <h1>Corbeille</h1>
+  {% if (items or kits) and can(current_user, "settings.manage") %}
+  <form method="post" action="{{ url_for('trash.empty') }}"
+        onsubmit="return confirm('Vider la corbeille ? Tout ce qu\'elle contient sera supprimé définitivement.')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="contrast outline">Vider la corbeille</button>
+  </form>
+  {% endif %}
+</div>
+<p class="muted">Les objets et kits supprimés restent ici {{ retention }} jours, puis sont effacés automatiquement avec
+  leurs photos et leur historique. Tant qu'un objet est dans la corbeille, il n'apparaît nulle part ailleurs et son
+  QR code ne mène plus à rien.</p>
+
+{% if not items and not kits %}
+<p class="empty">La corbeille est vide.</p>
+{% endif %}
+
+{% if items %}
+<h2>Objets</h2>
+<div class="overflow-auto"><table class="striped responsive">
+  <thead><tr><th>Code</th><th>Désignation</th><th>Catégorie</th><th>Supprimé</th><th>Effacé dans</th><th></th></tr></thead>
+  <tbody>
+  {% for item in items %}
+    <tr>
+      <td data-label="Code"><code>{{ item.code }}</code></td>
+      <td data-label="Désignation">{{ item.name }}</td>
+      <td data-label="Catégorie">{{ item.category.name }}</td>
+      {{ deleted_cells(item) }}
+      <td>{{ row_actions("objets", item, item.code) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
+{% if kits %}
+<h2>Kits</h2>
+<div class="overflow-auto"><table class="striped responsive">
+  <thead><tr><th>Nom</th><th>Objets à remettre</th><th>Supprimé</th><th>Effacé dans</th><th></th></tr></thead>
+  <tbody>
+  {% for kit in kits %}
+    <tr>
+      <td data-label="Nom">{{ kit.name }}</td>
+      <td data-label="Objets à remettre">{{ (kit.trashed_item_ids or []) | length }}</td>
+      {{ deleted_cells(kit) }}
+      <td>{{ row_actions("kits", kit, "le kit « " ~ kit.name ~ " »") }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+{% endblock %}

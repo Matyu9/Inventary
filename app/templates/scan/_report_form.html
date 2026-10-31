@@ -1,0 +1,27 @@
+{#- Deux formulaires repliables : « Signaler un problème » et « J'ai trouvé cet objet ». -#}
+{% macro report_forms(form, token, show_identity=true) %}
+{% set chosen = form.kind.data %}
+{% for kind, title, hint in [
+    ("probleme", "Signaler un problème", "Qu'avez-vous constaté ? (tampon qui fuit, clé tordue, étui abîmé…)"),
+    ("trouve", "J'ai trouvé cet objet", "Où l'avez-vous trouvé, et où est-il maintenant ?")] %}
+<details class="report-form"{% if chosen == kind %} open{% endif %}>
+  <summary role="button" class="{{ 'secondary' if kind == 'probleme' else 'contrast outline' }}">{{ title }}</summary>
+  <form method="post" action="{{ url_for('scan.report', token=token) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="kind" value="{{ kind }}">
+    <label>{{ hint }}
+      <textarea name="message" rows="4" maxlength="2000" required>{{ form.message.data or "" if chosen == kind else "" }}</textarea>
+    </label>
+    {% if chosen == kind and form.message.errors %}<small class="error">{{ form.message.errors | join(" ") }}</small>{% endif %}
+    {% if show_identity %}
+    <div class="grid">
+      <label>{{ form.name.label.text }} <input type="text" name="name" maxlength="120" autocomplete="name" value="{{ form.name.data or '' if chosen == kind else '' }}"></label>
+      <label>{{ form.contact.label.text }} <input type="text" name="contact" maxlength="160" autocomplete="tel" value="{{ form.contact.data or '' if chosen == kind else '' }}"></label>
+    </div>
+    {% endif %}
+    <div class="hp" aria-hidden="true"><label>Ne pas remplir <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+    <button type="submit">Envoyer</button>
+  </form>
+</details>
+{% endfor %}
+{% endmacro %}

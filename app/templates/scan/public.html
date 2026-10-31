@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "partials/_icons.html" import icon %}
+{% from "scan/_report_form.html" import report_forms with context %}
+{% block title %}{{ obj.name }}{% endblock %}
+{% block content %}
+<article class="login-card public-item">
+  <div class="brand">
+    <span class="brand-mark">{{ icon("music", 18) }}</span>
+    <span class="brand-text"><strong>{{ asso_name }}</strong><small>Inventaire des instruments et du matériel</small></span>
+  </div>
+  <h1>{{ obj.name if obj.code is defined else "Kit " ~ obj.name }}</h1>
+  {% if obj.code is defined %}<p class="muted"><code>{{ obj.code }}</code></p>{% endif %}
+  <p>Ce matériel appartient à <strong>{{ asso_name }}</strong>. Un souci, ou vous l'avez trouvé ? Prévenez-nous ici,
+    sans avoir besoin de compte.</p>
+  {{ report_forms(form, token) }}
+  <p class="small muted">Vous faites partie de l'association ?
+    <a href="{{ url_for('auth.login', next=url_for('scan.resolve', token=token)) }}">Connectez-vous</a> pour voir la fiche complète.</p>
+</article>
+{% endblock %}

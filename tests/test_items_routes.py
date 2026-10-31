@@ -67,7 +67,7 @@ def test_anonymous_redirected_to_login(client, url):
     ("/champs-perso/nouveau", {A}),
 ])
 def test_page_access_by_role(client, as_role, ref, url, allowed):
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         as_role(role)
         expected = 200 if role in allowed else 403
         assert client.get(url).status_code == expected, (url, role)
@@ -75,7 +75,7 @@ def test_page_access_by_role(client, as_role, ref, url, allowed):
 
 def test_item_pages_access_by_role(client, as_role, ref):
     item = new_item(ref["bois"])
-    for role in Role.ALL:
+    for role in Role.BUILTIN:
         as_role(role)
         ok = role != E
         assert client.get(f"/objets/{item.id}").status_code == (200 if ok else 403)
@@ -448,7 +448,13 @@ def test_admin_deletes_item_and_photos(client, as_role, app, ref):
     client.post(f"/objets/{item.id}/notes", data={"text": "note"})
     r = client.post(f"/objets/{item.id}/supprimer")
     assert r.status_code == 302
+    # D'abord la corbeille : masqué, mais photos et notes conservées.
     assert db.session.scalar(db.select(db.func.count(Item.id))) == 0
+    assert db.session.scalar(db.select(db.func.count(Note.id))) == 1
+    assert all(f.exists() for f in files)
+    # Puis la suppression définitive efface tout.
+    client.post(f"/corbeille/objets/{item.id}/supprimer")
+    assert db.session.scalar(db.select(db.func.count(Item.id)).execution_options(include_deleted=True)) == 0
     assert db.session.scalar(db.select(db.func.count(Note.id))) == 0
     assert not any(f.exists() for f in files)
 

@@ -2,9 +2,17 @@
 {% from "partials/_loan_rows.html" import loan_table %}
 {% block title %}Mes prêts{% endblock %}
 {% block content %}
-<h1>Mes prêts</h1>
+<div class="page-head">
+  <h1>Mes prêts</h1>
+  {% if can_request_loan() %}<a href="{{ url_for('loans.create') }}" role="button">Demander du matériel</a>{% endif %}
+</div>
 {{ loan_table(as_borrower, "Vous n'avez jamais emprunté de matériel.") }}
-{% if current_user.role != "emprunteur" %}
+{% if to_confirm %}
+<h2>Demandes à confirmer comme garant</h2>
+<p class="muted">Ces personnes vous ont choisi comme garant. Ouvrez la demande pour l'accepter ou la refuser.</p>
+{{ loan_table(to_confirm, "") }}
+{% endif %}
+{% if can(current_user, "loan.guarantee") %}
 <h2>Prêts dont je suis garant</h2>
 {{ loan_table(as_guarantor, "Aucun prêt en cours dont vous êtes garant.") }}
 {% endif %}

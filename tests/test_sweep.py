@@ -17,11 +17,13 @@ from .conftest import login
 A, P, E = Role.ADMIN, Role.PROF, Role.EMPRUNTEUR
 
 # Routes accessibles sans connexion (le reste doit rediriger vers la page de connexion).
-PUBLIC = {"auth.login", "static", "scan.manifest", "scan.service_worker", "calendar.ical"}
+PUBLIC = {"auth.login", "auth.forgot", "auth.token_link", "static", "scan.manifest", "scan.service_worker", "calendar.ical"}
 # Routes ouvertes à l'emprunteur.
 BORROWER = PUBLIC | {"dashboard.index", "auth.logout", "auth.password", "loans.mine", "loans.detail", "loans.checklist",
-                     "users.notifications", "calendar.index", "calendar.events", "calendar.reset_token",
-                     "scan.resolve"}
+                     "users.notifications", "calendar.index", "account.index", "account.change_email",
+                     "account.revoke_session", "account.revoke_others", "account.set_avatar",
+                     "account.remove_avatar", "users.avatar_file", "calendar.events", "calendar.reset_token",
+                     "scan.resolve", "loans.create", "loans.search_equipment", "loans.check"}
 
 
 @pytest.fixture
@@ -124,8 +126,8 @@ def test_borrower_only_reaches_allowed_routes(client, app, users, rich):
 
 
 def test_admin_only_routes_forbidden_to_prof(client, app, users, rich):
-    from app.permissions import ROLE_PERMISSIONS
-    admin_only = {a for a, roles in ROLE_PERMISSIONS.items() if roles == {A}}
+    from app.permissions import DEFAULT_PERMISSIONS
+    admin_only = DEFAULT_PERMISSIONS[A] - DEFAULT_PERMISSIONS[P] - DEFAULT_PERMISSIONS[E]
     assert {"loan.validate", "user.manage", "import", "audit.manage", "settings.manage", "item.delete",
             "customfield.manage"} <= admin_only
     login(client, users[P])

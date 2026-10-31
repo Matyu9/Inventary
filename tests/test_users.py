@@ -54,20 +54,22 @@ def test_create_from_loan_form_redirects_back(client, as_role):
     assert f"/prets/nouveau?borrower_id={user.id}" in r.headers["Location"]
 
 
-def test_admin_creates_account_with_temporary_password(client, as_role):
+def test_admin_creates_account_with_invitation(client, as_role):
     as_role(A)
     r = client.post("/utilisateurs/nouveau", data=person(role=P, active="y", email="Prof2@OHN.test"))
-    assert r.status_code == 200 and "ne sera <strong>plus affiché</strong>" in r.text
-    password = created_password(r)
+    assert r.status_code == 200 and "Transmettez ce lien" in r.text  # SMTP non configuré : lien affiché
+    assert re.search(r'value="http://[^"]+/lien/[\w-]+"', r.text)
     user = db.session.scalar(db.select(User).filter_by(email="prof2@ohn.test"))
-    assert user.role == P and user.active and user.must_change_password and user.check_password(password)
+    assert user.role == P and user.active and user.password_hash is None
     assert db.session.scalar(db.select(Activity).filter_by(action="user.create"))
+    assert db.session.scalar(db.select(Activity).filter_by(action="user.invite"))
 
 
 def test_temporary_password_forces_change(client, as_role):
     as_role(A)
-    password = created_password(client.post("/utilisateurs/nouveau",
-                                            data=person(role=E, active="y", email="lea@ohn.test")))
+    client.post("/utilisateurs/nouveau", data=person(role=E, active="y", email="lea@ohn.test"))
+    lea = db.session.scalar(db.select(User).filter_by(email="lea@ohn.test"))
+    password = created_password(client.post(f"/utilisateurs/{lea.id}/mot-de-passe"))
     client.post("/deconnexion")
     r = client.post("/connexion", data={"email": "lea@ohn.test", "password": password}, follow_redirects=True)
     assert "Choisissez un nouveau mot de passe" in r.text
@@ -125,15 +127,15 @@ def test_edit_keeps_own_email(client, as_role, users):
     assert r.status_code == 302
 
 
-def test_activating_record_without_password_generates_one(client, as_role):
+def test_activating_record_without_password_sends_invitation(client, as_role):
     record = User(first_name="Tom", last_name="Petit", role=E, active=False)
     db.session.add(record)
     db.session.commit()
     as_role(A)
     r = client.post(f"/utilisateurs/{record.id}/modifier", data=person(email="tom@ohn.test", active="y"))
-    assert created_password(r)
+    assert "/lien/" in r.text
     db.session.refresh(record)
-    assert record.active and record.must_change_password
+    assert record.active and record.password_hash is None and not record.must_change_password
 
 
 def test_deactivate_user_blocks_login(client, as_role, users):

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Accès de {{ user.full_name }}{% endblock %}
+{% block content %}
+<article class="narrow">
+  <h1>Accès de {{ user.full_name }}</h1>
+  {% if oidc_only %}
+  <p>Le compte est actif. {{ user.first_name }} se connecte avec le bouton
+    « Se connecter avec {{ config.OIDC_PROVIDER_NAME }} », en utilisant l'adresse <strong>{{ user.email }}</strong>.</p>
+  {% else %}
+  {% if sent %}
+  <p>{{ "Une invitation" if invited else "Un lien de réinitialisation" }} vient d'être envoyé{{ "e" if invited }} à
+    <strong>{{ user.email }}</strong>. Le lien est valable {{ ttl }} et ne sert qu'une fois.</p>
+  {% else %}
+  <p>{% if config.SMTP_HOST %}L'email n'a pas pu partir.{% else %}L'envoi d'emails n'est pas configuré.{% endif %}
+    Transmettez ce lien à {{ user.first_name }} (valable {{ ttl }}, utilisable une seule fois) : il permet de
+    {{ "choisir son" if invited else "choisir un nouveau" }} mot de passe.</p>
+  {% endif %}
+  <label for="invite-link">Lien</label>
+  <input id="invite-link" type="text" value="{{ link }}" readonly onclick="this.select()">
+  <p class="muted small">Le lien ne sera plus affiché. Vous pourrez en générer un nouveau depuis la fiche, ce qui
+    annule le précédent.</p>
+  {% endif %}
+  <div class="actions">
+    <a href="{{ url_for('users.detail', user_id=user.id) }}" role="button">Voir la fiche</a>
+    <a href="{{ url_for('users.index') }}" role="button" class="secondary outline">Personnes</a>
+  </div>
+</article>
+{% endblock %}

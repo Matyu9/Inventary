@@ -3,7 +3,10 @@
 {% block content %}
 <div class="page-head">
   <h1>Kits</h1>
-  {% if can(current_user, "item.edit") %}<a href="{{ url_for('kits.create') }}" role="button">+ Nouveau kit</a>{% endif %}
+  <div class="actions">
+    {% if can(current_user, "item.delete") %}<a href="{{ url_for('trash.index') }}" role="button" class="secondary outline">Corbeille</a>{% endif %}
+    {% if can(current_user, "item.edit") %}<a href="{{ url_for('kits.create') }}" role="button">+ Nouveau kit</a>{% endif %}
+  </div>
 </div>
 <p class="muted">Un kit regroupe des objets toujours prêtés ensemble (batterie complète, sono de concert, saxophone + bec + étui…).</p>
 {% if kits %}

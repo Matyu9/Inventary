@@ -51,6 +51,12 @@ class Kind:
 KINDS = {
     "loan.request": Kind("Nouvelle demande de prêt", "Admins", "Nouvelle demande de {type} pour {emprunteur}",
                          "Examiner la demande", "brand"),
+    "loan.guarantee_request": Kind("Demande de garantie", "Garant choisi par l'emprunteur",
+                                   "{emprunteur} vous demande d'être garant", "Répondre à la demande", "brand"),
+    "loan.guarantee_accepted": Kind("Garantie acceptée", "Emprunteur", "Votre demande n°{numero} a un garant",
+                                    "Voir la demande", "ok"),
+    "loan.guarantee_refused": Kind("Garantie refusée", "Emprunteur", "Demande n°{numero} : garant non obtenu",
+                                   "Voir la demande", "danger"),
     "loan.validated": Kind("Prêt validé", "Emprunteur, garant, demandeur", "Votre {type} n°{numero} est validée",
                            "Voir le prêt", "ok"),
     "loan.refused": Kind("Demande refusée", "Garant, demandeur", "Demande n°{numero} refusée", "Voir la demande",
@@ -74,6 +80,11 @@ KINDS = {
     "item.maintenance": Kind("Entretien à prévoir", "Admins", "Entretien à prévoir : {code} {objet}",
                              "Voir l'objet", "warn"),
     "item.low_stock": Kind("Stock bas", "Admins", "Stock bas : {objet}", "Voir le stock", "warn"),
+    "public.problem": Kind("Problème signalé par QR code", "Personnes qui traitent les signalements",
+                           "Problème signalé : {materiel}", "Voir les signalements", "warn"),
+    "public.found": Kind("Objet trouvé signalé par QR code",
+                         "Personnes qui traitent les signalements, emprunteur et garant",
+                         "Objet trouvé : {materiel}", "Voir les signalements", "ok"),
 }
 
 # Variables utilisables dans les textes, par famille de type ("loan" ou "item").
@@ -85,6 +96,8 @@ VARIABLES = {
              "debut": "Date et heure de début", "fin": "Date et heure de fin", "motif": "Motif du refus"},
     "item": {"code": "Code de l'objet", "objet": "Nom de l'objet", "emplacement": "Emplacement de l'objet",
              "stock": "Stock restant (objets au stock)"},
+    "public": {"materiel": "Objet (code et nom) ou kit concerné", "signalement": "Texte du signalement",
+               "auteur": "Nom laissé par la personne (ou « anonyme »)", "contact": "Contact laissé par la personne"},
 }
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
@@ -121,6 +134,10 @@ def _values(notification):
     if item is not None:
         values.update(code=item.code, objet=item.name, emplacement=item.location.path if item.location else "",
                       stock=item.stock_label if item.is_quantity else "")
+    report = notification.report
+    if report is not None:
+        values.update(materiel=report.target_label, signalement=report.message, auteur=report.name or "anonyme",
+                      contact=report.contact or "")
     return values
 
 
@@ -134,8 +151,12 @@ def _line_label(line):
     return label
 
 
-def _recap(loan, item):
+def _recap(loan, item, report=None):
     """Titre, lignes (libellé, valeur) et liste du matériel du bloc récapitulatif."""
+    if report is not None:
+        rows = [("Type", report.kind_label), ("Message", report.message), ("Nom", report.name),
+                ("Contact", report.contact), ("Envoyé le", date_fr(report.created_at, with_time=True))]
+        return report.target_label, [r for r in rows if r[1]], []
     if loan is not None:
         rows = [
             ("Statut", loan.status_label),
@@ -163,13 +184,15 @@ def compose(notification):
     """(objet, texte, html) de l'email correspondant à une notification."""
     cfg = current_app.config
     kind = KINDS.get(notification.kind)
-    # Prêt ou objet supprimé depuis, ou notification d'avant les types : email générique.
-    if kind and (notification.loan if notification.kind.startswith("loan.") else notification.item) is None:
+    # Prêt, objet ou signalement supprimé depuis, ou notification d'avant les types : email générique.
+    family = notification.kind.split(".")[0] if notification.kind else None
+    subject_of = {"loan": notification.loan, "item": notification.item, "public": notification.report}
+    if kind and (subject_of.get(family) is None or family == "public" and not notification.report.target_label):
         kind = None
     if kind:
         values = _values(notification)
         subject, intro, button = (fill(text, values) for text in texts(notification.kind))
-        recap_title, rows, lines = _recap(notification.loan, notification.item)
+        recap_title, rows, lines = _recap(notification.loan, notification.item, notification.report)
     else:
         subject, intro, button = notification.message, notification.message, "Ouvrir l'inventaire"
         recap_title, rows, lines = None, [], []
@@ -181,6 +204,11 @@ def compose(notification):
 def compose_test(user):
     return _render(user, "Email de test", "Si vous lisez ceci, l'envoi d'emails de l'inventaire fonctionne.",
                    "Ouvrir l'inventaire", current_app.config["BASE_URL"], "ok")
+
+
+def compose_account(user, subject, intro, button, url):
+    """Email lié au compte (invitation, mot de passe oublié…) : mêmes gabarits que les notifications."""
+    return _render(user, subject, intro, button, url, "brand")
 
 
 def _render(user, subject, intro, button, url, tone, recap_title=None, rows=(), lines=()):

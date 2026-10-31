@@ -293,7 +293,10 @@ def run_import(rows, mapping, user, *, default_category=None, create_missing=Tru
                 code = get(row, "code").upper()
                 if code and code in seen_codes:
                     raise ValueError(f"code {code} présent plusieurs fois dans le fichier")
-                item = db.session.scalar(db.select(Item).where(db.func.upper(Item.code) == code)) if code else None
+                item = db.session.scalar(db.select(Item).where(db.func.upper(Item.code) == code)
+                                         .execution_options(include_deleted=True)) if code else None
+                if item is not None and item.deleted_at is not None:
+                    raise ValueError(f"le code {code} est celui d'un objet de la corbeille (restaurez-le d'abord)")
                 if item is not None and not update_existing:
                     raise ValueError(f"le code {code} existe déjà")
                 creating = item is None

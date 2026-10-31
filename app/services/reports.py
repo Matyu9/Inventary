@@ -90,7 +90,7 @@ def custody():
 
 def maintenance_costs(start, end):
     rows = defaultdict(lambda: {"count": 0, "cost": Decimal(0)})
-    for m in db.session.scalars(db.select(Maintenance).where(
+    for m in db.session.scalars(db.select(Maintenance).join(Maintenance.item).where(
             Maintenance.date >= start.date(), Maintenance.date < end.date())):
         row = rows[m.item.category.name]
         row["count"] += 1

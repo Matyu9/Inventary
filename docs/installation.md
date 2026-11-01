@@ -276,10 +276,11 @@ Dans l'appli, **Paramètres → État de l'installation** (`/sante`) fait le poi
 
 ## Liste de contrôle de sécurité
 
-- [ ] `SECRET_KEY` longue et aléatoire, jamais publiée (le fichier `.env` n'est pas versionné).
-- [ ] Appli servie uniquement en **HTTPS**, avec `BASE_URL` en `https://`.
+- [ ] `SECRET_KEY` longue et aléatoire (`python3 -c "import secrets; print(secrets.token_hex(32))"`), propre à cette installation et jamais publiée (le fichier `.env` n'est pas versionné).
+- [ ] Appli servie uniquement en **HTTPS**, avec `BASE_URL` en `https://` (sans quoi les cookies de session ne sont pas marqués `Secure`).
 - [ ] Port 8000 non exposé publiquement (c'est le réglage par défaut de `docker-compose.yml`).
-- [ ] `TRUST_PROXY=1` seulement derrière un reverse proxy.
+- [ ] `TRUST_PROXY=1` derrière le reverse proxy (OpenResty, Nginx Proxy Manager, Caddy, Traefik…), et seulement dans ce cas. Sans lui, l'appli voit toutes les requêtes venir du proxy en `http` : la limite de tentatives de connexion vise l'adresse du proxy, et les redirections sont fausses. Les logs le signalent au démarrage quand `BASE_URL` est en `https://`.
+- [ ] Après une mise à jour, aucune violation « Content Security Policy » dans la console du navigateur (F12) sur les pages courantes (voir [`CSP_REPORT_ONLY`](configuration.md#content-security-policy)).
 - [ ] Sauvegardes automatiques, stockées hors du serveur, et restauration testée au moins une fois.
 - [ ] Comptes des personnes parties désactivés (Personnes → Modifier → décocher « Peut se connecter »).
 - [ ] Système et images Docker mis à jour régulièrement.

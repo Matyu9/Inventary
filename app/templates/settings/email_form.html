@@ -41,8 +41,7 @@
     <h2>Aperçu</h2>
     <p class="muted small">Version enregistrée, d'après la dernière notification de ce type (ou le dernier
       {{ "prêt" if kind.startswith("loan.") else "objet" }} de l'inventaire).</p>
-    <iframe src="{{ url_for('settings.preview_email', kind=kind) }}" title="Aperçu de l'email" sandbox
-            style="width: 100%; height: 640px; border: 1px solid var(--border); border-radius: var(--radius);"></iframe>
+    <iframe src="{{ url_for('settings.preview_email', kind=kind) }}" title="Aperçu de l'email" sandbox class="email-preview"></iframe>
   </div>
 </div>
 {% endblock %}

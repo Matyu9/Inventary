@@ -169,7 +169,7 @@ def test_reports_page(client, as_role, users, park):
     assert r.status_code == 200
     assert "7 300,00 €" in r.text and 'class="hbar"' in r.text and "Gardes en cours par personne" in r.text
     assert "OHN-0001 Sax" in r.text and "45,00 €" in r.text
-    widths = [int(w) for w in re.findall(r'class="hbar" style="width: (\d+)%"', r.text)]
+    widths = [int(w) for w in re.findall(r'class="hbar" data-width="(\d+)"', r.text)]
     assert 100 in widths and all(0 <= w <= 100 for w in widths)
 
 

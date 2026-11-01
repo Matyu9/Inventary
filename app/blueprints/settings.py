@@ -157,4 +157,7 @@ def preview_email(kind):
     _, _, html = mailer.compose(notification)
     response = current_app.make_response(html)
     response.headers["X-Frame-Options"] = "SAMEORIGIN"  # affiché dans un <iframe> de la page d'édition
+    # Styles en ligne indispensables aux emails ; aucun script ; encadrable par l'appli seulement.
+    response.headers["Content-Security-Policy"] = ("default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; "
+                                                   "frame-ancestors 'self'")
     return response

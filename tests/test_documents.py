@@ -164,6 +164,9 @@ def test_image_gets_strict_csp(client, as_role, gear):
     doc = only_document()
     r = client.get(f"/documents/{doc.id}/plan.png")
     assert "default-src 'none'" in r.headers["Content-Security-Policy"]
+    # La CSP globale ne s'y ajoute pas, ni en Report-Only ni en doublon.
+    assert len(r.headers.getlist("Content-Security-Policy")) == 1
+    assert "Content-Security-Policy-Report-Only" not in r.headers
 
 
 def test_section_lists_documents(client, as_role, gear):

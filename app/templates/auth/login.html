@@ -12,7 +12,7 @@
   {% if oidc_enabled %}
   <form method="get" action="{{ url_for('auth.oidc_login') }}">
     {% if request.args.get("next") %}<input type="hidden" name="next" value="{{ request.args.get('next') }}">{% endif %}
-    <button type="submit" style="width: 100%"{% if not oidc_only %} class="secondary"{% endif %}>Se connecter avec {{ config.OIDC_PROVIDER_NAME }}</button>
+    <button type="submit" class="wide{% if not oidc_only %} secondary{% endif %}">Se connecter avec {{ config.OIDC_PROVIDER_NAME }}</button>
     <label><input type="checkbox" name="remember" value="1"> Rester connecté</label>
   </form>
   {% if not oidc_only %}<p class="login-or muted small">ou avec votre email</p>{% endif %}
@@ -23,7 +23,7 @@
     {{ field(form.email, autocomplete="username", autofocus=not oidc_enabled) }}
     {{ field(form.password, autocomplete="current-password") }}
     <label>{{ form.remember() }} {{ form.remember.label.text }}</label>
-    <button type="submit" style="width: 100%">Se connecter</button>
+    <button type="submit" class="wide">Se connecter</button>
   </form>
   <p class="small"><a href="{{ url_for('auth.forgot') }}">Mot de passe oublié ?</a></p>
   {% endif %}

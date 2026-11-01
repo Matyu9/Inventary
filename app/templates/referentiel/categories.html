@@ -8,7 +8,7 @@
   <tbody>
   {% for c in categories %}
   <tr>
-    <td>{% if c.color %}<span class="swatch" style="background: {{ c.color }}"></span>{% endif %}
+    <td>{% if c.color %}<span class="swatch" data-color="{{ c.color }}"></span>{% endif %}
       <a href="{{ url_for('items.index', category=c.id) }}">{{ c.name }}</a></td>
     <td>{{ labels[c.type] }}</td>
     <td>{{ counts.get(c.id, 0) }}</td>

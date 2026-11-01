@@ -23,9 +23,19 @@ La page **Paramètres** de l'appli (admins) affiche les principales valeurs en c
 |---|---|---|
 | `DATA_DIR` | `/data` dans Docker, `./data` sinon | Dossier des données : la base `inventaire.db` et les photos (`uploads/`). C'est lui qu'il faut sauvegarder. |
 | `DATABASE_URL` | `sqlite:///<DATA_DIR>/inventaire.db` | URL SQLAlchemy de la base. **Seul SQLite est pris en charge** : l'appli utilise des fonctions propres à SQLite (recherche sans accents, verrouillage des écritures). |
-| `TRUST_PROXY` | `0` | `1` derrière un reverse proxy qui ajoute les en-têtes `X-Forwarded-For`, `-Proto` et `-Host`. Laissez `0` sinon : ces en-têtes pourraient être falsifiés. |
+| `TRUST_PROXY` | `0` | `1` derrière un reverse proxy qui ajoute les en-têtes `X-Forwarded-For`, `-Proto` et `-Host`. Laissez `0` sinon : ces en-têtes pourraient être falsifiés. Si `BASE_URL` est en `https://` et `TRUST_PROXY` n'est pas à `1`, un avertissement apparaît dans les logs au démarrage (l'appli démarre quand même). |
 | `BIND_ADDR` | `127.0.0.1` | Docker uniquement : adresse du serveur sur laquelle le port 8000 est publié. Gardez `127.0.0.1` si le reverse proxy tourne sur la même machine. S'il est sur une autre machine, mettez l'IP **privée** par laquelle il joint ce serveur (par exemple `10.30.0.2`), et filtrez le port 8000 au pare-feu pour n'accepter que le proxy. |
 | `TZ` | `Europe/Paris` | Fuseau horaire du conteneur. Les dates sont enregistrées et affichées dans l'heure locale du serveur. |
+
+## Content-Security-Policy
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `CSP_REPORT_ONLY` | `1` | `1` : la politique est envoyée en `Content-Security-Policy-Report-Only`. Le navigateur signale les violations dans sa console sans rien bloquer. `0` : elle est envoyée en `Content-Security-Policy` et appliquée. |
+
+La politique n'autorise que les ressources du site lui-même : aucun script ni aucune feuille de style venant d'un CDN, aucun script en ligne, pas d'affichage de l'appli dans un cadre d'un autre site. Les images peuvent être en `data:` (icônes de Pico), comme la police d'icônes de FullCalendar. Les styles en ligne restent permis (`style-src 'unsafe-inline'`) parce que le calendrier (FullCalendar) en injecte. Deux réponses ont leur propre politique, plus stricte, qui n'est jamais remplacée : les images des documents joints et l'aperçu des emails.
+
+**Avant de passer à `0`** : ouvrez les pages principales avec la console du navigateur (F12) et vérifiez qu'aucun message « Content Security Policy » n'apparaît. Les boutons de confirmation (« Supprimer… ? ») et quelques listes déroulantes qui envoient le formulaire utilisent encore des gestionnaires `onclick` / `onsubmit` / `onchange` en ligne, que la politique bloquerait : laissez `1` tant qu'ils n'ont pas été déplacés dans les fichiers JavaScript.
 
 ## Emails (facultatif)
 

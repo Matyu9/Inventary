@@ -2,14 +2,16 @@
 import csv
 import io
 import os
+import re
+from pathlib import Path
 
 import pytest
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 
-from app import create_app
+from app import CSP, create_app
 from app.blueprints import auth
-from app.config import Config, TestConfig
+from app.config import Config, TestConfig, startup_warnings
 from app.extensions import db
 from app.models import Category, Item, Loan, LoanLine, LoginSession, LoanType, Role, Tag, User
 from app.services import stock
@@ -120,6 +122,74 @@ def test_security_headers(client, users):
     r = client.get("/connexion")
     assert r.headers["X-Content-Type-Options"] == "nosniff" and r.headers["X-Frame-Options"] == "DENY"
     assert r.headers["Referrer-Policy"] == "same-origin" and "camera=(self)" in r.headers["Permissions-Policy"]
+
+
+def test_csp_report_only_by_default(client, users):
+    r = client.get("/connexion")
+    assert r.mimetype == "text/html" and "Content-Security-Policy" not in r.headers
+    assert r.headers.getlist("Content-Security-Policy-Report-Only") == [CSP]
+    for directive in ("default-src 'self'", "script-src 'self'", "object-src 'none'", "base-uri 'none'",
+                      "form-action 'self'", "frame-ancestors 'none'"):
+        assert directive in CSP
+
+
+def test_csp_enforced_when_report_only_disabled(app, client, users):
+    app.config["CSP_REPORT_ONLY"] = False
+    r = client.get("/connexion")
+    assert r.headers.getlist("Content-Security-Policy") == [CSP] and "Content-Security-Policy-Report-Only" not in r.headers
+
+
+@pytest.mark.parametrize("value,report_only", [("1", True), ("0", False), ("", False)])
+def test_csp_report_only_env(monkeypatch, value, report_only):
+    import importlib
+
+    import app.config as config_module
+    monkeypatch.setenv("CSP_REPORT_ONLY", value)
+    try:
+        assert importlib.reload(config_module).Config.CSP_REPORT_ONLY is report_only
+    finally:
+        monkeypatch.delenv("CSP_REPORT_ONLY")
+        importlib.reload(config_module)
+
+
+def test_csp_without_inline_scripts_or_external_sources(app):
+    """script-src 'self' : les pages ne chargent aucun script hors du site (CDN), ni balise <script> en ligne."""
+    root = Path(app.root_path, app.template_folder)
+    assert len(list(root.rglob("*.html"))) > 50
+    for path in root.rglob("*.html"):
+        html = path.read_text()
+        for tag in re.findall(r"<script\b[^>]*>", html):
+            assert "src=" in tag and "url_for('static'" in tag, f"{path.relative_to(root)} : {tag}"
+        assert not re.search(r'(src|href)="(https?:)?//', html), f"ressource externe dans {path.relative_to(root)}"
+
+
+def test_no_inline_style_attributes_in_pages(app):
+    """Objectif : retirer 'unsafe-inline' de style-src. Seuls les emails (clients mail) gardent des styles en ligne."""
+    root = Path(app.root_path, app.template_folder)
+    assert len(list(root.rglob("*.html"))) > 50
+    offenders = [f"{p.relative_to(root)}" for p in root.rglob("*.html")
+                 if p.parent.name != "emails" and (re.search(r"\sstyle=", p.read_text()) or "<style" in p.read_text())]
+    assert offenders == []
+
+
+@pytest.mark.parametrize("base_url,trust_proxy,warned", [
+    ("https://inventaire.exemple.org", False, True), ("https://inventaire.exemple.org", True, False),
+    ("http://localhost:8000", False, False)])
+def test_startup_warning_https_without_trust_proxy(base_url, trust_proxy, warned):
+    warnings = startup_warnings({"BASE_URL": base_url, "TRUST_PROXY": trust_proxy})
+    assert bool(warnings) is warned and all("TRUST_PROXY" in w for w in warnings)
+
+
+def test_startup_warning_logged_without_blocking(tmp_path, caplog):
+    class Https(TestConfig):
+        BASE_URL = "https://inventaire.exemple.org"
+        TRUST_PROXY = False
+        DATA_DIR = tmp_path
+        UPLOAD_DIR = tmp_path / "u"
+
+    with caplog.at_level("WARNING"):
+        app = create_app(Https)
+    assert app is not None and any("TRUST_PROXY" in r.getMessage() for r in caplog.records)
 
 
 def test_password_pages_not_cached(client, as_role, users):

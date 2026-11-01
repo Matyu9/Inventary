@@ -6,8 +6,8 @@
   {% if can(current_user, "loan.request") %}<a href="{{ url_for('loans.create') }}" role="button">+ Nouvelle demande</a>{% endif %}
 </div>
 <p class="legend">
-  <span style="--c:#d08a0b">Demandé</span><span style="--c:#2f6fd0">Validé</span><span style="--c:#2e8b4e">En cours</span>
-  <span style="--c:#c0392b">En retard</span><span style="--c:#8c8c8c">Rendu</span>{% if can(current_user, "inventory.view") %}<span style="--c:#7b5ea7">Entretien</span>{% endif %}
+  <span class="lg-demande">Demandé</span><span class="lg-valide">Validé</span><span class="lg-en-cours">En cours</span>
+  <span class="lg-retard">En retard</span><span class="lg-rendu">Rendu</span>{% if can(current_user, "inventory.view") %}<span class="lg-entretien">Entretien</span>{% endif %}
 </p>
 <div id="calendar" data-events-url="{{ url_for('calendar.events') }}"></div>
 

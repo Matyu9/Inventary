@@ -55,6 +55,19 @@ class Config:
     # Masque le formulaire email / mot de passe (la connexion passe uniquement par l'OIDC).
     OIDC_ONLY = os.environ.get("OIDC_ONLY", "0") == "1"
 
+    # Content-Security-Policy : « 1 » = Report-Only (le navigateur signale les violations sans rien bloquer).
+    CSP_REPORT_ONLY = os.environ.get("CSP_REPORT_ONLY", "1") == "1"
+
+
+def startup_warnings(config):
+    """Réglages incohérents qui n'empêchent pas de démarrer mais méritent d'être signalés dans les journaux."""
+    warnings = []
+    if config.get("BASE_URL", "").startswith("https://") and not config.get("TRUST_PROXY"):
+        warnings.append("BASE_URL est en https:// mais TRUST_PROXY n'est pas à 1 : derrière un reverse proxy, "
+                        "l'adresse des visiteurs et le protocole (cookies Secure, redirections) dépendent des "
+                        "en-têtes X-Forwarded-*, ignorés sans TRUST_PROXY=1.")
+    return warnings
+
 
 class TestConfig(Config):
     TESTING = True

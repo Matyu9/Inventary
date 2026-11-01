@@ -4,12 +4,18 @@ from pathlib import Path
 from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from .config import UNSAFE_SECRETS, Config
+from .config import UNSAFE_SECRETS, Config, startup_warnings
 from .errors import register_error_handlers
 from .extensions import csrf, db, login_manager, migrate
 from .services.oidc import init_oidc
 
 __version__ = "0.1.0"
+
+# Styles en ligne encore autorisés : FullCalendar injecte une balise <style> ; il charge aussi sa police d'icônes
+# en data: (font-src). Voir docs/configuration.md, section Content-Security-Policy.
+CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+       "font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; "
+       "frame-ancestors 'none'")
 
 
 def create_app(config_class=Config):
@@ -21,6 +27,8 @@ def create_app(config_class=Config):
     if app.config.get("TRUST_PROXY"):
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     app.config["UPLOAD_DIR"].mkdir(parents=True, exist_ok=True)
+    for warning in startup_warnings(app.config):
+        app.logger.warning(warning)
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -103,6 +111,10 @@ def create_app(config_class=Config):
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "same-origin")
         response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=(), geolocation=()")
+        # Une réponse qui pose sa propre CSP (images des documents, aperçu des emails) la garde telle quelle.
+        if "Content-Security-Policy" not in response.headers:
+            response.headers.setdefault("Content-Security-Policy-Report-Only" if app.config["CSP_REPORT_ONLY"]
+                                        else "Content-Security-Policy", CSP)
         if request.endpoint in ("auth.password", "users.create", "users.edit", "users.reset_password",
                                 "auth.oidc_callback"):
             response.headers["Cache-Control"] = "no-store"  # mots de passe affichés ou saisis

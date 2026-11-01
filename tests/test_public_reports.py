@@ -281,8 +281,8 @@ def test_email_previews_for_report_kinds(client, as_role, gear):
 def test_honeypot_hidden_even_without_stylesheet(client, gear):
     """Feuille de style ancienne (cache du téléphone) : le champ piège ne doit pas apparaître pour autant."""
     page = client.get(f"/q/{gear['sax'].qr_token}").text
-    for block in re.findall(r'<div class="hp"[^>]*>', page):
-        assert "left: -10000px" in block
+    blocks = re.findall(r'<div class="hp"[^>]*>', page)
+    assert blocks and all(re.search(r"\shidden[\s>]", block) for block in blocks)
 
 
 def test_static_urls_are_versioned(client, gear):

@@ -33,6 +33,9 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ### Sécurité
 
+- **Content-Security-Policy** sur toutes les pages, en mode Report-Only par défaut (`CSP_REPORT_ONLY=1`) : le navigateur signale ce qui serait bloqué sans rien casser. Les images des documents et l'aperçu des emails gardent leur propre politique, plus stricte.
+- Avertissement au démarrage quand `BASE_URL` est en `https://` sans `TRUST_PROXY=1`.
+- Plus aucun style en ligne dans les pages (étiquettes, liste à imprimer, connexion…) : tout est dans les feuilles de style du site, première étape pour une politique sans `'unsafe-inline'`.
 - Le lien d'un QR code ne demande plus de connexion : sans compte, il mène à une page publique qui ne montre que le nom et le code de l'objet.
 
 - L'adresse des photos (`/objets/fichiers/…`) ne sert plus que les photos d'objets, et plus le reste du dossier des fichiers envoyés.

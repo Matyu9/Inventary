@@ -73,3 +73,14 @@
     if (trigger) open(trigger);
   });
 })();
+
+// Couleurs (pastilles) et largeurs (barres des rapports) calculées côté serveur : posées ici plutôt qu'en
+// attribut style="…", que la Content-Security-Policy pourra interdire.
+(function () {
+  function apply(root) {
+    root.querySelectorAll("[data-color]").forEach((el) => { el.style.background = el.dataset.color; });
+    root.querySelectorAll("[data-width]").forEach((el) => { el.style.width = el.dataset.width + "%"; });
+  }
+  apply(document);
+  document.addEventListener("htmx:afterSwap", (event) => apply(event.detail.elt));
+})();

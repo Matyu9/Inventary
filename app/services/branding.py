@@ -12,15 +12,16 @@ from ..extensions import db
 from ..models import AppSetting
 from . import photos
 
-# clé : (libellé, couleur principale en thème clair). Les nuances (clair et sombre) sont dans css/app.css.
+# clé : (libellé, couleur principale et fond pâle en thème clair), repris par les emails et la barre du navigateur.
+# Toutes les nuances, thème sombre compris, sont dans css/app.css.
 PALETTES = {
-    "bordeaux": ("Bordeaux", "#8b1e3f"),
-    "bleu": ("Bleu nuit", "#1f4e8c"),
-    "sarcelle": ("Bleu canard", "#0f6b72"),
-    "vert": ("Vert sapin", "#1f6b4a"),
-    "violet": ("Violet", "#5b3a9e"),
-    "terracotta": ("Terracotta", "#a3441f"),
-    "ardoise": ("Ardoise", "#3d4a5c"),
+    "bordeaux": ("Bordeaux", "#8b1e3f", "#f6e8ed"),
+    "bleu": ("Bleu nuit", "#1f4e8c", "#e7eef8"),
+    "sarcelle": ("Bleu canard", "#0f6b72", "#e2f2f3"),
+    "vert": ("Vert sapin", "#1f6b4a", "#e5f2eb"),
+    "violet": ("Violet", "#5b3a9e", "#efe9f8"),
+    "terracotta": ("Terracotta", "#a3441f", "#f9ebe4"),
+    "ardoise": ("Ardoise", "#3d4a5c", "#eaedf1"),
 }
 DEFAULT_PALETTE = "bordeaux"
 DEFAULT_SUBTITLE = "Inventaire"
@@ -38,6 +39,10 @@ class Branding:
     @property
     def theme_color(self):
         return PALETTES[self.palette][1]
+
+    @property
+    def soft_color(self):
+        return PALETTES[self.palette][2]
 
     @property
     def logo_url(self):

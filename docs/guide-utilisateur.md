@@ -490,8 +490,8 @@ Ces réglages se modifient dans le fichier de configuration du serveur : voir [C
 Le bloc **Apparence** de la page Paramètres se règle directement, sans redémarrer :
 
 - **Nom de l'association** et **sous-titre** (« Inventaire » par défaut), affichés en haut du menu. Le nom apparaît aussi sur la page de connexion, dans les emails, sur les étiquettes et dans le calendrier. Laissé vide, le nom reprend celui du fichier de configuration (`ASSO_NAME`) ;
-- **Couleur principale**, parmi sept palettes (bordeaux, bleu nuit, bleu canard, vert sapin, violet, terracotta, ardoise). Chacune a sa variante pour le thème sombre ;
-- **Logo** : PNG, JPEG, WebP ou GIF, de préférence carré. Il est réduit à 256 px, garde sa transparence et remplace la note de musique du menu et de la page de connexion. Il sert aussi d'icône d'onglet. Il est visible sans connexion (page de connexion, page d'un QR code).
+- **Couleur principale**, parmi sept palettes (bordeaux, bleu nuit, bleu canard, vert sapin, violet, terracotta, ardoise). Chacune a sa variante pour le thème sombre. Les emails reprennent aussi cette couleur ;
+- **Logo** : PNG, JPEG, WebP ou GIF, de préférence carré. Un GIF animé ne garde que sa première image. Le logo est réduit à 256 px, garde sa transparence et remplace la note de musique du menu et de la page de connexion. Il sert aussi d'icône d'onglet. Il est visible sans connexion (page de connexion, page d'un QR code).
 
 Chacun choisit en plus son thème clair ou sombre dans **Mon compte**.
 

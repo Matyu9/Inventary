@@ -21,7 +21,7 @@ bp = Blueprint("settings", __name__)
 class BrandingForm(FlaskForm):
     name = StringField("Nom de l'association", validators=[Length(max=branding.NAME_MAX)])
     subtitle = StringField("Sous-titre", validators=[Length(max=branding.SUBTITLE_MAX)])
-    palette = RadioField("Couleur principale", choices=[(k, label) for k, (label, _) in branding.PALETTES.items()])
+    palette = RadioField("Couleur principale", choices=[(k, label) for k, (label, *_) in branding.PALETTES.items()])
 
 
 def _branding_form():

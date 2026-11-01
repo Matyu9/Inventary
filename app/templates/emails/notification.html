@@ -1,6 +1,6 @@
 {#- Email HTML : mise en page en tableaux et styles en ligne, seuls rendus fiables dans les messageries. -#}
 {%- set tones = {
-  "brand": ("#8b1e3f", "#f6e8ed"), "ok": ("#1e7a45", "#e7f4ec"),
+  "brand": (branding.theme_color, branding.soft_color), "ok": ("#1e7a45", "#e7f4ec"),
   "warn": ("#8a5a00", "#fdf3dc"), "danger": ("#b42318", "#fdecea"),
 } -%}
 {%- set accent, accent_bg = tones[tone] -%}
@@ -19,7 +19,7 @@
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f6f5f3;">
   <tr><td align="center" style="padding:24px 12px;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;">
-      <tr><td style="padding:0 4px 12px; font-size:13px; font-weight:600; letter-spacing:.02em; color:#8b1e3f;">
+      <tr><td style="padding:0 4px 12px; font-size:13px; font-weight:600; letter-spacing:.02em; color:{{ branding.theme_color }};">
         Inventaire · {{ asso_name }}
       </td></tr>
       <tr><td style="background:#ffffff; border:1px solid #e6e3de; border-top:4px solid {{ accent }}; border-radius:10px; padding:28px 28px 24px;">
@@ -57,7 +57,7 @@
 
         {%- if url %}
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px;">
-          <tr><td style="border-radius:6px; background:#8b1e3f;">
+          <tr><td style="border-radius:6px; background:{{ branding.theme_color }};">
             <a href="{{ url }}" style="display:inline-block; padding:11px 20px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:6px;">{{ button }}</a>
           </td></tr>
         </table>

@@ -405,3 +405,48 @@ def test_layout_tokens_apply_in_every_theme():
     assert "data-theme" not in base.group(1)
     for token in ("--sidebar-w", "--radius", "--font", "--pico-spacing"):
         assert f"{token}:" in base.group(2)
+
+
+def test_animated_gif_keeps_first_frame(client, users, app):
+    login(client, users[A])
+    frames = [Image.new("RGB", (120, 120), color) for color in ((200, 0, 0), (0, 0, 200))]
+    buf = io.BytesIO()
+    frames[0].save(buf, "GIF", save_all=True, append_images=frames[1:], duration=100, loop=0)
+    buf.seek(0)
+    assert "Logo enregistré." in upload_logo(client, buf, "anime.gif").get_data(as_text=True)
+    with Image.open(logo_path(app)) as image:
+        assert image.format == "PNG" and getattr(image, "n_frames", 1) == 1
+        assert image.convert("RGB").getpixel((60, 60))[0] > 150  # rouge : la première image
+
+
+def test_settings_page_warns_about_animated_gif(client, users):
+    login(client, users[A])
+    assert "Un GIF animé ne garde que sa première image." in client.get("/parametres").get_data(as_text=True)
+
+
+@pytest.mark.parametrize("key", list(branding.PALETTES))
+def test_soft_color_matches_css(key):
+    light = re.search(rf'html:root\[data-palette="{key}"\]:not\(\[data-theme="dark"\]\).*?--brand-soft: (#[0-9a-f]+)', CSS)
+    assert light.group(1) == branding.PALETTES[key][2]
+
+
+def test_emails_follow_palette(client, users, smtp):
+    login(client, users[A])
+    save(client, palette="vert")
+    mailer.send(users[A].email, *mailer.compose_account(users[A], "Sujet", "Intro", "Bouton", "http://x/"))
+    html = smtp.sent[-1].get_body("html").get_content()
+    assert "#1f6b4a" in html and "#8b1e3f" not in html
+
+
+def test_email_recap_uses_palette_background(client, users):
+    login(client, users[A])
+    save(client, palette="vert")
+    # Le fond pâle n'apparaît que dans l'encadré récapitulatif (prêt, objet).
+    _subject, _text, html = mailer._render(users[A], "Sujet", "Intro", "Bouton", "http://x/", "brand",
+                                           recap_title="Votre prêt", rows=[("Début", "demain")])
+    assert "background:#e5f2eb" in html and "color:#1f6b4a" in html
+
+
+def test_emails_default_to_bordeaux(app, users, smtp):
+    mailer.send(users[A].email, *mailer.compose_account(users[A], "Sujet", "Intro", "Bouton", "http://x/"))
+    assert "#8b1e3f" in smtp.sent[-1].get_body("html").get_content()

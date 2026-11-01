@@ -107,6 +107,7 @@ class User(UserMixin, TimestampMixin, db.Model):
     role_from_oidc = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     last_login_at = db.Column(db.DateTime)
     theme = db.Column(db.String(10))  # "light", "dark" ou None (celui du système)
+    dashboard = db.Column(db.JSON)  # {"order": [...], "hidden": [...]} ou None (disposition par défaut)
     # Fiche archivée : plus d'accès, masquée des listes et des choix, historique conservé.
     archived_at = db.Column(db.DateTime)
     avatar = db.Column(db.String(255))  # photo de profil, relative à UPLOAD_DIR (avatars/….jpg)

@@ -14,21 +14,46 @@ Inspirée de [Shelf.nu](https://www.shelf.nu/), elle est **entièrement en fran�
 
 ## Fonctionnalités
 
-- **Inventaire** : fiches avec photos, champs personnalisés par catégorie, tags, lieux en arborescence, historique complet de chaque objet. La recherche ignore les accents : « flute » trouve « Flûte ».
-- **Prêts** de deux sortes :
-  - les *gardes* : un instrument confié pour l'année ;
-  - les *réservations* : une période précise, par exemple un concert.
+### Inventaire
 
-  Le circuit : demande par un prof garant, validation par un admin, remise du matériel, puis retour, éventuellement partiel. Les doubles réservations sont impossibles, même quand deux admins valident en même temps.
-- **Kits** (sono, batterie…), prêtés d'un bloc, et **consommables** (anches, huile…) suivis en stock, avec alerte de stock bas.
-- **QR codes** et planches d'étiquettes A4. On les scanne avec l'appareil photo du téléphone ou depuis la page « Scanner ».
-- **Inventaire physique** : on scanne ce qui est présent, et un rapport liste ce qui est trouvé, manquant ou inattendu.
-- **Calendrier**, avec un flux iCal personnel pour Google Agenda, Outlook ou Apple Calendrier.
-- **Rappels automatiques** : retards, retours, entretiens, stocks bas. Ils s'affichent dans l'appli, et partent aussi par email si un serveur SMTP est configuré.
-- **Rapports** (valeur du parc pour l'assurance et l'AG, utilisation, retards, gardes, coûts d'entretien) et **import / export** CSV ou Excel.
-- **Comptes** : invitations et mot de passe oublié par email, espace « Mon compte » avec les appareils connectés, fiche détaillée de chaque personne, archivage, fusion de doublons et actions groupées.
+- **Fiches objets** : photos, notes, état, statut, marque, modèle, n° de série, prix d'achat et valeur estimée, **champs personnalisés** par catégorie, **tags**, **lieux en arborescence**, historique complet de chaque modification.
+- **Documents joints** aux objets et aux kits : factures, devis, notices, garanties, certificats, assurances (PDF, images, Word, Excel…).
+- **Entretiens** (avec coût et prochaine échéance) et **rappels** programmés sur un objet.
+- **Recherche sans accents** (« flute » trouve « Flûte »), filtres, actions groupées (déplacer, ajouter un tag, étiquettes), « Enregistrer et créer un autre ».
+- **Kits** (sono, batterie…) prêtés d'un bloc, et **consommables** (anches, pupitres…) suivis en quantité, consommés ou retournables, avec alerte de stock bas.
+- **Corbeille** : un objet ou un kit supprimé se restaure pendant 30 jours.
+
+### Prêts
+
+- Deux sortes : les **gardes** (un instrument confié pour l'année) et les **réservations** (une période précise, par exemple un concert).
+- Le circuit : **demande** par un prof qui s'en porte **garant**, **validation** par un admin, **remise**, puis **retour**, éventuellement partiel, avec caution. Les doubles réservations sont impossibles, même quand deux admins valident en même temps.
+- Un **emprunteur** connecté peut demander du matériel pour lui-même : son garant accepte d'abord, puis un admin valide.
+- **« Rien oublié ? »** : en fin de concert, on scanne ce qu'on a en main et l'appli montre ce qui manque, à plusieurs en même temps.
+- **Liste du matériel à imprimer** pour chaque prêt, avec cases départ / retour et signatures.
+
+### QR codes et terrain
+
+- **QR code** sur chaque objet et chaque kit, **planches d'étiquettes A4** en trois formats. On scanne avec l'appareil photo du téléphone, la page « Scanner » ou une douchette.
+- **Page publique** du QR code : sans compte, on peut **signaler un problème** ou dire **« J'ai trouvé cet objet »**. Les messages arrivent dans le menu **Signalements**.
+- **Inventaire physique** : on scanne ce qui est présent, et un rapport liste ce qui est trouvé, manquant, prêté ou inattendu.
+
+### Suivi
+
+- **Tableau de bord** à la carte : chacun choisit les blocs affichés et leur ordre.
+- **Calendrier** des prêts et entretiens, avec un flux iCal personnel pour Google Agenda, Outlook ou Apple Calendrier.
+- **Notifications et rappels automatiques** : retards, retours, sorties, entretiens, stocks bas, demandes en attente. Dans l'appli, et par email si un serveur SMTP est configuré. Les textes des emails se modifient depuis les paramètres.
+- **Rapports** (valeur du parc pour l'assurance et l'AG, utilisation, retours, gardes, coûts d'entretien, objets inactifs) et **import / export** CSV ou Excel.
+
+### Comptes et administration
+
+- **Comptes** : invitations et mot de passe oublié par email, espace « Mon compte » (profil, photo, appareils connectés), fiche détaillée de chaque personne, archivage, fusion de doublons et actions groupées.
+- **Rôles sur mesure** et droits modifiables (voir [Rôles](#rôles)).
 - **Connexion OIDC** facultative (Authentik, Keycloak, Google, Microsoft…), avec rôles déduits des groupes.
+- **Personnalisation** : nom, logo et couleur de l'association ; thème clair ou sombre, taille du texte et page d'accueil au choix de chacun.
+- **État de l'installation** (`/sante`) : base, migrations, disque, rappels et emails vérifiés en un coup d'œil.
 - Interface **adaptée au téléphone**, installable comme une application (PWA).
+
+La liste complète, domaine par domaine, est dans [Liste des fonctionnalités](docs/fonctionnalites.md). Ce qui a changé version après version est dans le [journal des versions](CHANGELOG.md).
 
 ## Rôles
 
@@ -36,9 +61,11 @@ Inspirée de [Shelf.nu](https://www.shelf.nu/), elle est **entièrement en fran�
 |---|:---:|:---:|:---:|
 | Consulter et modifier l'inventaire, notes, entretiens, stock | ✅ | ✅ | — |
 | Demander un prêt (et s'en porter garant) | ✅ | ✅ | — |
+| Demander du matériel pour soi (avec l'accord d'un garant) | ✅ | — | ✅ |
+| Traiter les signalements, documents joints | ✅ | ✅ | — |
 | **Valider ou refuser** un prêt | ✅ | — | — |
 | Remettre ou récupérer le matériel | ✅ | ✅ si garant | — |
-| Supprimer ou réformer, comptes, import, paramètres, clôture d'inventaire | ✅ | — | — |
+| Supprimer ou réformer, corbeille, comptes, rôles, import, paramètres, clôture d'inventaire | ✅ | — | — |
 | Mes prêts, calendrier, notifications | ✅ | ✅ | ✅ |
 
 Ce sont les droits **par défaut** : les droits du Prof et de l'Emprunteur se modifient dans l'écran **Rôles** (admin), qui permet aussi de créer des rôles sur mesure (« Régisseur », « Secrétariat »…). L'Admin garde toujours tous les droits. Le détail des droits est dans le [guide d'utilisation](docs/guide-utilisateur.md#qui-peut-faire-quoi). Côté code, toutes les règles sont centralisées dans [app/permissions.py](app/permissions.py).
@@ -67,6 +94,7 @@ Pour essayer en local avec des données fictives, voir [Développement](docs/dev
 
 | Document | Pour qui | Contenu |
 |---|---|---|
+| [Liste des fonctionnalités](docs/fonctionnalites.md) | Tout le monde | Tout ce que fait l'appli, domaine par domaine |
 | [Guide d'utilisation](docs/guide-utilisateur.md) | Admins, profs, emprunteurs | Toutes les fonctionnalités, écran par écran |
 | [Installation et exploitation](docs/installation.md) | Personne qui héberge l'appli | Docker, reverse proxy, sauvegarde, mise à jour, emails |
 | [Configuration](docs/configuration.md) | Personne qui héberge l'appli | Toutes les variables d'environnement |

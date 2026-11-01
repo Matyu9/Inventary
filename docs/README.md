@@ -2,6 +2,7 @@
 
 | Document | Pour qui | Contenu |
 |---|---|---|
+| [Liste des fonctionnalités](fonctionnalites.md) | Tout le monde | Tout ce que fait l'appli, domaine par domaine |
 | [Guide d'utilisation](guide-utilisateur.md) | Admins, profs, emprunteurs | Toutes les fonctionnalités, écran par écran, et le tableau « qui peut faire quoi » |
 | [Installation et exploitation](installation.md) | Personne qui héberge l'appli | Docker, reverse proxy, emails, sauvegarde, mise à jour, diagnostic |
 | [Configuration](configuration.md) | Personne qui héberge l'appli | Référence de toutes les variables d'environnement |

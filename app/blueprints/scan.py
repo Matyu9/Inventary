@@ -166,7 +166,7 @@ def manifest():
         "name": f"Inventaire — {brand.name}",
         "short_name": "Inventaire",
         "lang": "fr",
-        "start_url": "/",
+        "start_url": "/accueil",  # page d'accueil de chacun (Mon compte → Affichage)
         "scope": "/",
         "display": "standalone",
         "background_color": "#ffffff",

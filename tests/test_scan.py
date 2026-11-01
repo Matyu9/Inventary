@@ -348,7 +348,7 @@ def test_manifest(client, app):
     r = client.get("/manifest.webmanifest")
     assert r.status_code == 200 and r.mimetype == "application/manifest+json"
     data = r.get_json(force=True)
-    assert data["lang"] == "fr" and data["start_url"] == "/" and len(data["icons"]) == 2
+    assert data["lang"] == "fr" and data["start_url"] == "/accueil" and len(data["icons"]) == 2
     for icon in data["icons"]:
         assert client.get(icon["src"]).status_code == 200
 

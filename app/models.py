@@ -108,6 +108,8 @@ class User(UserMixin, TimestampMixin, db.Model):
     last_login_at = db.Column(db.DateTime)
     theme = db.Column(db.String(10))  # "light", "dark" ou None (celui du système)
     dashboard = db.Column(db.JSON)  # {"order": [...], "hidden": [...]} ou None (disposition par défaut)
+    home = db.Column(db.String(20))  # page d'accueil (services/preferences.py) ou None (tableau de bord)
+    text_size = db.Column(db.String(10))  # "large", "xlarge" ou None (normale)
     # Fiche archivée : plus d'accès, masquée des listes et des choix, historique conservé.
     archived_at = db.Column(db.DateTime)
     avatar = db.Column(db.String(255))  # photo de profil, relative à UPLOAD_DIR (avatars/….jpg)

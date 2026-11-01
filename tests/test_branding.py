@@ -343,7 +343,7 @@ def test_invalid_theme_rejected(client, users, value):
     login(client, users[E])
     client.post("/mon-compte/affichage", data={"theme": "dark"})
     r = client.post("/mon-compte/affichage", data={"theme": value}, follow_redirects=True)
-    assert "Choix de thème invalide." in r.get_data(as_text=True)
+    assert "Choix d&#39;affichage invalide." in r.get_data(as_text=True)
     assert db.session.get(User, users[E].id).theme == "dark"
 
 

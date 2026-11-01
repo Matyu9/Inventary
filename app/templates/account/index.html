@@ -71,8 +71,17 @@
       <label class="choice">{{ option() }}{{ option.label.text }}</label>
       {% endfor %}
     </fieldset>
-    <small class="muted">« Comme l'appareil » suit le réglage clair ou sombre de votre téléphone ou ordinateur.
-      Le choix vaut pour tous vos appareils.</small>
+    <small class="muted">« Comme l'appareil » suit le réglage clair ou sombre de votre téléphone ou ordinateur.</small>
+    <fieldset class="choices">
+      <legend>{{ display.text_size.label.text }}</legend>
+      {% for option in display.text_size %}
+      <label class="choice text-sample-{{ option.data }}">{{ option() }}{{ option.label.text }}</label>
+      {% endfor %}
+    </fieldset>
+    <label for="{{ display.home.id }}">{{ display.home.label.text }}</label>
+    {{ display.home() }}
+    <small class="muted">La page qui s'ouvre après la connexion et au lancement de l'appli installée.
+      Un lien reçu (QR code, email) mène toujours à sa page. Ces choix valent pour tous vos appareils.</small>
     <button type="submit" class="secondary">Enregistrer</button>
   </form>
 </section>

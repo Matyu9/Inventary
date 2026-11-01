@@ -6,7 +6,7 @@
   <a href="{{ url_for(endpoint) }}" class="nav-link{{ ' active' if active }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name) }}<span>{{ label }}</span></a>
 {%- endmacro -%}
 <!doctype html>
-<html lang="fr" data-palette="{{ branding.palette }}"{% if current_user.is_authenticated and current_user.theme %} data-theme="{{ current_user.theme }}"{% endif %}>
+<html lang="fr" data-palette="{{ branding.palette }}"{% if current_user.is_authenticated %}{% if current_user.theme %} data-theme="{{ current_user.theme }}"{% endif %}{% if current_user.text_size %} data-text="{{ current_user.text_size }}"{% endif %}{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">

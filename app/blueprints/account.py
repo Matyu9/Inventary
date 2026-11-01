@@ -1,13 +1,13 @@
 """Mon compte : chacun gère son profil, son adresse email et ses appareils connectés."""
-from flask import Blueprint, flash, redirect, render_template, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
-from wtforms import EmailField, PasswordField, RadioField, StringField
+from wtforms import EmailField, PasswordField, RadioField, SelectField, StringField
 from wtforms.validators import DataRequired, Length, Optional, Regexp, ValidationError
 
 from ..extensions import db
 from ..models import AccountToken, User
-from ..services import accounts, mailer, people, sessions
+from ..services import accounts, mailer, people, preferences, sessions
 from ..services.activity import log
 from .users import upload_avatar
 
@@ -46,12 +46,25 @@ class EmailForm(FlaskForm):
 
 class DisplayForm(FlaskForm):
     theme = RadioField("Thème", choices=[("auto", "Comme l'appareil"), ("light", "Clair"), ("dark", "Sombre")])
+    text_size = RadioField("Taille du texte", choices=list(preferences.TEXT_SIZES.items()))
+    home = SelectField("Page d'accueil")
+
+
+def _display_form(formdata=None):
+    """Formulaire prérempli : un champ absent de l'envoi garde sa valeur actuelle."""
+    form = DisplayForm(formdata=formdata, data={
+        "theme": current_user.theme or "auto",
+        "text_size": current_user.text_size or preferences.DEFAULT_TEXT_SIZE,
+        "home": current_user.home if current_user.home in dict(preferences.home_choices(current_user))
+        else preferences.DEFAULT_HOME})
+    form.home.choices = preferences.home_choices(current_user)
+    return form
 
 
 def _render(profile=None, email_form=None):
     return render_template("account/index.html", profile=profile or ProfileForm(obj=current_user),
                            email_form=email_form or EmailForm(), sessions=sessions.of(current_user),
-                           display=DisplayForm(data={"theme": current_user.theme or "auto"}),
+                           display=_display_form(),
                            device_label=sessions.device_label, smtp=mailer.smtp_enabled(),
                            pending=db.session.scalar(db.select(AccountToken).where(
                                AccountToken.user_id == current_user.id, AccountToken.purpose == AccountToken.EMAIL)))
@@ -73,13 +86,15 @@ def index():
 
 @bp.route("/affichage", methods=["POST"])
 def display():
-    form = DisplayForm()
+    form = _display_form(request.form)
     if form.validate_on_submit():
         current_user.theme = None if form.theme.data == "auto" else form.theme.data
+        current_user.text_size = None if form.text_size.data == preferences.DEFAULT_TEXT_SIZE else form.text_size.data
+        current_user.home = None if form.home.data == preferences.DEFAULT_HOME else form.home.data
         db.session.commit()
         flash("Affichage enregistré.", "success")
     else:
-        flash("Choix de thème invalide.", "error")
+        flash("Choix d'affichage invalide.", "error")
     return redirect(url_for(".index") + "#affichage")
 
 

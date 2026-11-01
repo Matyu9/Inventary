@@ -6,7 +6,7 @@ from flask_login import current_user, login_required
 from ..extensions import db
 from ..models import Item, ItemStatus, Loan, LoanStatus, Tracking
 from ..permissions import can, require
-from ..services import dashboard
+from ..services import dashboard, preferences
 from ..services.reminders import due_maintenances
 
 bp = Blueprint("dashboard", __name__)
@@ -81,6 +81,13 @@ def index():
     widgets = [key for key in widgets if key != "to_confirm" or data[key]]  # affiché seulement s'il y en a
     return render_template("dashboard/index.html", widgets=widgets, data=data, statuses=ItemStatus.ALL,
                            wide=dashboard.full_width(widgets))
+
+
+@bp.route("/accueil")
+@login_required
+def start():
+    """Page d'accueil choisie dans Mon compte : point d'entrée de l'appli installée (manifeste)."""
+    return redirect(preferences.home_url(current_user))
 
 
 @bp.route("/tableau-de-bord", methods=["GET", "POST"])

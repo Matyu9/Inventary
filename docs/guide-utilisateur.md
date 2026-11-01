@@ -61,7 +61,10 @@ Cliquez sur votre nom (en bas du menu) ou sur votre avatar, puis **Mon compte** 
 - **Photo de profil** : recadrée en carré, elle remplace vos initiales dans le menu et apparaît dans la liste des personnes et sur votre fiche. Elle n'est visible que des personnes connectées à l'appli ;
 - **Changer d'adresse email** : un lien de confirmation part vers la nouvelle adresse, et l'ancienne reste active tant qu'il n'a pas été suivi. L'ancienne adresse reçoit ensuite un message de prévenance. Votre mot de passe actuel est demandé ;
 - **Changer mon mot de passe** ;
-- **Affichage** : thème clair, sombre, ou « Comme l'appareil » (par défaut, il suit le réglage du téléphone ou de l'ordinateur). Le choix vaut pour tous vos appareils ;
+- **Affichage**, valable sur tous vos appareils :
+  - **thème** clair, sombre, ou « Comme l'appareil » (par défaut, il suit le réglage du téléphone ou de l'ordinateur) ;
+  - **taille du texte** : normale, grande ou très grande. Tout s'agrandit (texte, boutons, champs, menu), pratique sur une tablette posée sur la table ou si les petits caractères fatiguent ;
+  - **page d'accueil** : la page qui s'ouvre après la connexion et au lancement de l'appli installée (tableau de bord, prêts, mes prêts, scanner, matériel ou calendrier, selon vos droits). Un lien reçu (QR code, email) mène toujours à sa page, et « Accueil » dans le menu reste le tableau de bord ;
 - **Mes appareils connectés** : navigateur, adresse IP, date de connexion et dernière activité de chaque appareil. Déconnectez un appareil que vous ne reconnaissez pas, ou tous vos autres appareils d'un coup.
 
 ## Les trois rôles

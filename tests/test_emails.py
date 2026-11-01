@@ -306,6 +306,10 @@ def test_preview(client, as_role, users, resa):
     before = db.session.scalar(db.select(db.func.count(Notification.id)))
     r = client.get("/parametres/emails/loan.validated/apercu")
     assert r.status_code == 200 and r.headers["X-Frame-Options"] == "SAMEORIGIN"
+    # CSP propre à l'aperçu : encadrable par l'appli, styles en ligne des emails permis, aucun script.
+    csp = r.headers["Content-Security-Policy"]
+    assert "frame-ancestors 'self'" in csp and "style-src 'unsafe-inline'" in csp and "script-src" not in csp
+    assert "Content-Security-Policy-Report-Only" not in r.headers
     assert f"Aperçu {resa.id}" in r.text and "Concert de Noël" in r.text and "Bonjour Admin," in r.text
     assert db.session.scalar(db.select(db.func.count(Notification.id))) == before  # rien d'enregistré
 

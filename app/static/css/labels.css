@@ -1,0 +1,30 @@
+/* Planche d'étiquettes imprimables (scan/labels.html). Une classe par format sur <body> : leurs dimensions
+   doivent rester celles de LABEL_FORMATS (app/blueprints/scan.py), ce que vérifie tests/test_scan.py. */
+.fmt-petit { --cols: 5; --w: 38.1mm; --h: 21.2mm; --code: 7pt; --name: 6pt; --asso: 5pt; }
+.fmt-moyen { --cols: 3; --w: 63.5mm; --h: 38.1mm; --code: 11pt; --name: 9pt; --asso: 7pt; }
+.fmt-grand { --cols: 2; --w: 99.1mm; --h: 67.7mm; --code: 11pt; --name: 9pt; --asso: 7pt; }
+
+@page { size: A4; margin: 10mm 7mm; }
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; color: #111; background: #fff; }
+.toolbar { padding: 1rem; background: #f4f4f6; border-bottom: 1px solid #ddd; display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
+.toolbar label { display: flex; flex-direction: column; font-size: .8rem; gap: .2rem; }
+.toolbar select, .toolbar input, .toolbar button, .toolbar a { font: inherit; padding: .4rem .6rem; }
+.toolbar input[name=decalage] { width: 6rem; }
+.toolbar button.print { background: #8b1e3f; color: #fff; border: 0; border-radius: .3rem; cursor: pointer; }
+.warning { background: #fff4e0; color: #7a4b00; padding: .5rem 1rem; margin: 0; }
+.sheet { display: grid; grid-template-columns: repeat(var(--cols), var(--w)); grid-auto-rows: var(--h);
+         justify-content: center; padding: 10mm 0; }
+.label { display: flex; align-items: center; gap: 2mm; padding: 2mm; overflow: hidden; outline: 1px dashed #ccc; outline-offset: -1px; break-inside: avoid; }
+.label svg { height: calc(var(--h) - 4mm); width: auto; flex: none; }
+.label .txt { min-width: 0; line-height: 1.15; }
+.label .code { font-weight: 700; font-size: var(--code); font-family: ui-monospace, Menlo, monospace; }
+.label .name { font-size: var(--name); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.label .asso { font-size: var(--asso); color: #555; }
+.empty { padding: 2rem; text-align: center; color: #666; }
+@media print {
+  .toolbar, .warning { display: none; }
+  .sheet { padding: 0; }
+  .label { outline: none; }
+  .label.blank { visibility: hidden; }
+}

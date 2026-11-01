@@ -148,12 +148,11 @@ def labels():
     entries = entries[:MAX_LABELS]
 
     size = request.args.get("format", "moyen")
-    fmt = LABEL_FORMATS.get(size) or LABEL_FORMATS["moyen"]
     skip = max(0, min(request.args.get("decalage", 0, type=int), 200))
     labels = [dict(e, svg=qr_svg(qr_url(e["token"]))) for e in entries]
     base_url = current_app.config["BASE_URL"]
     return render_template(
-        "scan/labels.html", labels=labels, fmt=fmt, size=size if size in LABEL_FORMATS else "moyen",
+        "scan/labels.html", labels=labels, size=size if size in LABEL_FORMATS else "moyen",
         formats=LABEL_FORMATS, skip=skip, truncated=truncated, max_labels=MAX_LABELS,
         local_url=any(h in base_url for h in ("localhost", "127.0.0.1")), base_url=base_url,
         query_args=[(k, v) for k, v in request.args.items(multi=True) if k not in ("format", "decalage", "csrf_token")],

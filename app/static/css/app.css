@@ -200,6 +200,7 @@ button.small, [role=button].small, .small > button { padding: .25rem .6rem; font
 .link-button { all: unset; cursor: pointer; color: var(--brand); font-size: inherit; }
 /* Pico force `button[type=submit] { width: 100% }`, plus spécifique que `.link-button`. */
 button.link-button { width: auto; }
+button.wide { width: 100%; }
 .link-button:hover { text-decoration: underline; }
 .link-button.small { font-size: .8rem; }
 [role=button].secondary, button.secondary { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
@@ -227,6 +228,7 @@ body.guest .error-card { margin: 0 auto; }
 .settings-security { margin-top: 2rem; }
 .settings-security p { margin: .75rem 0 1rem; }
 .settings-security button { display: inline-flex; align-items: center; gap: .4rem; }
+.email-preview { width: 100%; height: 640px; border: 1px solid var(--border); border-radius: var(--radius); }
 /* Erreur d'une action HTMX (le fragment n'est pas remplacé) : bandeau en haut de page. */
 .flash.htmx-error { position: sticky; top: calc(var(--topbar-h) + .5rem); z-index: 5; }
 .wide { max-width: 46rem; }
@@ -382,6 +384,8 @@ form.inline { display: inline; }
 .quick-move select, .quick-move input, .quick-move button { margin: 0; padding: .3rem .5rem; height: auto; width: auto; font-size: .85rem; }
 .quick-move input { width: 5rem; }
 .legend { display: flex; flex-wrap: wrap; gap: .25rem 1rem; font-size: .84rem; color: var(--text-2); }
+.legend .lg-demande { --c: #d08a0b; } .legend .lg-valide { --c: #2f6fd0; } .legend .lg-en-cours { --c: #2e8b4e; }
+.legend .lg-retard { --c: #c0392b; } .legend .lg-rendu { --c: #8c8c8c; } .legend .lg-entretien { --c: #7b5ea7; }
 .legend span::before { content: ""; display: inline-block; width: .65rem; height: .65rem; border-radius: 50%; background: var(--c); margin-right: .35rem; vertical-align: middle; }
 #calendar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); }
 #calendar .fc-toolbar-title { font-size: 1.15rem; text-transform: capitalize; }
@@ -411,7 +415,7 @@ progress { height: .6rem; border-radius: 999px; }
 .hbar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .88rem; color: var(--text-2); }
 .hbar-track { height: .7rem; }
 .hbar { display: block; height: 100%; background: var(--series-1); border-radius: 0 4px 4px 0; min-width: 2px; }
-.hbar[style="width: 0%"] { display: none; }
+.hbar[data-width="0"] { display: none; }
 .hbar:hover { filter: brightness(1.12); }
 .hbar-value { font-variant-numeric: tabular-nums; font-size: .88rem; color: var(--text); font-weight: 550; }
 .mapping-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0 1rem; }

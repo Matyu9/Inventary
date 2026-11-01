@@ -1,8 +1,10 @@
 import re
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 
+from app.blueprints.scan import LABEL_FORMATS
 from app.extensions import db
 from app.models import Category, Item, Kit, Loan, LoanLine, LoanStatus, LoanType, Role
 from app.services.qr import find_by_token, qr_svg, qr_url, resolve_scan
@@ -268,11 +270,23 @@ def test_labels_from_filters(client, as_role, items):
     assert label_codes(client.get("/etiquettes?q=flute")) == ["OHN-0002"]
 
 
-@pytest.mark.parametrize("fmt,cols", [("petit", 5), ("moyen", 3), ("grand", 2), ("inconnu", 3)])
-def test_label_formats(client, as_role, items, fmt, cols):
+@pytest.mark.parametrize("fmt,css_class", [("petit", "fmt-petit"), ("moyen", "fmt-moyen"), ("grand", "fmt-grand"),
+                                           ("inconnu", "fmt-moyen"), ('"><script>', "fmt-moyen")])
+def test_label_formats(client, as_role, items, fmt, css_class):
     as_role(P)
     r = client.get("/etiquettes", query_string={"format": fmt})
-    assert f"grid-template-columns: repeat({cols}," in r.text
+    assert f'<body class="{css_class}">' in r.text and "/static/css/labels.css" in r.text
+
+
+def test_labels_css_matches_formats(app):
+    """Les dimensions des planches sont dans labels.css (pas de style en ligne) : elles doivent suivre LABEL_FORMATS."""
+    css = (Path(app.static_folder) / "css" / "labels.css").read_text()
+    for key, fmt in LABEL_FORMATS.items():
+        rule = re.search(r"\.fmt-" + key + r" \{([^}]*)\}", css)
+        assert rule, f"format {key} absent de labels.css"
+        props = dict(re.findall(r"--([\w-]+):\s*([^;]+);", rule.group(1)))
+        assert props["cols"] == str(fmt["cols"]) and props["w"] == f"{fmt['w']}mm" and props["h"] == f"{fmt['h']}mm"
+        assert props["code"] == ("7pt" if fmt["h"] < 25 else "11pt")
 
 
 def test_labels_skip_offset(client, as_role, items):

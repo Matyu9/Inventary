@@ -241,3 +241,23 @@ def test_dashboard_migration_keeps_linked_rows(migrated_app):
                                        "SELECT name FROM pragma_table_info('user') WHERE name = 'dashboard'")
     assert users == [(1, "dark")] and sessions == [(1,)] and columns == []
     upgrade(MIGRATIONS)
+
+
+def test_home_and_text_size_migration(migrated_app):
+    """Page d'accueil et taille du texte : colonnes ajoutées sans recréer `user`."""
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="b8d2e6f4a1c7")
+    run_sql(path,
+            "INSERT INTO user (id, first_name, last_name, email, role, active, ical_token, theme) "
+            "VALUES (1, 'Alice', 'Martin', 'alice@ohn.test', 'admin', 1, 'tok', 'dark')",
+            "INSERT INTO login_session (id, user_id, created_at) VALUES ('session-1', 1, '2026-10-31')")
+    upgrade(MIGRATIONS, revision="c3e7a9d1f5b2")
+    users, fk_errors = run_sql(path, "SELECT id, theme, home, text_size FROM user", "PRAGMA foreign_key_check")
+    assert users == [(1, "dark", None, None)] and fk_errors == []
+    run_sql(path, "UPDATE user SET home = 'scan', text_size = 'large'")
+    downgrade(MIGRATIONS, revision="b8d2e6f4a1c7")
+    users, sessions, columns = run_sql(
+        path, "SELECT id, theme FROM user", "SELECT user_id FROM login_session",
+        "SELECT name FROM pragma_table_info('user') WHERE name IN ('home', 'text_size')")
+    assert users == [(1, "dark")] and sessions == [(1,)] and columns == []
+    upgrade(MIGRATIONS)

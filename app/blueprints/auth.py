@@ -9,7 +9,7 @@ from wtforms.validators import DataRequired, EqualTo, Length
 
 from ..extensions import db
 from ..models import AccountToken, User
-from ..services import accounts, mailer, oidc, sessions, throttle
+from ..services import accounts, mailer, oidc, preferences, sessions, throttle
 from ..services.activity import log
 
 # Limitation des tentatives : au-delà de MAX_FAILURES échecs en WINDOW secondes pour un même
@@ -75,7 +75,7 @@ def _login_page(form, status=200):
 @bp.route("/connexion", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("dashboard.index"))
+        return redirect(preferences.home_url(current_user))
     form = LoginForm()
     if request.method == "POST" and oidc.enabled() and current_app.config["OIDC_ONLY"]:
         abort(404)
@@ -90,7 +90,7 @@ def login():
         if user and user.active and valid:
             _clear_failures(keys)
             sessions.start(user, remember=form.remember.data)
-            return redirect(safe_next(request.args.get("next")))
+            return redirect(safe_next(request.args.get("next"), preferences.home_url(user)))
         _record_failure(keys)
         flash("Email ou mot de passe incorrect.", "error")
     return _login_page(form)
@@ -102,7 +102,7 @@ def oidc_login():
         abort(404)
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
-    session["oidc_next"] = safe_next(request.args.get("next"))
+    session["oidc_next"] = request.args.get("next")  # vérifié au retour, une fois la page d'accueil connue
     session["oidc_remember"] = request.args.get("remember") == "1"
     # BASE_URL plutôt que l'hôte de la requête : c'est l'URL déclarée chez le fournisseur.
     redirect_uri = current_app.config["BASE_URL"] + url_for(".oidc_callback")
@@ -118,7 +118,7 @@ def oidc_login():
 def oidc_callback():
     if not oidc.enabled():
         abort(404)
-    next_url = safe_next(session.pop("oidc_next", None))
+    next_url = session.pop("oidc_next", None)
     remember = session.pop("oidc_remember", False)
     try:
         token = oidc.client().authorize_access_token()
@@ -149,7 +149,7 @@ def oidc_callback():
         return redirect(url_for(".login"))
     db.session.commit()
     sessions.start(user, remember=remember)
-    return redirect(next_url)
+    return redirect(safe_next(next_url, preferences.home_url(user)))
 
 
 @bp.route("/deconnexion", methods=["POST"])

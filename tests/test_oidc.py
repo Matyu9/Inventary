@@ -671,3 +671,13 @@ def test_oidc_only_access_without_password_or_link(tmp_path, monkeypatch):
         db.session.remove()
         db.drop_all()
         ctx.pop()
+
+
+def test_lands_on_chosen_home_page(oclient, idp):
+    oidc_login(oclient, idp, ALICE)
+    get_by_sub("alice-1").home = "mine"
+    db.session.commit()
+    oclient.post("/deconnexion")
+    assert oidc_login(oclient, idp, ALICE).headers["Location"] == "/mes-prets"
+    oclient.post("/deconnexion")
+    assert oidc_login(oclient, idp, ALICE, next="/notifications").headers["Location"] == "/notifications"

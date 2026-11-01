@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "partials/_icons.html" import icon %}
+{% block title %}Personnaliser le tableau de bord{% endblock %}
+{% block content %}
+<h1>Personnaliser le tableau de bord</h1>
+<p class="muted">Cochez les blocs à afficher et choisissez leur ordre. Ce réglage n'appartient qu'à vous.</p>
+
+<section class="card">
+  <form method="post" action="{{ url_for('dashboard.customize') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <ul class="dash-widgets">
+      {% for key, shown in layout %}
+      {% set w = widgets[key] %}
+      <li id="w-{{ key }}">
+        <input type="hidden" name="order" value="{{ key }}">
+        <label><input type="checkbox" name="shown" value="{{ key }}" {{ "checked" if shown }}>
+          <span>{{ w.label }}{% if w.note %}<small class="muted note">{{ w.note }}</small>{% endif %}</span></label>
+        <span class="move">
+          <button type="submit" name="move" value="{{ key }}:up" class="secondary outline" aria-label="Monter « {{ w.label }} »" {{ "disabled" if loop.first }}>↑</button>
+          <button type="submit" name="move" value="{{ key }}:down" class="secondary outline" aria-label="Descendre « {{ w.label }} »" {{ "disabled" if loop.last }}>↓</button>
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    <div class="actions">
+      <button type="submit">Enregistrer</button>
+      <a href="{{ url_for('dashboard.index') }}" role="button" class="secondary outline">Retour au tableau de bord</a>
+    </div>
+  </form>
+</section>
+
+<form method="post" action="{{ url_for('dashboard.reset') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="link-button">Remettre la disposition par défaut</button>
+</form>
+{% endblock %}

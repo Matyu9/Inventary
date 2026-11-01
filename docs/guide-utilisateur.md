@@ -83,6 +83,8 @@ Le tableau complet est en fin de guide : [Qui peut faire quoi](#qui-peut-faire-q
 - les **demandes à valider** (admins), les **prêts en retard**, les **sorties des 7 prochains jours** ;
 - les **entretiens à prévoir** et les **stocks bas**.
 
+Le bouton **Personnaliser** permet à chacun de choisir les blocs affichés (compteurs, demandes, retards, sorties, entretiens, stocks bas) et leur ordre, avec les flèches ↑ et ↓. Le réglage est propre à chaque compte et vaut sur tous ses appareils. **Remettre la disposition par défaut** annule tout. Un bloc réservé à un droit (les demandes à valider, par exemple) n'apparaît que pour qui a ce droit. Le bloc « Demandes à confirmer comme garant » ne s'affiche que s'il y en a.
+
 **Les emprunteurs** voient leurs prêts en cours.
 
 ![Accueil d'un emprunteur sur téléphone](images/mobile-mes-prets.png)

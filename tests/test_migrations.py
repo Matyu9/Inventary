@@ -222,3 +222,22 @@ def test_branding_migration_keeps_linked_rows(migrated_app):
         "SELECT name FROM pragma_table_info('user') WHERE name = 'theme'")
     assert sessions == [(1,)] and tables == [] and columns == []
     upgrade(MIGRATIONS)
+
+
+def test_dashboard_migration_keeps_linked_rows(migrated_app):
+    """Disposition du tableau de bord : colonne ajoutée sans recréer `user`."""
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="a1f4c8e2b6d9")
+    run_sql(path,
+            "INSERT INTO user (id, first_name, last_name, email, role, active, ical_token, theme) "
+            "VALUES (1, 'Alice', 'Martin', 'alice@ohn.test', 'admin', 1, 'tok', 'dark')",
+            "INSERT INTO login_session (id, user_id, created_at) VALUES ('session-1', 1, '2026-10-31')")
+    upgrade(MIGRATIONS, revision="b8d2e6f4a1c7")
+    users, fk_errors = run_sql(path, "SELECT id, theme, dashboard FROM user", "PRAGMA foreign_key_check")
+    assert users == [(1, "dark", None)] and fk_errors == []
+    run_sql(path, """UPDATE user SET dashboard = '{"order": ["overdue"], "hidden": []}'""")
+    downgrade(MIGRATIONS, revision="a1f4c8e2b6d9")
+    users, sessions, columns = run_sql(path, "SELECT id, theme FROM user", "SELECT user_id FROM login_session",
+                                       "SELECT name FROM pragma_table_info('user') WHERE name = 'dashboard'")
+    assert users == [(1, "dark")] and sessions == [(1,)] and columns == []
+    upgrade(MIGRATIONS)

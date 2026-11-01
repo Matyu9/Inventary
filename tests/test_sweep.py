@@ -18,12 +18,12 @@ A, P, E = Role.ADMIN, Role.PROF, Role.EMPRUNTEUR
 
 # Routes accessibles sans connexion (le reste doit rediriger vers la page de connexion).
 PUBLIC = {"auth.login", "auth.forgot", "auth.token_link", "static", "scan.manifest", "scan.service_worker", "calendar.ical",
-          "csp.report"}
+          "csp.report", "settings.logo_file"}
 # Routes ouvertes à l'emprunteur.
 BORROWER = PUBLIC | {"dashboard.index", "auth.logout", "auth.password", "loans.mine", "loans.detail", "loans.checklist",
                      "users.notifications", "calendar.index", "account.index", "account.change_email",
                      "account.revoke_session", "account.revoke_others", "account.set_avatar",
-                     "account.remove_avatar", "users.avatar_file", "calendar.events", "calendar.reset_token",
+                     "account.remove_avatar", "account.display", "users.avatar_file", "calendar.events", "calendar.reset_token",
                      "scan.resolve", "loans.create", "loans.search_equipment", "loans.check"}
 
 

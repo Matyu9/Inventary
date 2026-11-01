@@ -61,6 +61,7 @@ Cliquez sur votre nom (en bas du menu) ou sur votre avatar, puis **Mon compte** 
 - **Photo de profil** : recadrée en carré, elle remplace vos initiales dans le menu et apparaît dans la liste des personnes et sur votre fiche. Elle n'est visible que des personnes connectées à l'appli ;
 - **Changer d'adresse email** : un lien de confirmation part vers la nouvelle adresse, et l'ancienne reste active tant qu'il n'a pas été suivi. L'ancienne adresse reçoit ensuite un message de prévenance. Votre mot de passe actuel est demandé ;
 - **Changer mon mot de passe** ;
+- **Affichage** : thème clair, sombre, ou « Comme l'appareil » (par défaut, il suit le réglage du téléphone ou de l'ordinateur). Le choix vaut pour tous vos appareils ;
 - **Mes appareils connectés** : navigateur, adresse IP, date de connexion et dernière activité de chaque appareil. Déconnectez un appareil que vous ne reconnaissez pas, ou tous vos autres appareils d'un coup.
 
 ## Les trois rôles
@@ -476,13 +477,23 @@ Un changement de droits s'applique immédiatement, y compris aux personnes déj�
 
 ## Paramètres
 
-**Menu Paramètres** (admins). La page affiche la configuration en cours : nom de l'association, adresse publique, préfixe des codes, état des emails. Elle propose ces actions :
+**Menu Paramètres** (admins). La page affiche la configuration en cours : adresse publique, préfixe des codes, état des emails. Elle propose ces actions :
 
 - **État de l'installation**, qui vérifie la base de données, les migrations, l'espace disque, le passage des rappels automatiques et les emails (voir [Installation](installation.md#journaux-et-diagnostic)) ;
 - **M'envoyer un email de test**, pour vérifier la configuration SMTP ;
 - **Lancer les rappels maintenant**, sans attendre le prochain passage automatique.
 
 Ces réglages se modifient dans le fichier de configuration du serveur : voir [Configuration](configuration.md).
+
+### Apparence
+
+Le bloc **Apparence** de la page Paramètres se règle directement, sans redémarrer :
+
+- **Nom de l'association** et **sous-titre** (« Inventaire » par défaut), affichés en haut du menu. Le nom apparaît aussi sur la page de connexion, dans les emails, sur les étiquettes et dans le calendrier. Laissé vide, le nom reprend celui du fichier de configuration (`ASSO_NAME`) ;
+- **Couleur principale**, parmi sept palettes (bordeaux, bleu nuit, bleu canard, vert sapin, violet, terracotta, ardoise). Chacune a sa variante pour le thème sombre. Les emails reprennent aussi cette couleur ;
+- **Logo** : PNG, JPEG, WebP ou GIF, de préférence carré. Un GIF animé ne garde que sa première image. Le logo est réduit à 256 px, garde sa transparence et remplace la note de musique du menu et de la page de connexion. Il sert aussi d'icône d'onglet. Il est visible sans connexion (page de connexion, page d'un QR code).
+
+Chacun choisit en plus son thème clair ou sombre dans **Mon compte**.
 
 ## Installer l'appli sur un téléphone
 

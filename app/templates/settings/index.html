@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% from "partials/_icons.html" import icon %}
+{% from "partials/_form.html" import field %}
+{% from "partials/_brand.html" import brand_mark with context %}
 {% block title %}Paramètres{% endblock %}
 {% block content %}
 <h1>Paramètres</h1>
-<p class="muted">Ces réglages se modifient dans le fichier <code>.env</code> du serveur, puis en redémarrant l'appli.</p>
+<p class="muted">Ces réglages se modifient dans le fichier <code>.env</code> du serveur, puis en redémarrant l'appli.
+  L'apparence, plus bas, se règle directement ici.</p>
 <dl class="props">
-  <dt>Nom de l'association</dt><dd>{{ cfg.ASSO_NAME }}</dd>
   <dt>Adresse publique (QR, emails)</dt><dd><code>{{ cfg.BASE_URL }}</code></dd>
   <dt>Préfixe des codes</dt><dd>{{ cfg.ITEM_CODE_PREFIX }}</dd>
   <dt>Emails</dt><dd>{% if smtp %}Activés via {{ cfg.SMTP_HOST }}:{{ cfg.SMTP_PORT }}{% else %}Désactivés : les notifications restent dans l'appli.{% endif %}</dd>
@@ -23,7 +25,48 @@
   </form>
 </div>
 
-<section class="card wide settings-security">
+<section class="card wide settings-block" id="apparence">
+  <h2>{{ icon("image", 18) }} Apparence</h2>
+  <form method="post" action="{{ url_for('settings.save_branding') }}" novalidate>
+    {{ branding_form.hidden_tag() }}
+    <div class="grid">
+      <div>{{ field(branding_form.name, placeholder=cfg.ASSO_NAME) }}</div>
+      <div>{{ field(branding_form.subtitle, placeholder="Inventaire") }}</div>
+    </div>
+    <small class="muted">Laissés vides : « {{ cfg.ASSO_NAME }} » (fichier <code>.env</code>) et « Inventaire ».
+      Le nom apparaît dans le menu, les emails, les étiquettes et le calendrier.</small>
+    <fieldset class="choices">
+      <legend>Couleur principale</legend>
+      {% for option in branding_form.palette %}
+      <label class="choice">{{ option() }}<span class="swatch" data-palette="{{ option.data }}"></span>{{ option.label.text }}</label>
+      {% endfor %}
+    </fieldset>
+    <button type="submit">Enregistrer</button>
+  </form>
+
+  <h3>Logo</h3>
+  <div class="logo-row">
+    {{ brand_mark() }}
+    <div class="actions">
+      <form method="post" action="{{ url_for('settings.set_logo') }}" enctype="multipart/form-data" class="avatar-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="Logo de l'association" required>
+        <button type="submit" class="secondary small">{{ "Changer" if branding.logo else "Ajouter" }}</button>
+      </form>
+      {% if branding.logo %}
+      <form method="post" action="{{ url_for('settings.remove_logo') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="link-button">Retirer</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  <small class="muted">PNG, JPEG, WebP ou GIF, de préférence carré : il est réduit à 256 px et garde sa transparence.
+    Un GIF animé ne garde que sa première image. Le logo remplace la note de musique du menu et de la page
+    de connexion, et sert d'icône d'onglet.</small>
+</section>
+
+<section class="card wide settings-block settings-security">
   <h2>{{ icon("key", 18) }} Sécurité</h2>
   <dl class="props">
     <dt>Sessions ouvertes</dt><dd>{{ open_sessions }} ({{ connected }} personne{{ "s" if connected > 1 }})</dd>

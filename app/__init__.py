@@ -7,6 +7,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from .config import UNSAFE_SECRETS, Config, startup_warnings
 from .errors import register_error_handlers
 from .extensions import csrf, db, login_manager, migrate
+from .services import branding
 from .services.oidc import init_oidc
 
 __version__ = "0.1.0"
@@ -104,7 +105,8 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_globals():
-        return {"can": can, "asso_name": app.config["ASSO_NAME"], "code_prefix": app.config["ITEM_CODE_PREFIX"],
+        brand = branding.current()
+        return {"can": can, "branding": brand, "asso_name": brand.name, "code_prefix": app.config["ITEM_CODE_PREFIX"],
                 "document_kinds": Document.KINDS, "document_accept": documents.ACCEPT}
 
     @app.after_request

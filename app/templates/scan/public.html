@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% from "partials/_brand.html" import brand_mark with context %}
 {% from "partials/_icons.html" import icon %}
 {% from "scan/_report_form.html" import report_forms with context %}
 {% block title %}{{ obj.name }}{% endblock %}
 {% block content %}
 <article class="login-card public-item">
   <div class="brand">
-    <span class="brand-mark">{{ icon("music", 18) }}</span>
+    {{ brand_mark() }}
     <span class="brand-text"><strong>{{ asso_name }}</strong><small>Inventaire des instruments et du matériel</small></span>
   </div>
   <h1>{{ obj.name if obj.code is defined else "Kit " ~ obj.name }}</h1>

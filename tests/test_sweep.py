@@ -17,7 +17,8 @@ from .conftest import login
 A, P, E = Role.ADMIN, Role.PROF, Role.EMPRUNTEUR
 
 # Routes accessibles sans connexion (le reste doit rediriger vers la page de connexion).
-PUBLIC = {"auth.login", "auth.forgot", "auth.token_link", "static", "scan.manifest", "scan.service_worker", "calendar.ical"}
+PUBLIC = {"auth.login", "auth.forgot", "auth.token_link", "static", "scan.manifest", "scan.service_worker", "calendar.ical",
+          "csp.report"}
 # Routes ouvertes à l'emprunteur.
 BORROWER = PUBLIC | {"dashboard.index", "auth.logout", "auth.password", "loans.mine", "loans.detail", "loans.checklist",
                      "users.notifications", "calendar.index", "account.index", "account.change_email",

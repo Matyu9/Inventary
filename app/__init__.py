@@ -15,7 +15,7 @@ __version__ = "0.1.0"
 # en data: (font-src). Voir docs/configuration.md, section Content-Security-Policy.
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
        "font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; "
-       "frame-ancestors 'none'")
+       "frame-ancestors 'none'; report-uri /csp-report; report-to csp-endpoint")
 
 
 def create_app(config_class=Config):
@@ -42,6 +42,7 @@ def create_app(config_class=Config):
     from .blueprints.auth import bp as auth_bp
     from .blueprints.calendar import bp as calendar_bp
     from .blueprints.consumables import bp as consumables_bp
+    from .blueprints.csp import bp as csp_bp
     from .blueprints.dashboard import bp as dashboard_bp
     from .blueprints.documents import bp as documents_bp
     from .blueprints.health import bp as health_bp
@@ -82,6 +83,7 @@ def create_app(config_class=Config):
     app.register_blueprint(calendar_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(csp_bp)
     app.register_blueprint(audits_bp)
     app.register_blueprint(public_reports_bp)
     app.register_blueprint(reports_bp)
@@ -115,6 +117,7 @@ def create_app(config_class=Config):
         if "Content-Security-Policy" not in response.headers:
             response.headers.setdefault("Content-Security-Policy-Report-Only" if app.config["CSP_REPORT_ONLY"]
                                         else "Content-Security-Policy", CSP)
+            response.headers.setdefault("Reporting-Endpoints", 'csp-endpoint="/csp-report"')  # pour report-to
         if request.endpoint in ("auth.password", "users.create", "users.edit", "users.reset_password",
                                 "auth.oidc_callback"):
             response.headers["Cache-Control"] = "no-store"  # mots de passe affichés ou saisis

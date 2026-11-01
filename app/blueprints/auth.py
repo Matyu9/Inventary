@@ -52,7 +52,8 @@ class NewPasswordForm(FlaskForm):
 def force_password_change():
     """Un compte créé avec un mot de passe provisoire doit le changer avant tout."""
     if (current_user.is_authenticated and current_user.must_change_password
-            and request.endpoint not in ("auth.password", "auth.logout", "static", "csp.report")):
+            and request.endpoint not in ("auth.password", "auth.logout", "static", "csp.report",
+                                         "settings.logo_file")):
         if request.method == "GET" and not request.headers.get("HX-Request"):
             flash("Choisissez un nouveau mot de passe pour continuer.", "warning")
         return redirect(url_for("auth.password"))

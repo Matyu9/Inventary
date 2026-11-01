@@ -9,7 +9,7 @@ from wtforms.validators import AnyOf, DataRequired, Length, Optional
 from ..extensions import db
 from ..models import Item, Kit, Loan, LoanLine, LoanStatus, PublicReport, get_live
 from ..permissions import can, require
-from ..services import public_reports, throttle
+from ..services import branding, public_reports, throttle
 from ..services.items import search_items
 from ..services.mailer import deliver_quietly
 from ..services.qr import find_by_token, qr_svg, qr_url, resolve_scan
@@ -161,16 +161,16 @@ def labels():
 
 @bp.route("/manifest.webmanifest")
 def manifest():
-    name = current_app.config["ASSO_NAME"]
+    brand = branding.current()
     data = {
-        "name": f"Inventaire — {name}",
+        "name": f"Inventaire — {brand.name}",
         "short_name": "Inventaire",
         "lang": "fr",
         "start_url": "/",
         "scope": "/",
         "display": "standalone",
         "background_color": "#ffffff",
-        "theme_color": "#8b1e3f",
+        "theme_color": brand.theme_color,
         "icons": [
             {"src": url_for("static", filename="icons/icon-192.png"), "sizes": "192x192", "type": "image/png"},
             {"src": url_for("static", filename="icons/icon-512.png"), "sizes": "512x512", "type": "image/png"},

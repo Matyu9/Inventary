@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% from "partials/_brand.html" import brand_mark with context %}
 {% from "partials/_form.html" import field %}
 {% from "partials/_icons.html" import icon %}
 {% block title %}Connexion{% endblock %}
 {% block content %}
 <article class="login-card">
   <div class="brand">
-    <span class="brand-mark">{{ icon("music", 18) }}</span>
+    {{ brand_mark() }}
     <span class="brand-text"><strong>{{ asso_name }}</strong><small>Inventaire des instruments et du matériel</small></span>
   </div>
   <h1>Connexion</h1>

@@ -9,7 +9,7 @@ from flask import current_app, url_for
 
 from ..extensions import db
 from ..models import AccountToken
-from . import mailer
+from . import branding, mailer
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ def _send(to, user, subject, intro, button, url):
 
 
 def send_invitation(user, raw):
-    asso = current_app.config["ASSO_NAME"]
+    asso = branding.name()
     return _send(user.email, user, f"Votre accès à l'inventaire {asso}",
                  f"Un compte vous a été ouvert sur l'inventaire de {asso}.\n\n"
                  f"Choisissez votre mot de passe avec le bouton ci-dessous. Le lien est valable "

@@ -10,6 +10,7 @@ from sqlalchemy import or_
 from ..extensions import db
 from ..models import Loan, LoanStatus, LoanType, Maintenance, User
 from ..permissions import can, require
+from ..services import branding
 
 bp = Blueprint("calendar", __name__)
 
@@ -88,9 +89,9 @@ def ical(token):
         abort(404)
     now = datetime.now()
     cal = Calendar()
-    cal.add("prodid", f"-//{current_app.config['ASSO_NAME']}//Inventaire//FR")
+    cal.add("prodid", f"-//{branding.name()}//Inventaire//FR")
     cal.add("version", "2.0")
-    cal.add("x-wr-calname", f"Prêts — {current_app.config['ASSO_NAME']}")
+    cal.add("x-wr-calname", f"Prêts — {branding.name()}")
     base = current_app.config["BASE_URL"]
     for loan in loans_between(user, now - timedelta(days=90), now + timedelta(days=365),
                               (LoanStatus.VALIDE, LoanStatus.EN_COURS)):

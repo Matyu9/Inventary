@@ -61,6 +61,22 @@
   </section>
 </div>
 
+<section class="card settings-block" id="affichage">
+  <h2>Affichage</h2>
+  <form method="post" action="{{ url_for('account.display') }}">
+    {{ display.hidden_tag() }}
+    <fieldset class="choices">
+      <legend>{{ display.theme.label.text }}</legend>
+      {% for option in display.theme %}
+      <label class="choice">{{ option() }}{{ option.label.text }}</label>
+      {% endfor %}
+    </fieldset>
+    <small class="muted">« Comme l'appareil » suit le réglage clair ou sombre de votre téléphone ou ordinateur.
+      Le choix vaut pour tous vos appareils.</small>
+    <button type="submit" class="secondary">Enregistrer</button>
+  </form>
+</section>
+
 <h2 id="sessions">Mes appareils connectés</h2>
 <p class="muted">Un appareil que vous ne reconnaissez pas ? Déconnectez-le, puis changez votre mot de passe.</p>
 <div class="overflow-auto"><table class="striped">

@@ -17,5 +17,5 @@ Bonjour {{ user.first_name }},
 {{ button }} : {{ url }}
 {% endif %}
 --
-Inventaire {{ config.ASSO_NAME }}
+Inventaire {{ asso_name }}
 Toutes vos notifications : {{ config.BASE_URL }}/notifications

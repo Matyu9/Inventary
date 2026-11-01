@@ -106,6 +106,7 @@ class User(UserMixin, TimestampMixin, db.Model):
     # Rôle attribué d'après les groupes OIDC (et non par un admin) : il suit les groupes.
     role_from_oidc = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     last_login_at = db.Column(db.DateTime)
+    theme = db.Column(db.String(10))  # "light", "dark" ou None (celui du système)
     # Fiche archivée : plus d'accès, masquée des listes et des choix, historique conservé.
     archived_at = db.Column(db.DateTime)
     avatar = db.Column(db.String(255))  # photo de profil, relative à UPLOAD_DIR (avatars/….jpg)
@@ -762,3 +763,9 @@ class EmailTemplate(db.Model):
     intro = db.Column(db.Text, nullable=False)
     button = db.Column(db.String(60), nullable=False)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+
+class AppSetting(db.Model):
+    """Réglage de l'appli modifiable depuis l'interface (nom, logo, couleur…), stocké en clé / valeur."""
+    key = db.Column(db.String(50), primary_key=True)
+    value = db.Column(db.Text, nullable=False)

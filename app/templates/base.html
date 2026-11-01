@@ -1,11 +1,12 @@
 {% from "partials/_icons.html" import icon %}
 {% from "partials/_avatar.html" import avatar %}
+{% from "partials/_brand.html" import brand_mark with context %}
 {%- macro navlink(endpoint, label, icon_name, prefixes=none) -%}
   {%- set active = request.endpoint and (request.endpoint == endpoint or (prefixes and request.endpoint.split(".")[0] in prefixes)) -%}
   <a href="{{ url_for(endpoint) }}" class="nav-link{{ ' active' if active }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name) }}<span>{{ label }}</span></a>
 {%- endmacro -%}
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-palette="{{ branding.palette }}"{% if current_user.is_authenticated and current_user.theme %} data-theme="{{ current_user.theme }}"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -16,9 +17,9 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   {#- Sans quoi htmx injecte une feuille de style en ligne (.htmx-indicator, inutilisé ici) que la CSP bloquerait. -#}
   <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
-  <meta name="theme-color" content="#8b1e3f">
+  <meta name="theme-color" content="{{ branding.theme_color }}">
   <link rel="manifest" href="{{ url_for('scan.manifest') }}">
-  <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="icon" href="{{ branding.logo_url or url_for('static', filename='icons/icon-192.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}' class="{{ 'app' if current_user.is_authenticated else 'guest' }}">
@@ -26,8 +27,8 @@
   {% set staff = can(current_user, "inventory.view") %}
   <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
     <a href="{{ url_for('dashboard.index') }}" class="brand">
-      <span class="brand-mark">{{ icon("music", 18) }}</span>
-      <span class="brand-text"><strong>{{ asso_name }}</strong><small>Inventaire</small></span>
+      {{ brand_mark() }}
+      <span class="brand-text"><strong>{{ asso_name }}</strong><small>{{ branding.subtitle }}</small></span>
     </a>
     <nav>
       <p class="nav-title">Au quotidien</p>

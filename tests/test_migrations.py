@@ -201,3 +201,24 @@ def test_borrower_requests_migration(migrated_app):
     (perms,), loans = run_sql(path, "SELECT permissions FROM role WHERE key = 'emprunteur'", "SELECT id FROM loan")
     assert "loan.request_own" not in json.loads(perms[0]) and loans == [(1,)]
     upgrade(MIGRATIONS)
+
+
+def test_branding_migration_keeps_linked_rows(migrated_app):
+    """Réglages d'apparence et thème de chacun : `user` n'est pas recréée, ses données liées restent."""
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="d2a6b8c4e1f3")
+    run_sql(path,
+            "INSERT INTO user (id, first_name, last_name, email, role, active, ical_token) "
+            "VALUES (1, 'Alice', 'Martin', 'alice@ohn.test', 'admin', 1, 'tok')",
+            "INSERT INTO login_session (id, user_id, created_at) VALUES ('session-1', 1, '2026-10-31')")
+    upgrade(MIGRATIONS, revision="a1f4c8e2b6d9")
+    users, sessions, fk_errors = run_sql(path, "SELECT id, theme FROM user", "SELECT user_id FROM login_session",
+                                         "PRAGMA foreign_key_check")
+    assert users == [(1, None)] and sessions == [(1,)] and fk_errors == []
+    run_sql(path, "UPDATE user SET theme = 'dark'", "INSERT INTO app_setting (key, value) VALUES ('palette', 'vert')")
+    downgrade(MIGRATIONS, revision="d2a6b8c4e1f3")
+    sessions, tables, columns = run_sql(
+        path, "SELECT user_id FROM login_session", "SELECT name FROM sqlite_master WHERE name = 'app_setting'",
+        "SELECT name FROM pragma_table_info('user') WHERE name = 'theme'")
+    assert sessions == [(1,)] and tables == [] and columns == []
+    upgrade(MIGRATIONS)

@@ -20,7 +20,7 @@
   <tr><td align="center" style="padding:24px 12px;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;">
       <tr><td style="padding:0 4px 12px; font-size:13px; font-weight:600; letter-spacing:.02em; color:#8b1e3f;">
-        Inventaire · {{ config.ASSO_NAME }}
+        Inventaire · {{ asso_name }}
       </td></tr>
       <tr><td style="background:#ffffff; border:1px solid #e6e3de; border-top:4px solid {{ accent }}; border-radius:10px; padding:28px 28px 24px;">
         <h1 style="margin:0 0 16px; font-size:20px; line-height:1.3; font-weight:650; color:#1d1b19;">{{ subject }}</h1>
@@ -64,7 +64,7 @@
         {%- endif %}
       </td></tr>
       <tr><td style="padding:16px 4px 0; font-size:12px; line-height:1.5; color:#8a857e;">
-        Vous recevez cet email parce que vous avez un compte sur l'inventaire de {{ config.ASSO_NAME }}.<br>
+        Vous recevez cet email parce que vous avez un compte sur l'inventaire de {{ asso_name }}.<br>
         <a href="{{ config.BASE_URL }}/notifications" style="color:#8a857e;">Voir toutes mes notifications</a>
       </td></tr>
     </table>

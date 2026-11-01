@@ -114,6 +114,7 @@ def test_csrf_exempt_without_session(tmp_path):
         client = app.test_client()
         assert client.post("/deconnexion").status_code == 400  # la protection CSRF est bien active ailleurs
         assert post(client, VIOLATION).status_code == 204
+        db.session.remove()  # comme la fixture `app` : la page 400 a lu les réglages d'apparence
         db.drop_all()
 
 

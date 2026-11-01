@@ -14,7 +14,7 @@ La page **Paramètres** de l'appli (admins) affiche les principales valeurs en c
 |---|---|---|
 | `SECRET_KEY` | aucun | **Obligatoire.** Clé qui signe les cookies de session et les jetons CSRF. Générez-la avec `python3 -c "import secrets; print(secrets.token_hex(32))"`. L'appli refuse de démarrer si elle est vide ou vaut encore `change-moi`, sauf en mode debug. La changer déconnecte tout le monde. |
 | `BASE_URL` | `http://localhost:8000` | Adresse publique de l'appli, sans `/` final. Elle est inscrite dans les **QR codes**, les emails, les liens iCal et l'URL de rappel OIDC. En `https://`, elle active aussi les cookies sécurisés. À fixer **avant** d'imprimer les étiquettes. |
-| `ASSO_NAME` | `Mon association` | Nom affiché dans l'interface, les emails et le calendrier. |
+| `ASSO_NAME` | `Mon association` | Nom affiché dans l'interface, les emails et le calendrier. Valeur par défaut seulement : un admin peut le remplacer dans **Paramètres → Apparence**, sans redémarrer. |
 | `ITEM_CODE_PREFIX` | `INV` | Préfixe des codes d'inventaire attribués automatiquement (`INV-0001`…), mis en majuscules. En changer n'affecte pas les codes existants : les nouveaux objets repartent à `<préfixe>-0001`. |
 
 ## Données et réseau

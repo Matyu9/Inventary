@@ -11,6 +11,7 @@ from flask import current_app, render_template
 from ..extensions import db
 from ..filters import date_fr, euros
 from ..models import EmailTemplate, LoanStatus, Notification, User
+from . import branding
 
 logger = logging.getLogger(__name__)
 # Une notification plus ancienne n'est plus envoyée (ex. SMTP configuré après coup).
@@ -26,7 +27,7 @@ def send(to, subject, text, html=None):
     """Envoie un email ; `html`, s'il est fourni, s'ajoute en alternative à la version texte."""
     cfg = current_app.config
     message = EmailMessage()
-    message["From"] = formataddr((f"Inventaire {cfg['ASSO_NAME']}", cfg["SMTP_FROM"] or cfg["SMTP_USER"]))
+    message["From"] = formataddr((f"Inventaire {branding.name()}", cfg["SMTP_FROM"] or cfg["SMTP_USER"]))
     message["To"] = to
     message["Subject"] = subject
     message.set_content(text)
@@ -125,7 +126,7 @@ def texts(kind):
 
 def _values(notification):
     loan, item = notification.loan, notification.item
-    values = {"prenom": notification.user.first_name, "asso": current_app.config["ASSO_NAME"],
+    values = {"prenom": notification.user.first_name, "asso": branding.name(),
               "message": notification.message}
     if loan is not None:
         values.update(numero=loan.id, type=loan.type_label.lower(), Type=loan.type_label, titre=loan.title or "",
@@ -219,7 +220,7 @@ def _render(user, subject, intro, button, url, tone, recap_title=None, rows=(), 
     context = {"user": user, "subject": subject, "intro": intro.strip(), "paragraphs": paragraphs,
                "button": button.strip() or "Ouvrir l'inventaire", "url": url, "tone": tone,
                "recap_title": recap_title, "rows": rows, "lines": lines}
-    return (f"[{current_app.config['ASSO_NAME']}] {subject}", render_template("emails/notification.txt", **context),
+    return (f"[{branding.name()}] {subject}", render_template("emails/notification.txt", **context),
             render_template("emails/notification.html", **context))
 
 

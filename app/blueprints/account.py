@@ -2,7 +2,7 @@
 from flask import Blueprint, flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
-from wtforms import EmailField, PasswordField, StringField
+from wtforms import EmailField, PasswordField, RadioField, StringField
 from wtforms.validators import DataRequired, Length, Optional, Regexp, ValidationError
 
 from ..extensions import db
@@ -44,9 +44,14 @@ class EmailForm(FlaskForm):
             raise ValidationError("Mot de passe incorrect.")
 
 
+class DisplayForm(FlaskForm):
+    theme = RadioField("Thème", choices=[("auto", "Comme l'appareil"), ("light", "Clair"), ("dark", "Sombre")])
+
+
 def _render(profile=None, email_form=None):
     return render_template("account/index.html", profile=profile or ProfileForm(obj=current_user),
                            email_form=email_form or EmailForm(), sessions=sessions.of(current_user),
+                           display=DisplayForm(data={"theme": current_user.theme or "auto"}),
                            device_label=sessions.device_label, smtp=mailer.smtp_enabled(),
                            pending=db.session.scalar(db.select(AccountToken).where(
                                AccountToken.user_id == current_user.id, AccountToken.purpose == AccountToken.EMAIL)))
@@ -64,6 +69,18 @@ def index():
         flash("Profil enregistré.", "success")
         return redirect(url_for(".index"))
     return _render(profile=form)
+
+
+@bp.route("/affichage", methods=["POST"])
+def display():
+    form = DisplayForm()
+    if form.validate_on_submit():
+        current_user.theme = None if form.theme.data == "auto" else form.theme.data
+        db.session.commit()
+        flash("Affichage enregistré.", "success")
+    else:
+        flash("Choix de thème invalide.", "error")
+    return redirect(url_for(".index") + "#affichage")
 
 
 @bp.route("/email", methods=["POST"])

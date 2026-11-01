@@ -35,6 +35,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 - **Content-Security-Policy** sur toutes les pages, en mode Report-Only par défaut (`CSP_REPORT_ONLY=1`) : le navigateur signale ce qui serait bloqué sans rien casser. Les images des documents et l'aperçu des emails gardent leur propre politique, plus stricte.
 - Avertissement au démarrage quand `BASE_URL` est en `https://` sans `TRUST_PROXY=1`.
+- Les violations de la CSP sont envoyées à `/csp-report` (`report-uri` et `report-to`) et écrites dans les logs, sans rien stocker. Adresse publique limitée en débit (60 par heure et par IP) et en taille (16 Ko).
 - Plus aucun style en ligne dans les pages (étiquettes, liste à imprimer, connexion…) : tout est dans les feuilles de style du site, première étape pour une politique sans `'unsafe-inline'`.
 - Le lien d'un QR code ne demande plus de connexion : sans compte, il mène à une page publique qui ne montre que le nom et le code de l'objet.
 

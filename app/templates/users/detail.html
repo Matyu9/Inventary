@@ -114,6 +114,30 @@
 <p class="muted">Aucune session ouverte.</p>
 {% endif %}
 
+{% if api_tokens %}
+<h2 id="api">Jetons d'accès à l'API</h2>
+<div class="overflow-auto"><table class="striped">
+  <thead><tr><th>Nom</th><th>Début du jeton</th><th>Créé le</th><th>Expire le</th><th>Dernière utilisation</th><th></th></tr></thead>
+  <tbody>
+  {% for t in api_tokens %}
+  <tr>
+    <td>{{ t.name }}{% if t.expired %} <span class="badge">expiré</span>{% endif %}</td>
+    <td><code>{{ t.prefix }}…</code></td>
+    <td><small>{{ t.created_at | datetime_fr }}</small></td>
+    <td><small>{{ t.expires_at | datetime_fr if t.expires_at else "jamais" }}</small></td>
+    <td><small>{{ t.last_used_at | datetime_fr if t.last_used_at else "jamais" }}</small></td>
+    <td class="actions">
+      <form method="post" action="{{ url_for('users.revoke_api_token', user_id=user.id, token_id=t.id) }}" onsubmit="return confirm('Supprimer ce jeton ?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="link-button">Supprimer</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
 <h2>Journal</h2>
 {% if activities %}
 <ul class="timeline">

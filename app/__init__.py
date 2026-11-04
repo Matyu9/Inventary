@@ -39,6 +39,7 @@ def create_app(config_class=Config):
 
     from . import models  # noqa: F401  (enregistre les modèles pour Alembic)
     from .blueprints.account import bp as account_bp
+    from .blueprints.api import bp as api_bp
     from .blueprints.audits import bp as audits_bp
     from .blueprints.auth import bp as auth_bp
     from .blueprints.calendar import bp as calendar_bp
@@ -92,6 +93,7 @@ def create_app(config_class=Config):
     app.register_blueprint(reports_bp)
     app.register_blueprint(transfer_bp)
     app.register_blueprint(trash_bp)
+    app.register_blueprint(api_bp)
     register_cli(app)
     register_filters(app)
 
@@ -123,8 +125,8 @@ def create_app(config_class=Config):
                                         else "Content-Security-Policy", CSP)
             response.headers.setdefault("Reporting-Endpoints", 'csp-endpoint="/csp-report"')  # pour report-to
         if request.endpoint in ("auth.password", "users.create", "users.edit", "users.reset_password",
-                                "auth.oidc_callback"):
-            response.headers["Cache-Control"] = "no-store"  # mots de passe affichés ou saisis
+                                "auth.oidc_callback", "account.create_api_token"):
+            response.headers["Cache-Control"] = "no-store"  # mots de passe ou jeton affichés ou saisis
         return response
 
     register_error_handlers(app)

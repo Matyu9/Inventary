@@ -51,6 +51,7 @@ Inspirée de [Shelf.nu](https://www.shelf.nu/), elle est **entièrement en fran�
 - **Connexion OIDC** facultative (Authentik, Keycloak, Google, Microsoft…), avec rôles déduits des groupes.
 - **Personnalisation** : nom, logo et couleur de l'association ; thème clair ou sombre, taille du texte et page d'accueil au choix de chacun.
 - **État de l'installation** (`/sante`) : base, migrations, disque, rappels et emails vérifiés en un coup d'œil.
+- **API en lecture seule** avec jetons personnels, et **serveur MCP** pour interroger l'inventaire depuis Claude (voir [API et serveur MCP](docs/api.md)).
 - Interface **adaptée au téléphone**, installable comme une application (PWA).
 
 La liste complète, domaine par domaine, est dans [Liste des fonctionnalités](docs/fonctionnalites.md). Ce qui a changé version après version est dans le [journal des versions](CHANGELOG.md).
@@ -99,6 +100,7 @@ Pour essayer en local avec des données fictives, voir [Développement](docs/dev
 | [Installation et exploitation](docs/installation.md) | Personne qui héberge l'appli | Docker, reverse proxy, sauvegarde, mise à jour, emails |
 | [Configuration](docs/configuration.md) | Personne qui héberge l'appli | Toutes les variables d'environnement |
 | [Connexion OIDC avec Authentik](docs/oidc-authentik.md) | Personne qui héberge l'appli | SSO pas à pas, test en local, dépannage |
+| [API et serveur MCP](docs/api.md) | Développeurs, intégrations | API JSON en lecture seule, jetons, branchement de Claude |
 | [Architecture](docs/architecture.md) | Développeurs | Structure du code, modèle de données, choix techniques |
 | [Développement](docs/developpement.md) | Développeurs | Environnement, tests, migrations, conventions |
 | [Contribuer](CONTRIBUTING.md) | Contributeurs | Signaler un bug, proposer une modification |

@@ -14,6 +14,7 @@ Inventaire complet de ce que fait l'appli, domaine par domaine. Pour savoir comm
 - [Comptes et personnes](#comptes-et-personnes)
 - [Rôles et permissions](#rôles-et-permissions)
 - [Administration et personnalisation](#administration-et-personnalisation)
+- [API et assistants](#api-et-assistants)
 - [Sécurité et technique](#sécurité-et-technique)
 
 ## Inventaire
@@ -161,7 +162,7 @@ Inventaire complet de ce que fait l'appli, domaine par domaine. Pour savoir comm
 
 ## Rôles et permissions
 
-- **3 rôles de base** (Administrateur, Professeur, Emprunteur) et **40 droits** répartis en 4 groupes.
+- **3 rôles de base** (Administrateur, Professeur, Emprunteur) et **35 droits** répartis en 4 groupes.
 - **Rôles sur mesure** : créer, dupliquer, renommer, supprimer.
   - Les droits du Professeur et de l'Emprunteur se modifient.
   - L'Administrateur garde toujours tous les droits.
@@ -182,6 +183,18 @@ Inventaire complet de ce que fait l'appli, domaine par domaine. Pour savoir comm
   - déconnecter tout le monde, avec le nombre de sessions ouvertes.
 - **État de l'installation** (`/sante`, et `/health` en JSON) : base, migrations, espace disque, planificateur, emails.
 - **Commandes CLI** : `flask create-admin`, `flask seed`, `flask run-reminders`.
+
+## API et assistants
+
+- **API JSON en lecture seule** (`/api/v1`), détaillée dans [API et serveur MCP](api.md) :
+  - objets, kits, consommables, lieux, catégories, tags, prêts, chiffres clés ;
+  - matériel libre sur une période ;
+  - recherche, filtres et pagination comme dans l'appli, avec les droits du propriétaire du jeton.
+- **Jetons d'accès personnels** (Mon compte → Accès à l'API) :
+  - expiration au choix, jeton affiché une seule fois, dernière utilisation visible ;
+  - suppression par leur propriétaire, ou par un admin depuis la fiche de la personne ;
+  - 300 appels par minute au plus.
+- **Serveur MCP** pour brancher Claude ou un autre assistant, en lecture seule.
 
 ## Sécurité et technique
 

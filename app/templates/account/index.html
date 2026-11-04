@@ -86,6 +86,48 @@
   </form>
 </section>
 
+{% if api %}
+<section class="card settings-block" id="api">
+  <h2>Accès à l'API</h2>
+  <p class="muted small">Un jeton permet à un tableur, un script ou un assistant (serveur MCP) de <strong>lire</strong>
+    les données de l'appli avec vos droits, sans jamais rien modifier. Gardez-le secret comme un mot de passe et
+    supprimez-le dès qu'il ne sert plus. Mode d'emploi : <code>docs/api.md</code>.</p>
+  {% if api_tokens %}
+  <div class="overflow-auto"><table class="striped">
+    <thead><tr><th>Nom</th><th>Début du jeton</th><th>Créé le</th><th>Expire le</th><th>Dernière utilisation</th><th></th></tr></thead>
+    <tbody>
+    {% for t in api_tokens %}
+    <tr>
+      <td>{{ t.name }}{% if t.expired %} <span class="badge">expiré</span>{% endif %}</td>
+      <td><code>{{ t.prefix }}…</code></td>
+      <td><small>{{ t.created_at | datetime_fr }}</small></td>
+      <td><small>{{ t.expires_at | datetime_fr if t.expires_at else "jamais" }}</small></td>
+      <td><small>{{ t.last_used_at | datetime_fr if t.last_used_at else "jamais" }}</small></td>
+      <td class="actions">
+        <form method="post" action="{{ url_for('account.revoke_api_token', token_id=t.id) }}" onsubmit="return confirm('Supprimer ce jeton ? Ce qui l\'utilise n\'aura plus accès.')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="link-button">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+  <details {{ "open" if token_form.errors or not api_tokens }}>
+    <summary>Créer un jeton</summary>
+    <form method="post" action="{{ url_for('account.create_api_token') }}" novalidate>
+      {{ token_form.hidden_tag() }}
+      <div class="grid">
+        <div>{{ field(token_form.name, placeholder="Tableur du bureau, Claude, Home Assistant…") }}</div>
+        <div>{{ field(token_form.lifetime) }}</div>
+      </div>
+      <button type="submit" class="secondary">Créer le jeton</button>
+    </form>
+  </details>
+</section>
+{% endif %}
+
 <h2 id="sessions">Mes appareils connectés</h2>
 <p class="muted">Un appareil que vous ne reconnaissez pas ? Déconnectez-le, puis changez votre mot de passe.</p>
 <div class="overflow-auto"><table class="striped">

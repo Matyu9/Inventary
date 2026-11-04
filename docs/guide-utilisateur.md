@@ -65,6 +65,7 @@ Cliquez sur votre nom (en bas du menu) ou sur votre avatar, puis **Mon compte** 
   - **thème** clair, sombre, ou « Comme l'appareil » (par défaut, il suit le réglage du téléphone ou de l'ordinateur) ;
   - **taille du texte** : normale, grande ou très grande. Tout s'agrandit (texte, boutons, champs, menu), pratique sur une tablette posée sur la table ou si les petits caractères fatiguent ;
   - **page d'accueil** : la page qui s'ouvre après la connexion et au lancement de l'appli installée (tableau de bord, prêts, mes prêts, scanner, matériel ou calendrier, selon vos droits). Un lien reçu (QR code, email) mène toujours à sa page, et « Accueil » dans le menu reste le tableau de bord ;
+- **Accès à l'API** (si votre rôle le permet, par défaut admins et profs) : créez un jeton pour qu'un tableur, un script ou un assistant comme Claude **lise** les données de l'appli avec vos droits, sans rien pouvoir modifier. Le jeton n'est affiché qu'une fois : copiez-le aussitôt. Supprimez-le dès qu'il ne sert plus. Le mode d'emploi technique est dans [API et serveur MCP](api.md) ;
 - **Mes appareils connectés** : navigateur, adresse IP, date de connexion et dernière activité de chaque appareil. Déconnectez un appareil que vous ne reconnaissez pas, ou tous vos autres appareils d'un coup.
 
 ## Les trois rôles
@@ -544,6 +545,7 @@ Droits par défaut des rôles de base (modifiables dans l'écran [Rôles](#rôle
 | Rapports et export | ✅ | ✅ | — |
 | Import | ✅ | — | — |
 | Paramètres | ✅ | — | — |
+| Jetons d'accès à l'API (lecture seule, avec ses propres droits) | ✅ | ✅ | — |
 | Mes prêts, calendrier, notifications | ✅ | ✅ | ✅ |
 
 ## Questions fréquentes

@@ -2,7 +2,7 @@
 import uuid
 from urllib.parse import urlsplit
 
-from flask import current_app, render_template, request
+from flask import current_app, jsonify, render_template, request
 from flask_wtf.csrf import CSRFError
 from werkzeug.exceptions import HTTPException, InternalServerError
 
@@ -37,11 +37,28 @@ def _page(code, icon, title, message):
                            back=_back_url()), code
 
 
+def _is_api():
+    return request.path.startswith("/api/")
+
+
+def _json(code, title, e=None):
+    """Erreur de l'API : {"error": {"code", "message"}}. Le message précis passé à abort() prime sur le titre."""
+    message = e.description if e is not None and e.description != type(e).description else title
+    response = jsonify({"error": {"code": code, "message": message}})
+    response.status_code = code
+    for name, value in e.get_headers() if e is not None else ():
+        if name.lower() != "content-type":  # WWW-Authenticate (401), Retry-After (429)
+            response.headers[name] = value
+    return response
+
+
 def register_error_handlers(app):
     @app.errorhandler(HTTPException)
     def http_error(e):
         if e.code is None or e.code < 400:
             return e
+        if _is_api() and e.code < 500:
+            return _json(e.code, MESSAGES.get(e.code, DEFAULT)[1], e)
         if e.code >= 500:
             return server_error(e)
         if isinstance(e, CSRFError):
@@ -52,7 +69,7 @@ def register_error_handlers(app):
     def overflow(_e):
         # Identifiant, page ou date hors limites (ex. /objets/99999999999999999999) : rien ne peut correspondre.
         db.session.rollback()
-        return _page(404, *MESSAGES[404])
+        return _json(404, MESSAGES[404][1]) if _is_api() else _page(404, *MESSAGES[404])
 
     @app.errorhandler(InternalServerError)
     def server_error(_e):
@@ -63,6 +80,8 @@ def register_error_handlers(app):
             pass
         ref = uuid.uuid4().hex[:8]
         current_app.logger.error("Erreur 500, référence %s : %s %s", ref, request.method, request.path)
+        if _is_api():
+            return _json(500, f"Erreur interne (référence {ref}).")
         try:
             return render_template("errors/500.html", ref=ref), 500
         except Exception:  # noqa: BLE001

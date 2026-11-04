@@ -16,7 +16,7 @@ from wtforms.validators import DataRequired, Length, Optional, Regexp, Validatio
 from ..extensions import db, fold, fold_contains
 from ..models import AccountToken, Activity, Loan, LoanStatus, Notification, Role, User
 from ..permissions import can, permissions_of, require
-from ..services import accounts, oidc, people, roles, sessions
+from ..services import accounts, api_tokens, oidc, people, roles, sessions
 from ..services.photos import InvalidImage
 from ..services.activity import log
 
@@ -253,6 +253,7 @@ def detail(user_id):
     if manage:
         context = {
             "sessions": sessions.of(user),
+            "api_tokens": api_tokens.of(user),
             "activities": db.session.scalars(
                 db.select(Activity).where(or_(Activity.user_id == user.id, Activity.target_user_id == user.id))
                 .order_by(Activity.created_at.desc(), Activity.id.desc()).limit(50)).all(),
@@ -284,6 +285,18 @@ def revoke_sessions(user_id):
     flash("Tous les appareils sont déconnectés." if user.id != current_user.id
           else "Vos autres appareils sont déconnectés.", "success")
     return redirect(url_for(".detail", user_id=user.id) + "#sessions")
+
+
+@bp.route("/utilisateurs/<int:user_id>/jetons-api/<token_id>/supprimer", methods=["POST"])
+@require("user.manage")
+def revoke_api_token(user_id, token_id):
+    user = managed_user(user_id)
+    token = api_tokens.revoke_one(user, token_id)
+    if token is not None:
+        log("user.api_token", f"Jeton d'API « {token.name} » de {user.full_name} supprimé", target=user)
+        db.session.commit()
+        flash("Jeton supprimé : il ne donne plus accès à l'API.", "success")
+    return redirect(url_for(".detail", user_id=user.id) + "#api")
 
 
 # ---------------------------------------------------------------------------

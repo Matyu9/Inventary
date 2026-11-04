@@ -1,5 +1,5 @@
-"""Mon compte : chacun gère son profil, son adresse email et ses appareils connectés."""
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+"""Mon compte : chacun gère son profil, son adresse email, ses appareils connectés et ses jetons d'API."""
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import EmailField, PasswordField, RadioField, SelectField, StringField
@@ -7,7 +7,8 @@ from wtforms.validators import DataRequired, Length, Optional, Regexp, Validatio
 
 from ..extensions import db
 from ..models import AccountToken, User
-from ..services import accounts, mailer, people, preferences, sessions
+from ..permissions import can
+from ..services import accounts, api_tokens, mailer, people, preferences, sessions
 from ..services.activity import log
 from .users import upload_avatar
 
@@ -44,6 +45,12 @@ class EmailForm(FlaskForm):
             raise ValidationError("Mot de passe incorrect.")
 
 
+class ApiTokenForm(FlaskForm):
+    name = StringField("Nom du jeton", validators=[DataRequired(), Length(max=80)])
+    lifetime = SelectField("Expiration", choices=[(key, label) for key, (label, _) in api_tokens.LIFETIMES.items()],
+                           default=api_tokens.DEFAULT_LIFETIME)
+
+
 class DisplayForm(FlaskForm):
     theme = RadioField("Thème", choices=[("auto", "Comme l'appareil"), ("light", "Clair"), ("dark", "Sombre")])
     text_size = RadioField("Taille du texte", choices=list(preferences.TEXT_SIZES.items()))
@@ -61,9 +68,12 @@ def _display_form(formdata=None):
     return form
 
 
-def _render(profile=None, email_form=None):
+def _render(profile=None, email_form=None, token_form=None):
+    api = can(current_user, "api.use")
     return render_template("account/index.html", profile=profile or ProfileForm(obj=current_user),
                            email_form=email_form or EmailForm(), sessions=sessions.of(current_user),
+                           api=api, api_tokens=api_tokens.of(current_user) if api else [],
+                           token_form=token_form or ApiTokenForm(),
                            display=_display_form(),
                            device_label=sessions.device_label, smtp=mailer.smtp_enabled(),
                            pending=db.session.scalar(db.select(AccountToken).where(
@@ -151,3 +161,29 @@ def revoke_others():
     db.session.commit()
     flash("Vos autres appareils sont déconnectés.", "success")
     return redirect(url_for(".index") + "#sessions")
+
+
+@bp.route("/api/jetons", methods=["POST"])
+def create_api_token():
+    if not can(current_user, "api.use"):
+        abort(403)
+    form = ApiTokenForm()
+    if not form.validate_on_submit():
+        return _render(token_form=form)
+    raw, token = api_tokens.issue(current_user, form.name.data.strip(), api_tokens.LIFETIMES[form.lifetime.data][1])
+    log("account.api_token", f"{current_user.full_name} a créé le jeton d'API « {token.name} »", target=current_user)
+    db.session.commit()
+    # Affiché une seule fois, sur cette page (jamais dans un message flash : il passerait par le cookie de session).
+    return render_template("account/api_token_created.html", token=token, raw=raw,
+                           api_base=url_for("api.me", _external=True).removesuffix("/me"))
+
+
+@bp.route("/api/jetons/<token_id>/supprimer", methods=["POST"])
+def revoke_api_token(token_id):
+    token = api_tokens.revoke_one(current_user, token_id)
+    if token is not None:
+        log("account.api_token", f"{current_user.full_name} a supprimé le jeton d'API « {token.name} »",
+            target=current_user)
+        db.session.commit()
+        flash(f"Jeton « {token.name} » supprimé : il ne donne plus accès à l'API.", "success")
+    return redirect(url_for(".index") + "#api")

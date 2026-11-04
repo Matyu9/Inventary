@@ -22,7 +22,7 @@ PUBLIC = {"auth.login", "auth.forgot", "auth.token_link", "static", "scan.manife
 # Routes ouvertes à l'emprunteur.
 BORROWER = PUBLIC | {"dashboard.index", "dashboard.start", "auth.logout", "auth.password", "loans.mine", "loans.detail", "loans.checklist",
                      "users.notifications", "calendar.index", "account.index", "account.change_email",
-                     "account.revoke_session", "account.revoke_others", "account.set_avatar",
+                     "account.revoke_session", "account.revoke_others", "account.set_avatar", "account.revoke_api_token",
                      "account.remove_avatar", "account.display", "users.avatar_file", "calendar.events", "calendar.reset_token",
                      "scan.resolve", "loans.create", "loans.search_equipment", "loans.check"}
 
@@ -121,7 +121,8 @@ def test_borrower_only_reaches_allowed_routes(client, app, users, rich):
                 continue
             r = client.open(url, method=method)
             assert r.status_code < 500, (rule.endpoint, method)
-            if rule.endpoint not in BORROWER and r.status_code not in (403, 404, 405):
+            # 401 : l'API (/api/v1) n'accepte qu'un jeton, jamais le cookie de session.
+            if rule.endpoint not in BORROWER and r.status_code not in (401, 403, 404, 405):
                 leaks.append((rule.endpoint, method, r.status_code))
     assert leaks == []
 

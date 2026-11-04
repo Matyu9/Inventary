@@ -70,6 +70,11 @@ def _usage(start, end, statuses, exclude_loan_id=None):
     return used, holders
 
 
+def blocked_quantities(start, end):
+    """{item_id: quantité prise} par les prêts validés ou en cours sur la période."""
+    return _usage(start, end, LoanStatus.BLOCKING)[0]
+
+
 def _describe(loan, show_people=True):
     """« réservation n°3 du 01/11/2026 au 02/11/2026 pour Léa Martin » ; sans le nom pour qui ne voit pas
     tous les prêts (un emprunteur ne doit pas apprendre qui emprunte quoi)."""

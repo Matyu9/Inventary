@@ -69,8 +69,9 @@ Il n'y a **aucune étape de build** front-end : les bibliothèques JavaScript so
 │   │   ├── activity.py        journal d'activité (historique)
 │   │   ├── qr.py              QR codes et résolution d'un scan
 │   │   ├── photos.py          traitement des images
-│   │   └── oidc.py            client OIDC, rattachement des comptes, rôles par groupes
-│   ├── blueprints/          routes HTTP, une par domaine (items, loans, kits, audits…)
+│   │   ├── oidc.py            client OIDC, rattachement des comptes, rôles par groupes
+│   │   └── api_tokens.py      jetons d'accès à l'API : création, vérification, révocation
+│   ├── blueprints/          routes HTTP, une par domaine (items, loans, kits, audits…) ; api.py : /api/v1 en JSON
 │   ├── templates/           Jinja ; un dossier par blueprint, fragments HTMX préfixés par _
 │   │   └── partials/          macros communes (champs de formulaire, icônes, lignes de prêts)
 │   └── static/
@@ -78,6 +79,7 @@ Il n'y a **aucune étape de build** front-end : les bibliothèques JavaScript so
 │       ├── js/                petits scripts : scan, formulaire de prêt, calendrier, service worker
 │       ├── vendor/            htmx, Pico, html5-qrcode, FullCalendar
 │       └── icons/             icônes de la PWA
+├── mcp_server/              serveur MCP (assistant en lecture seule), client de l'API ; hors de l'image Docker
 ├── migrations/              migrations Alembic de la base
 ├── tests/                   pytest (unitaires, routes, propriétés, sécurité, e2e)
 ├── scripts/                 données de démo, captures d'écran de la doc
@@ -237,6 +239,7 @@ Les tests de propriétés (`tests/test_properties.py`, Hypothesis) génèrent de
 | Photos décodées puis réencodées en JPEG ; refus des « bombes de décompression » | [services/photos.py](../app/services/photos.py) |
 | Photos servies uniquement aux personnes connectées, avec noms de fichiers aléatoires | `items.uploaded_file` |
 | QR codes et flux iCal fondés sur des jetons aléatoires ; lien iCal révocable | `qr_token`, `ical_token` |
+| API en lecture seule (`GET` uniquement) : jeton porteur dont seule l'empreinte SHA-256 est stockée, droits du propriétaire, cookie de session refusé, 300 appels par minute, `no-store` | [blueprints/api.py](../app/blueprints/api.py), [services/api_tokens.py](../app/services/api_tokens.py) |
 | OIDC : PKCE, `state`, `nonce`, signature de l'`id_token` vérifiée, liaison par email seulement si l'email est vérifié | [services/oidc.py](../app/services/oidc.py) |
 | Refus de démarrer sans `SECRET_KEY` en production | `create_app` |
 | Conteneur exécuté sans droits root, port lié à `127.0.0.1` | `Dockerfile`, `docker-compose.yml` |

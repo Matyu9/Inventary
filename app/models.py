@@ -182,6 +182,27 @@ class AccountToken(db.Model):
     user = db.relationship("User")
 
 
+class ApiToken(db.Model):
+    """Jeton d'accès à l'API en lecture seule (/api/v1), créé par une personne dans « Mon compte ».
+
+    Il donne les droits de lecture de son propriétaire, tant que celui-ci a accès à l'appli. Seule l'empreinte
+    SHA-256 est stockée ; `prefix` (début du jeton) sert à le reconnaître dans la liste.
+    """
+    id = db.Column(db.String(64), primary_key=True)  # empreinte du jeton
+    user_id = db.Column(db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = db.Column(db.String(80), nullable=False)
+    prefix = db.Column(db.String(16), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    expires_at = db.Column(db.DateTime)  # None : sans date d'expiration
+    last_used_at = db.Column(db.DateTime)
+
+    user = db.relationship("User")
+
+    @property
+    def expired(self):
+        return self.expires_at is not None and self.expires_at <= datetime.now()
+
+
 @login_manager.user_loader
 def load_user(user_id):
     user_id, _, token = user_id.partition(":")

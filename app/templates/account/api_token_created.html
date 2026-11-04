@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Jeton d'API créé{% endblock %}
+{% block content %}
+<article class="narrow">
+  <h1>Jeton « {{ token.name }} » créé</h1>
+  <p>Copiez-le maintenant : il ne sera <strong>plus jamais affiché</strong>. Si vous le perdez, supprimez-le et créez-en un autre.</p>
+  <fieldset role="group">
+    <input readonly value="{{ raw }}" aria-label="Jeton d'API" onclick="this.select()">
+    <button type="button" class="secondary" onclick="navigator.clipboard && navigator.clipboard.writeText(this.previousElementSibling.value)">Copier</button>
+  </fieldset>
+  <dl class="props">
+    <dt>Expire le</dt><dd>{{ token.expires_at | datetime_fr if token.expires_at else "jamais" }}</dd>
+    <dt>Adresse de l'API</dt><dd><code>{{ api_base }}</code></dd>
+  </dl>
+  <p class="muted small">À envoyer dans l'en-tête <code>Authorization: Bearer &lt;jeton&gt;</code>. Exemple :<br>
+    <code>curl -H "Authorization: Bearer {{ token.prefix }}…" {{ url_for('api.me', _external=True) }}</code></p>
+  <a href="{{ url_for('account.index') }}#api" role="button">Terminé</a>
+</article>
+{% endblock %}

@@ -261,3 +261,25 @@ def test_home_and_text_size_migration(migrated_app):
         "SELECT name FROM pragma_table_info('user') WHERE name IN ('home', 'text_size')")
     assert users == [(1, "dark")] and sessions == [(1,)] and columns == []
     upgrade(MIGRATIONS)
+
+
+def test_api_tokens_migration(migrated_app):
+    """Table des jetons d'API (supprimés avec leur propriétaire) et droit « api.use » du professeur."""
+    import json
+    _app, path = migrated_app
+    upgrade(MIGRATIONS, revision="c3e7a9d1f5b2")
+    run_sql(path, "INSERT INTO user (id, first_name, last_name, email, role, active, ical_token) "
+                  "VALUES (1, 'Alice', 'Martin', 'alice@ohn.test', 'prof', 1, 'tok')")
+    upgrade(MIGRATIONS, revision="e4b9c1d7a3f6")
+    (prof,), _ = run_sql(path, "SELECT permissions FROM role WHERE key = 'prof'",
+                         "INSERT INTO api_token (id, user_id, name, prefix, created_at) "
+                         "VALUES ('hash', 1, 'Tableur', 'ohn_abc', '2026-11-02')")
+    assert "api.use" in json.loads(prof[0])
+    tokens, fk_errors = run_sql(path, "DELETE FROM user WHERE id = 1", "SELECT id FROM api_token")[1:] + \
+        run_sql(path, "PRAGMA foreign_key_check")
+    assert tokens == [] and fk_errors == []
+    downgrade(MIGRATIONS, revision="c3e7a9d1f5b2")
+    (prof,), tables = run_sql(path, "SELECT permissions FROM role WHERE key = 'prof'",
+                              "SELECT name FROM sqlite_master WHERE name = 'api_token'")
+    assert "api.use" not in json.loads(prof[0]) and tables == []
+    upgrade(MIGRATIONS)

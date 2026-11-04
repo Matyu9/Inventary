@@ -57,6 +57,7 @@ PERMISSION_GROUPS = [
         ("customfield.manage", "Gérer les champs personnalisés"),
         ("settings.manage", "Paramètres de l'appli"),
         ("activity.view", "Voir le journal de toutes les actions (connexions comprises)"),
+        ("api.use", "Créer des jetons d'accès à l'API (lecture seule, avec ses propres droits)"),
     ]),
 ]
 PERMISSIONS = {key: label for _, perms in PERMISSION_GROUPS for key, label in perms}
@@ -67,7 +68,7 @@ DEFAULT_PERMISSIONS = {
     P: {"inventory.view", "item.edit", "document.view", "document.edit", "note.add", "maintenance.edit",
         "reminder.edit", "stock.move", "scan", "label.print", "myloans.view", "calendar.view", "loan.request",
         "loan.guarantee", "loan.list_all", "loan.verify", "audit.scan", "report.view", "export", "borrower.create",
-        "report.handle"},
+        "report.handle", "api.use"},
     E: {"myloans.view", "calendar.view", "loan.request_own"},
 }
 

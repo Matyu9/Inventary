@@ -8,10 +8,11 @@ from flask_login import current_user, login_user, logout_user
 
 from ..extensions import db
 from ..models import LoginSession
+from .activity import log
 
 
-def start(user, remember=False):
-    """Ouvre une session pour `user` sur cet appareil (à la place de login_user)."""
+def start(user, remember=False, via=None):
+    """Ouvre une session pour `user` sur cet appareil (à la place de login_user) et la note au journal."""
     lifetime = current_app.config.get("REMEMBER_COOKIE_DURATION", timedelta(days=365))
     db.session.execute(db.delete(LoginSession).where(LoginSession.created_at < datetime.now() - lifetime))
     user.session_token = secrets.token_urlsafe(32)
@@ -20,6 +21,8 @@ def start(user, remember=False):
                                 user_agent=(request.user_agent.string or "")[:255] or None,
                                 ip=request.remote_addr))
     user.last_login_at = now
+    log("auth.login", f"Connexion de {user.full_name}" + (f" via {via}" if via else "") + f" ({request.remote_addr})",
+        user=user)
     db.session.commit()
     login_user(user, remember=remember)
 
@@ -27,6 +30,7 @@ def start(user, remember=False):
 def end():
     """Déconnecte cet appareil : son cookie, même rejoué, ne donne plus accès."""
     if current_user.is_authenticated:
+        log("auth.logout", f"Déconnexion de {current_user.full_name}")
         db.session.execute(db.delete(LoginSession).where(LoginSession.id == current_user.session_token))
         db.session.commit()
     logout_user()

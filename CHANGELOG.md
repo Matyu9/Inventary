@@ -6,6 +6,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ### Ajouté
 
+- **Journal global** (menu Administration → Journal) : toutes les actions récentes de l'appli sur une seule page, la plus récente d'abord, 100 par page. Les connexions, déconnexions et tentatives de connexion échouées (avec l'adresse IP) y sont désormais enregistrées. Filtres par type d'action (connexions, prêts, matériel…), par personne (en cliquant sur un nom) et recherche dans le texte. Nouveau droit « Voir le journal de toutes les actions », réservé par défaut aux admins.
 - **Personnalisation de l'interface** :
   - **Apparence** (Paramètres, admin) : nom de l'association et sous-titre du menu modifiables sans redémarrer (`ASSO_NAME` devient la valeur par défaut), logo (PNG transparent conservé, aussi icône d'onglet) et couleur principale parmi sept palettes, chacune déclinée en thème sombre. Les emails, le manifeste de l'appli installée et la couleur de la barre du navigateur suivent. Un GIF animé ne garde que sa première image.
   - **Tableau de bord à la carte** (bouton Personnaliser, admins et profs) : chacun choisit les blocs affichés et leur ordre. Les blocs masqués ne sont pas calculés. Un bloc ajouté plus tard apparaît à la fin.

@@ -424,7 +424,8 @@ def test_admin_retires_and_restores(client, as_role, ref):
     client.post(f"/objets/{item.id}/reformer")
     db.session.refresh(item)
     assert item.status == ItemStatus.DISPONIBLE
-    actions = db.session.scalars(db.select(Activity.action).order_by(Activity.id)).all()
+    actions = db.session.scalars(db.select(Activity.action).where(Activity.action.not_like("auth.%"))
+                                 .order_by(Activity.id)).all()
     assert actions == ["item.retire", "item.restore"]
 
 

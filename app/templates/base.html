@@ -52,12 +52,13 @@
       {% if can(current_user, "report.view") %}{{ navlink("reports.index", "Rapports", "chart", ["reports"]) }}{% endif %}
       {% if can(current_user, "export") %}{{ navlink("transfer.index", "Import / export", "transfer", ["transfer"]) }}{% endif %}
       {% endif %}
-      {% if can(current_user, "borrower.create") or can(current_user, "settings.manage") %}
+      {% if can(current_user, "borrower.create") or can(current_user, "settings.manage") or can(current_user, "activity.view") %}
       <p class="nav-title">Administration</p>
       {% if can(current_user, "borrower.create") %}{{ navlink("users.index", "Personnes", "users", ["users"]) }}{% endif %}
       {% if current_user.is_admin %}{{ navlink("roles.index", "Rôles", "key", ["roles"]) }}{% endif %}
       {% if can(current_user, "customfield.manage") %}{{ navlink("referentiel.custom_fields", "Champs perso", "sliders") }}{% endif %}
       {% if can(current_user, "settings.manage") %}{{ navlink("settings.index", "Paramètres", "settings", ["settings"]) }}{% endif %}
+      {% if can(current_user, "activity.view") %}{{ navlink("journal.index", "Journal", "clock") }}{% endif %}
       {% endif %}
     </nav>
     <div class="sidebar-user">

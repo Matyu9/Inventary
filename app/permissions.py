@@ -56,6 +56,7 @@ PERMISSION_GROUPS = [
         ("user.manage", "Gérer les comptes et leur attribuer un rôle"),
         ("customfield.manage", "Gérer les champs personnalisés"),
         ("settings.manage", "Paramètres de l'appli"),
+        ("activity.view", "Voir le journal de toutes les actions (connexions comprises)"),
     ]),
 ]
 PERMISSIONS = {key: label for _, perms in PERMISSION_GROUPS for key, label in perms}

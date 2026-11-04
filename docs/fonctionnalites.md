@@ -157,6 +157,7 @@ Inventaire complet de ce que fait l'appli, domaine par domaine. Pour savoir comm
 - **Archiver ou désarchiver**, **supprimer** une fiche jamais utilisée, **fusionner** deux doublons (avec suggestions).
 - **Actions groupées** : ouvrir ou couper l'accès, archiver, changer le rôle.
 - **Photos de profil** recadrées en carré, sans métadonnées EXIF, servies aux seules personnes connectées.
+- **Journal global** (menu Journal, admin) : toutes les actions récentes, connexions, déconnexions et échecs de connexion compris (avec l'adresse IP). Filtres par type d'action, par personne (auteur ou personne concernée) et recherche dans le texte.
 
 ## Rôles et permissions
 

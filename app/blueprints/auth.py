@@ -92,6 +92,8 @@ def login():
             sessions.start(user, remember=form.remember.data)
             return redirect(safe_next(request.args.get("next"), preferences.home_url(user)))
         _record_failure(keys)
+        log("auth.failed", f"Échec de connexion pour {email[:200]} ({request.remote_addr})", target=user)
+        db.session.commit()
         flash("Email ou mot de passe incorrect.", "error")
     return _login_page(form)
 
@@ -148,7 +150,7 @@ def oidc_callback():
         flash(str(e), "error")
         return redirect(url_for(".login"))
     db.session.commit()
-    sessions.start(user, remember=remember)
+    sessions.start(user, remember=remember, via="le fournisseur d'identité")
     return redirect(safe_next(next_url, preferences.home_url(user)))
 
 

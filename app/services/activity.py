@@ -1,7 +1,12 @@
+from datetime import datetime, timedelta
+
 from flask_login import current_user
 
 from ..extensions import db
 from ..models import Activity
+
+# Durée de conservation des connexions au journal : elles contiennent des adresses IP.
+LOGIN_RETENTION_DAYS = 365
 
 
 def log(action, message, *, item=None, kit=None, loan=None, changes=None, user=None, target=None):
@@ -20,6 +25,13 @@ def log(action, message, *, item=None, kit=None, loan=None, changes=None, user=N
     )
     db.session.add(entry)
     return entry
+
+
+def purge_expired_logins(now=None):
+    """Efface les connexions, déconnexions et échecs trop anciens (lancé par les rappels automatiques)."""
+    limit = (now or datetime.now()) - timedelta(days=LOGIN_RETENTION_DAYS)
+    return db.session.execute(db.delete(Activity).where(Activity.action.startswith("auth."),
+                                                        Activity.created_at < limit)).rowcount
 
 
 def diff(obj, fields, new_values):

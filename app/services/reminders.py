@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from ..extensions import db
 from ..models import (Item, Loan, LoanStatus, LoanType, Maintenance, Reminder, Tracking)
-from . import mailer, trash
+from . import activity, mailer, trash
 from .notify import admins, notify
 
 
@@ -105,10 +105,12 @@ def run(now=None):
                              kind="item.low_stock", item=item))
 
     purged = trash.purge_expired(now)
+    logins = activity.purge_expired_logins(now)
     db.session.commit()
     emails = mailer.deliver_pending()
     total = sum(counts.values())
     detail = ", ".join(f"{k} : {v}" for k, v in counts.items() if v)
     cleaned = f", {purged} élément(s) de la corbeille effacé(s)" if purged else ""
+    cleaned += f", {logins} connexion(s) ancienne(s) effacée(s) du journal" if logins else ""
     return (f"{total} notification(s) créée(s){' (' + detail + ')' if detail else ''}, {emails} email(s) envoyé(s)"
             f"{cleaned}.")

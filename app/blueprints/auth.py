@@ -92,7 +92,9 @@ def login():
             sessions.start(user, remember=form.remember.data)
             return redirect(safe_next(request.args.get("next"), preferences.home_url(user)))
         _record_failure(keys)
-        log("auth.failed", f"Échec de connexion pour {email[:200]} ({request.remote_addr})", target=user)
+        # Le texte saisi n'est gardé que s'il désigne un compte : ce peut être un mot de passe tapé au mauvais endroit.
+        log("auth.failed", f"Échec de connexion pour {user.email if user else 'une adresse inconnue'} "
+                           f"({request.remote_addr})", target=user)
         db.session.commit()
         flash("Email ou mot de passe incorrect.", "error")
     return _login_page(form)

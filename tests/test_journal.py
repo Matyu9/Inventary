@@ -1,7 +1,10 @@
+from datetime import datetime, timedelta
+
 from app.extensions import db
 from app.models import Activity, Role
 from app.permissions import DEFAULT_PERMISSIONS
-from app.services.activity import log
+from app.services import reminders
+from app.services.activity import LOGIN_RETENTION_DAYS, log, purge_expired_logins
 
 from .conftest import login, make_user
 
@@ -31,7 +34,13 @@ def test_failed_login_is_logged_without_author(client, users):
 def test_failed_login_unknown_email(client, users):
     client.post("/connexion", data={"email": "Inconnu@ohn.test", "password": "x"})
     entry = db.session.scalar(db.select(Activity))
-    assert entry.action == "auth.failed" and entry.target_user_id is None and "inconnu@ohn.test" in entry.message
+    assert entry.action == "auth.failed" and entry.target_user_id is None
+    assert "une adresse inconnue" in entry.message and "inconnu" not in entry.message.replace("une adresse inconnue", "")
+
+
+def test_password_typed_as_email_is_not_kept(client, users):
+    client.post("/connexion", data={"email": "MonMotDePasse!42", "password": "x"})
+    assert "motdepasse" not in db.session.scalar(db.select(Activity)).message.lower()
 
 
 def test_throttled_attempts_are_not_logged(client, users):
@@ -44,6 +53,28 @@ def test_inactive_account_login_is_a_failure(client, app):
     user = make_user(E, email="fiche@ohn.test", active=False)
     login(client, user)
     assert actions() == ["auth.failed"]
+
+
+def old_entry(action, days):
+    db.session.add(Activity(action=action, message=action, created_at=datetime.now() - timedelta(days=days)))
+
+
+def test_old_logins_are_purged(app):
+    for action in ("auth.login", "auth.logout", "auth.failed"):
+        old_entry(action, LOGIN_RETENTION_DAYS + 1)
+    old_entry("auth.login", LOGIN_RETENTION_DAYS - 1)
+    old_entry("item.create", LOGIN_RETENTION_DAYS + 1)
+    db.session.commit()
+    assert purge_expired_logins() == 3
+    db.session.commit()
+    assert actions() == ["auth.login", "item.create"]
+
+
+def test_reminders_purge_old_logins(app):
+    old_entry("auth.failed", LOGIN_RETENTION_DAYS + 1)
+    db.session.commit()
+    assert "1 connexion(s) ancienne(s) effacée(s) du journal" in reminders.run()
+    assert actions() == []
 
 
 def test_journal_is_admin_only_by_default(client, users):

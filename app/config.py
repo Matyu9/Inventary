@@ -52,8 +52,15 @@ class Config:
     OIDC_PROF_GROUPS = _csv(os.environ.get("OIDC_PROF_GROUPS", ""))
     # Lier un compte existant par son email seulement si le fournisseur l'a vérifié (email_verified).
     OIDC_REQUIRE_VERIFIED_EMAIL = os.environ.get("OIDC_REQUIRE_VERIFIED_EMAIL", "1") == "1"
-    # Masque le formulaire email / mot de passe (la connexion passe uniquement par l'OIDC).
+    # Masque le formulaire email / mot de passe (la connexion passe uniquement par l'OIDC). Un administrateur garde un
+    # accès de secours par mot de passe, sur /connexion?local=1, si le fournisseur est en panne.
     OIDC_ONLY = os.environ.get("OIDC_ONLY", "0") == "1"
+    # Retrouver la fiche d'une nouvelle identité par son email vérifié. À mettre à 0 avec Adhérents, une fois les comptes
+    # rattachés (Personnes → Rattacher les comptes OIDC) : une adresse partagée dans une famille désignerait la
+    # mauvaise fiche. Une identité inconnue dont l'adresse est déjà prise est alors refusée, sans rien lier.
+    OIDC_LINK_BY_EMAIL = os.environ.get("OIDC_LINK_BY_EMAIL", "1") == "1"
+    # Se déconnecter de l'Inventaire déconnecte aussi du fournisseur (s'il annonce un end_session_endpoint).
+    OIDC_PROVIDER_LOGOUT = os.environ.get("OIDC_PROVIDER_LOGOUT", "1") == "1"
 
     # Content-Security-Policy : « 1 » = Report-Only (le navigateur signale les violations sans rien bloquer).
     CSP_REPORT_ONLY = os.environ.get("CSP_REPORT_ONLY", "1") == "1"

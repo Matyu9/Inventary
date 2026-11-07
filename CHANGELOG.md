@@ -6,6 +6,15 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ### Ajouté
 
+- **Connexion avec Adhérents** (voir [docs/oidc-adherents.md](docs/oidc-adherents.md)) :
+  - **Déconnexion reçue du fournisseur** (Back-Channel Logout, `/connexion/oidc/deconnexion`) : un avis signé ferme la session désignée, quand la personne se déconnecte ailleurs, quand son compte est coupé ou ses groupes changés. Chaque avis est vérifié (signature, émetteur, audience, date, événement, pas de `nonce`).
+  - **Déconnexion transmise au fournisseur** : se déconnecter de l'inventaire déconnecte aussi d'Adhérents et des autres applis (`OIDC_PROVIDER_LOGOUT`, activé par défaut).
+  - **Rattachement des comptes** (Personnes → Rattacher les comptes OIDC, administrateurs) : à partir de l'export d'Adhérents, chaque compte retrouve sa fiche après vérification. Seuls l'adresse vérifiée et le nom ensemble sont proposés d'office : une adresse partagée dans une famille attend la décision d'un responsable.
+  - **`OIDC_LINK_BY_EMAIL=0`** : plus de rattachement par l'email à la connexion, pour qu'un parent ne prenne pas la fiche de son enfant.
+  - **Accès de secours** avec `OIDC_ONLY=1` : un administrateur qui a un mot de passe entre par `/connexion?local=1` si le fournisseur est en panne.
+  - **`external_id`** sur les personnes, vide pour l'instant : il désignera la fiche de l'annuaire d'Adhérents.
+  - Le bouton « Se connecter avec… » passe par une page intermédiaire : Chrome bloquait sinon la redirection vers le fournisseur dès que la CSP n'est plus en Report-Only (`form-action 'self'`).
+  - Une fiche d'emprunteur sans accès, rattachée à son identité, devient un compte, comme au rattachement par email.
 - **API en lecture seule** (`/api/v1`) : objets, kits, consommables, lieux, catégories, tags, prêts, disponibilités sur une période et chiffres clés, en JSON. Chacun crée ses **jetons d'accès** dans Mon compte → Accès à l'API (30 jours, 90 jours, 1 an ou sans expiration, affichés une seule fois, seule leur empreinte est stockée) ; un admin les voit et les supprime depuis la fiche de la personne. L'API applique les droits du propriétaire du jeton et n'accepte que des `GET`. Nouveau droit « Créer des jetons d'accès à l'API », donné par défaut aux profs. Voir [docs/api.md](docs/api.md).
 - **Serveur MCP** (`mcp_server/`) : branche Claude Desktop, Claude Code ou un autre assistant sur l'API, en lecture seule (« quels instruments sont libres le 14 décembre ? », « quels prêts sont en retard ? »).
 - **Journal global** (menu Administration → Journal) : toutes les actions récentes de l'appli sur une seule page, la plus récente d'abord, 100 par page. Les connexions, déconnexions et tentatives de connexion échouées (avec l'adresse IP) y sont désormais enregistrées. Filtres par type d'action (connexions, prêts, matériel…), par personne (en cliquant sur un nom) et recherche dans le texte. Nouveau droit « Voir le journal de toutes les actions », réservé par défaut aux admins. Les entrées de connexion, qui contiennent l'adresse IP, sont effacées au bout d'un an, et une adresse saisie qui ne correspond à aucun compte n'est pas conservée.

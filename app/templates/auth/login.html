@@ -10,6 +10,7 @@
     <span class="brand-text"><strong>{{ asso_name }}</strong><small>Inventaire des instruments et du matériel</small></span>
   </div>
   <h1>Connexion</h1>
+  {% if rescue %}<p class="muted small">Accès de secours, réservé aux administrateurs qui ont un mot de passe.</p>{% endif %}
   {% if oidc_enabled %}
   <form method="get" action="{{ url_for('auth.oidc_login') }}">
     {% if request.args.get("next") %}<input type="hidden" name="next" value="{{ request.args.get('next') }}">{% endif %}

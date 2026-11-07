@@ -11,15 +11,17 @@ from ..models import LoginSession
 from .activity import log
 
 
-def start(user, remember=False, via=None):
-    """Ouvre une session pour `user` sur cet appareil (à la place de login_user) et la note au journal."""
+def start(user, remember=False, via=None, oidc_sid=None, oidc_id_token=None):
+    """Ouvre une session pour `user` sur cet appareil (à la place de login_user) et la note au journal.
+
+    `oidc_sid` et `oidc_id_token` : session ouverte via le fournisseur OIDC (voir LoginSession)."""
     lifetime = current_app.config.get("REMEMBER_COOKIE_DURATION", timedelta(days=365))
     db.session.execute(db.delete(LoginSession).where(LoginSession.created_at < datetime.now() - lifetime))
     user.session_token = secrets.token_urlsafe(32)
     now = datetime.now()
     db.session.add(LoginSession(id=user.session_token, user_id=user.id, created_at=now, last_seen_at=now,
                                 user_agent=(request.user_agent.string or "")[:255] or None,
-                                ip=request.remote_addr))
+                                ip=request.remote_addr, oidc_sid=oidc_sid, oidc_id_token=oidc_id_token))
     user.last_login_at = now
     log("auth.login", f"Connexion de {user.full_name}" + (f" via {via}" if via else "") + f" ({request.remote_addr})",
         user=user)
@@ -34,6 +36,11 @@ def end():
         db.session.execute(db.delete(LoginSession).where(LoginSession.id == current_user.session_token))
         db.session.commit()
     logout_user()
+
+
+def current():
+    """Session de la requête en cours, sinon None."""
+    return db.session.get(LoginSession, current_user.session_token) if current_user.is_authenticated else None
 
 
 def revoke(user, keep_current=False):

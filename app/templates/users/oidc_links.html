@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Rattacher les comptes d'Adhérents{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('users.index') }}">← Utilisateurs</a></p>
+<article class="narrow wide">
+  <h1>Rattacher les comptes d'Adhérents</h1>
+  {% if proposals is none %}
+  <p>Avant de passer la connexion par Adhérents, chaque compte d'Adhérents doit retrouver sa fiche ici. Sans ce
+    rattachement, la fiche serait retrouvée par l'email seul : or la fiche d'un enfant porte souvent l'adresse de son
+    parent, qui récupérerait alors ses prêts.</p>
+  <p>Dans Adhérents, lancez <code>flask oidc-export-accounts --application "Inventaire" &gt; comptes.json</code>,
+    puis envoyez ce fichier. Rien n'est modifié avant votre confirmation.</p>
+  <form method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <label for="export">Fichier exporté d'Adhérents</label>
+    <input type="file" id="export" name="export" accept=".json,application/json" required>
+    <button type="submit">Voir les rattachements proposés</button>
+  </form>
+  <p class="muted small">Ce fichier contient des noms et des adresses : supprimez-le une fois le rattachement fait.</p>
+  {% if config.OIDC_LINK_BY_EMAIL %}<p class="flash flash-warning">Une fois les comptes rattachés, mettez <code>OIDC_LINK_BY_EMAIL=0</code> : sinon une personne non rattachée serait encore retrouvée par son email, au risque de prendre la fiche d'un membre de sa famille.</p>{% endif %}
+  {% else %}
+  <p>{{ counts[statuses.PROPOSED] }} proposé(s), {{ counts[statuses.DOUBTFUL] }} à vérifier,
+    {{ counts[statuses.LINKED] }} déjà rattaché(s), {{ counts[statuses.TAKEN] }} sur une fiche déjà prise,
+    {{ counts[statuses.NEW] }} sans fiche.</p>
+  <p class="muted small">Seuls l'adresse vérifiée et le nom ensemble sont cochés d'office. Cochez une ligne « à vérifier »
+    seulement si c'est bien la même personne.</p>
+  <form method="post">
+    {{ form.hidden_tag() }}
+    <input type="hidden" name="step" value="confirm">
+    <div class="overflow-auto">
+    <table>
+      <thead><tr><th>Rattacher</th><th>Compte Adhérents</th><th>Fiche Inventaire</th><th>Pourquoi</th></tr></thead>
+      <tbody>
+      {% for p in proposals %}
+      <tr>
+        <td>{% if p.status in (statuses.PROPOSED, statuses.DOUBTFUL) %}
+          <input type="checkbox" name="link" value="{{ loop.index }}" aria-label="Rattacher {{ p.first_name }} {{ p.last_name }}" {{ "checked" if p.checked }}>
+          <input type="hidden" name="sub-{{ loop.index }}" value="{{ p.sub }}">
+          <input type="hidden" name="user-{{ loop.index }}" value="{{ p.user.id }}">
+        {% endif %}</td>
+        <td>{{ p.first_name }} {{ p.last_name }}<br><span class="muted small">{{ p.email or "sans adresse" }}{% if not p.email_verified %} · non vérifiée{% endif %}</span></td>
+        <td>{% if p.user %}<a href="{{ url_for('users.detail', user_id=p.user.id) }}">{{ p.user.full_name }}</a><br><span class="muted small">{{ p.user.email or "sans adresse" }} · {{ p.user.role_label }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>{% if p.status == statuses.DOUBTFUL %}<strong>À vérifier :</strong> {% endif %}{{ p.reason }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <button type="submit">Rattacher les comptes cochés</button>
+  </form>
+  {% endif %}
+</article>
+{% endblock %}

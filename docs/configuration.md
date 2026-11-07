@@ -54,7 +54,7 @@ Les emails sont activés dès que `SMTP_HOST` et un expéditeur (`SMTP_FROM` ou 
 
 ## Connexion OIDC (facultatif)
 
-L'OIDC est activé dès que `OIDC_DISCOVERY_URL` et `OIDC_CLIENT_ID` sont renseignés. Le guide complet est dans [Connexion OIDC avec Authentik](oidc-authentik.md).
+L'OIDC est activé dès que `OIDC_DISCOVERY_URL` et `OIDC_CLIENT_ID` sont renseignés. Le guide complet est dans [Connexion OIDC avec Authentik](oidc-authentik.md), et le branchement sur le serveur de l'association dans [Connexion avec Adhérents](oidc-adherents.md).
 
 | Variable | Défaut | Description |
 |---|---|---|
@@ -67,7 +67,9 @@ L'OIDC est activé dès que `OIDC_DISCOVERY_URL` et `OIDC_CLIENT_ID` sont rensei
 | `OIDC_ADMIN_GROUPS` | (vide) | Groupes donnant le rôle Admin, séparés par des virgules. |
 | `OIDC_PROF_GROUPS` | (vide) | Groupes donnant le rôle Prof, séparés par des virgules. |
 | `OIDC_REQUIRE_VERIFIED_EMAIL` | `1` | Ne lier un compte existant par son email que si le fournisseur l'a vérifié (`email_verified`). |
-| `OIDC_ONLY` | `0` | `1` : masque le formulaire email / mot de passe. Ignoré si l'OIDC n'est pas configuré. |
+| `OIDC_ONLY` | `0` | `1` : masque le formulaire email / mot de passe. Ignoré si l'OIDC n'est pas configuré. Un administrateur qui a un mot de passe garde un accès de secours sur `/connexion?local=1`. |
+| `OIDC_LINK_BY_EMAIL` | `1` | `0` : une nouvelle identité n'est jamais rattachée à une fiche par son email. Si l'adresse est déjà prise, la connexion est refusée. À mettre à `0` avec Adhérents, une fois les comptes rattachés. |
+| `OIDC_PROVIDER_LOGOUT` | `1` | Se déconnecter de l'inventaire déconnecte aussi du fournisseur, s'il annonce un `end_session_endpoint`. `0` : déconnexion locale seulement. |
 
 URL de rappel à déclarer chez le fournisseur : `<BASE_URL>/connexion/oidc/retour`.
 

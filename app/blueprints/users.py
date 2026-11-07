@@ -534,3 +534,55 @@ def unread_notifications():
         return 0
     return db.session.scalar(db.select(db.func.count(Notification.id)).where(
         Notification.user_id == current_user.id, Notification.read.is_(False)))
+
+
+@bp.route("/utilisateurs/rattachement-oidc", methods=["GET", "POST"])
+@require("user.manage")
+def oidc_links():
+    """Avant la bascule vers Adhérents : rattacher chaque compte d'Adhérents à sa fiche, après vérification.
+
+    Réservé aux administrateurs : rattacher une identité à une fiche d'administrateur donnerait ses droits.
+    """
+    if not current_user.is_admin:
+        abort(403)
+    form = FlaskForm()
+    if request.method == "POST" and form.validate_on_submit():
+        if request.form.get("step") == "confirm":
+            return _confirm_oidc_links()
+        upload = request.files.get("export")
+        if upload is None or not upload.filename:
+            flash("Choisissez le fichier exporté d'Adhérents.", "error")
+        else:
+            try:
+                accounts_ = oidc.parse_export(upload.read())
+            except oidc.InvalidExport as error:
+                flash(str(error), "error")
+            else:
+                proposals = oidc.link_proposals(accounts_)
+                return render_template("users/oidc_links.html", form=form, proposals=proposals,
+                                       counts={s: sum(p["status"] == s for p in proposals) for s in
+                                               (oidc.PROPOSED, oidc.DOUBTFUL, oidc.LINKED, oidc.TAKEN, oidc.NEW)},
+                                       statuses=oidc)
+    return render_template("users/oidc_links.html", form=form, proposals=None)
+
+
+def _confirm_oidc_links():
+    linked, refused = 0, []
+    for index in request.form.getlist("link"):
+        sub = (request.form.get(f"sub-{index}") or "").strip()
+        user = db.session.get(User, request.form.get(f"user-{index}", type=int) or 0)
+        if not sub or len(sub) > 255:
+            continue
+        problem = oidc.link(user, sub, current_user)
+        if problem:
+            refused.append(problem)
+        else:
+            linked += 1
+    db.session.commit()
+    if linked:
+        flash(f"{linked} compte(s) rattaché(s) : à leur prochaine connexion, chacun retrouvera sa fiche.", "success")
+    for problem in refused:
+        flash(f"Non rattaché : {problem}.", "error")
+    if not linked and not refused:
+        flash("Aucun compte coché : rien n'a changé.", "info")
+    return redirect(url_for(".oidc_links"))

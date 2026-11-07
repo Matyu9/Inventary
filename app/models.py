@@ -103,6 +103,8 @@ class User(UserMixin, TimestampMixin, db.Model):
     must_change_password = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     # Identifiant du compte chez le fournisseur OIDC (claim « sub »), fixé à la première connexion.
     oidc_sub = db.Column(db.String(255), unique=True, index=True)
+    # Personne correspondante dans l'annuaire d'Adhérents. Vide pour l'instant : rempli une fois l'annuaire en place.
+    external_id = db.Column(db.String(64), unique=True, index=True)
     # Rôle attribué d'après les groupes OIDC (et non par un admin) : il suit les groupes.
     role_from_oidc = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     last_login_at = db.Column(db.DateTime)
@@ -159,6 +161,10 @@ class LoginSession(db.Model):
     last_seen_at = db.Column(db.DateTime)
     user_agent = db.Column(db.String(255))
     ip = db.Column(db.String(45))
+    # Session ouverte via le fournisseur OIDC : son `sid` (pour l'avis de déconnexion qui la désigne) et le jeton
+    # d'identité reçu, renvoyé au fournisseur pour qu'il déconnecte aussi la personne de chez lui.
+    oidc_sid = db.Column(db.String(255), index=True)
+    oidc_id_token = db.Column(db.Text)
 
     user = db.relationship("User")
 

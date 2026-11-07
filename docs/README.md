@@ -7,6 +7,7 @@
 | [Installation et exploitation](installation.md) | Personne qui héberge l'appli | Docker, reverse proxy, emails, sauvegarde, mise à jour, diagnostic |
 | [Configuration](configuration.md) | Personne qui héberge l'appli | Référence de toutes les variables d'environnement |
 | [Connexion OIDC avec Authentik](oidc-authentik.md) | Personne qui héberge l'appli | SSO pas à pas, test en local, rôles par groupes, dépannage |
+| [Connexion avec Adhérents](oidc-adherents.md) | Personne qui héberge l'appli | Branchement sur le serveur de l'association, rattachement des comptes, déconnexion, bascule |
 | [Architecture](architecture.md) | Développeurs | Organisation du code, modèle de données, permissions, choix techniques, sécurité |
 | [Développement](developpement.md) | Développeurs | Environnement, données de démo, tests, migrations, conventions |
 

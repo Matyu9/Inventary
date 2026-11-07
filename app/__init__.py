@@ -125,7 +125,8 @@ def create_app(config_class=Config):
                                         else "Content-Security-Policy", CSP)
             response.headers.setdefault("Reporting-Endpoints", 'csp-endpoint="/csp-report"')  # pour report-to
         if request.endpoint in ("auth.password", "users.create", "users.edit", "users.reset_password",
-                                "auth.oidc_callback", "account.create_api_token"):
+                                "auth.oidc_callback", "auth.oidc_login", "account.create_api_token", "auth.logout",
+                                "auth.oidc_backchannel", "users.oidc_links"):
             response.headers["Cache-Control"] = "no-store"  # mots de passe ou jeton affichés ou saisis
         return response
 

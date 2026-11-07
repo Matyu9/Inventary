@@ -1,14 +1,14 @@
 from urllib.parse import urlsplit
 
 from authlib.integrations.base_client import OAuthError
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, EmailField, PasswordField
 from wtforms.validators import DataRequired, EqualTo, Length
 
-from ..extensions import db
-from ..models import AccountToken, User
+from ..extensions import csrf, db
+from ..models import AccountToken, Role, User
 from ..services import accounts, mailer, oidc, preferences, sessions, throttle
 from ..services.activity import log
 
@@ -67,9 +67,18 @@ def safe_next(target, default=None):
     return default or url_for("dashboard.index")
 
 
+def _oidc_only():
+    return oidc.enabled() and current_app.config["OIDC_ONLY"]
+
+
+def _rescue():
+    """Accès de secours d'un administrateur, quand la connexion passe uniquement par l'OIDC (/connexion?local=1)."""
+    return _oidc_only() and request.args.get("local") == "1"
+
+
 def _login_page(form, status=200):
     return render_template("auth/login.html", form=form, oidc_enabled=oidc.enabled(),
-                           oidc_only=oidc.enabled() and current_app.config["OIDC_ONLY"]), status
+                           oidc_only=_oidc_only() and not _rescue(), rescue=_rescue()), status
 
 
 @bp.route("/connexion", methods=["GET", "POST"])
@@ -77,7 +86,7 @@ def login():
     if current_user.is_authenticated:
         return redirect(preferences.home_url(current_user))
     form = LoginForm()
-    if request.method == "POST" and oidc.enabled() and current_app.config["OIDC_ONLY"]:
+    if request.method == "POST" and _oidc_only() and not _rescue():
         abort(404)
     if form.validate_on_submit():
         email = form.email.data.strip().lower()
@@ -87,6 +96,8 @@ def login():
             return _login_page(form, 429)
         user = db.session.scalar(db.select(User).filter_by(email=email))
         valid = (user or _DUMMY).check_password(form.password.data)
+        if valid and _rescue() and user.role != Role.ADMIN:  # le secours n'est pas une porte dérobée pour tous
+            valid = False
         if user and user.active and valid:
             _clear_failures(keys)
             sessions.start(user, remember=form.remember.data)
@@ -111,7 +122,10 @@ def oidc_login():
     # BASE_URL plutôt que l'hôte de la requête : c'est l'URL déclarée chez le fournisseur.
     redirect_uri = current_app.config["BASE_URL"] + url_for(".oidc_callback")
     try:
-        return oidc.client().authorize_redirect(redirect_uri)
+        response = oidc.client().authorize_redirect(redirect_uri)
+        # Le bouton est un formulaire : Chrome applique form-action 'self' à la redirection qui suit, et la
+        # bloquerait dès que la CSP n'est plus en Report-Only. Une page intermédiaire casse cette chaîne.
+        return render_template("auth/continue.html", target=response.headers["Location"])
     except Exception:
         current_app.logger.exception("Fournisseur OIDC injoignable")
         flash("Le fournisseur d'identité est injoignable pour le moment.", "error")
@@ -152,15 +166,52 @@ def oidc_callback():
         flash(str(e), "error")
         return redirect(url_for(".login"))
     db.session.commit()
-    sessions.start(user, remember=remember, via="le fournisseur d'identité")
+    sessions.start(user, remember=remember, via="le fournisseur d'identité",
+                   oidc_sid=_text(dict(token.get("userinfo") or {}).get("sid")), oidc_id_token=token.get("id_token"))
     return redirect(safe_next(next_url, preferences.home_url(user)))
+
+
+def _text(value):
+    return value[:255] if isinstance(value, str) and value else None
+
+
+@bp.route("/connexion/oidc/deconnexion", methods=["POST"])
+@csrf.exempt
+def oidc_backchannel():
+    """Avis de déconnexion du fournisseur (Back-Channel Logout) : ferme les sessions qu'il désigne.
+
+    Appelé de serveur à serveur, sans cookie : c'est la signature de l'avis qui prouve qu'il vient du fournisseur.
+    """
+    if not oidc.enabled():
+        abort(404)
+    try:
+        claims = oidc.verify_logout_token(request.form.get("logout_token"))
+    except oidc.InvalidLogoutToken as error:
+        current_app.logger.warning("Avis de déconnexion OIDC refusé : %s", error)
+        response = jsonify(error="invalid_request")
+        response.status_code = 400
+    except Exception:  # noqa: BLE001  fournisseur injoignable (clés) : il réessaiera
+        current_app.logger.exception("Avis de déconnexion OIDC impossible à vérifier")
+        response = jsonify(error="temporarily_unavailable")
+        response.status_code = 503
+    else:
+        oidc.end_sessions(claims)
+        db.session.commit()
+        response = current_app.response_class(status=200)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @bp.route("/deconnexion", methods=["POST"])
 @login_required
 def logout():
+    """Session ouverte via le fournisseur : il est prévenu, pour que la personne soit déconnectée partout."""
+    provider = oidc.logout_url(sessions.current())
     sessions.end()
     flash("Vous êtes déconnecté.", "info")
+    if provider:
+        # Pas de redirection directe : Chrome applique form-action 'self' aux redirections qui suivent un formulaire.
+        return render_template("auth/continue.html", target=provider)
     return redirect(url_for("auth.login"))
 
 

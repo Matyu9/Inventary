@@ -91,10 +91,18 @@ def oclient(oidc_app):
     return oidc_app.test_client()
 
 
+def provider_url(response):
+    """Adresse du fournisseur, dans la page intermédiaire (voir auth.oidc_login)."""
+    import html
+    import re
+    match = re.search(r'http-equiv="refresh" content="0;url=([^"]+)"', response.text)
+    assert response.status_code == 200 and match, response.text
+    return html.unescape(match.group(1))
+
+
 def start(client, **params):
     r = client.get("/connexion/oidc" + ("?" + urlencode(params) if params else ""))
-    assert r.status_code == 302, r.text
-    return r, parse_qs(urlsplit(r.headers["Location"]).query)
+    return r, parse_qs(urlsplit(provider_url(r)).query)
 
 
 def oidc_login(client, idp, claims, nonce=None, **params):
@@ -142,7 +150,8 @@ def test_partial_configuration_stays_disabled(tmp_path):
 
 def test_authorize_redirect(oclient, idp):
     r, query = start(oclient)
-    assert r.headers["Location"].startswith(f"{ISSUER}/authorize?")
+    assert provider_url(r).startswith(f"{ISSUER}/authorize?")
+    assert r.headers["Cache-Control"] == "no-store"
     assert query["client_id"] == [CLIENT_ID]
     assert query["response_type"] == ["code"]
     assert query["redirect_uri"] == ["https://inventaire.test/connexion/oidc/retour"]

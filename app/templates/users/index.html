@@ -5,7 +5,10 @@
 {% set manage = can(current_user, "user.manage") %}
 <div class="page-head">
   <h1>Personnes</h1>
-  <a href="{{ url_for('users.create') }}" role="button">+ {{ "Nouvelle personne" if manage else "Nouvelle fiche emprunteur" }}</a>
+  <div class="actions">
+    {% if current_user.is_admin and config.OIDC_DISCOVERY_URL and config.OIDC_CLIENT_ID %}<a href="{{ url_for('users.oidc_links') }}" role="button" class="secondary outline">Rattacher les comptes OIDC</a>{% endif %}
+    <a href="{{ url_for('users.create') }}" role="button">+ {{ "Nouvelle personne" if manage else "Nouvelle fiche emprunteur" }}</a>
+  </div>
 </div>
 <form method="get" class="filters">
   <input type="search" name="q" value="{{ q }}" placeholder="Nom, email, pupitre…" aria-label="Recherche">

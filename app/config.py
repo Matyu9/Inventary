@@ -59,6 +59,9 @@ class Config:
     # rattachés (Personnes → Rattacher les comptes OIDC) : une adresse partagée dans une famille désignerait la
     # mauvaise fiche. Une identité inconnue dont l'adresse est déjà prise est alors refusée, sans rien lier.
     OIDC_LINK_BY_EMAIL = os.environ.get("OIDC_LINK_BY_EMAIL", "1") == "1"
+    # Liste des comptes à rattacher, lue directement chez Adhérents (https://compte.<domaine>/oidc/comptes) avec
+    # l'identifiant et le secret du client. Vide : il faut envoyer le fichier exporté.
+    OIDC_ACCOUNTS_URL = os.environ.get("OIDC_ACCOUNTS_URL", "").strip()
     # Se déconnecter de l'Inventaire déconnecte aussi du fournisseur (s'il annonce un end_session_endpoint).
     OIDC_PROVIDER_LOGOUT = os.environ.get("OIDC_PROVIDER_LOGOUT", "1") == "1"
 

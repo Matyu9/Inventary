@@ -10,6 +10,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
   - **Déconnexion reçue du fournisseur** (Back-Channel Logout, `/connexion/oidc/deconnexion`) : un avis signé ferme la session désignée, quand la personne se déconnecte ailleurs, quand son compte est coupé ou ses groupes changés. Chaque avis est vérifié (signature, émetteur, audience, date, événement, pas de `nonce`).
   - **Déconnexion transmise au fournisseur** : se déconnecter de l'inventaire déconnecte aussi d'Adhérents et des autres applis (`OIDC_PROVIDER_LOGOUT`, activé par défaut).
   - **Rattachement des comptes** (Personnes → Rattacher les comptes OIDC, administrateurs) : à partir de l'export d'Adhérents, chaque compte retrouve sa fiche après vérification. Seuls l'adresse vérifiée et le nom ensemble sont proposés d'office : une adresse partagée dans une famille attend la décision d'un responsable.
+  - **Récupérer les comptes depuis Adhérents** sans fichier (`OIDC_ACCOUNTS_URL`), avec l'identifiant et le secret du client. Le https est obligatoire hors de `localhost`, et une redirection est refusée.
   - **`OIDC_LINK_BY_EMAIL=0`** : plus de rattachement par l'email à la connexion, pour qu'un parent ne prenne pas la fiche de son enfant.
   - **Accès de secours** avec `OIDC_ONLY=1` : un administrateur qui a un mot de passe entre par `/connexion?local=1` si le fournisseur est en panne.
   - **`external_id`** sur les personnes, vide pour l'instant : il désignera la fiche de l'annuaire d'Adhérents.

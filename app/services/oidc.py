@@ -3,7 +3,11 @@
 Aussi la déconnexion : avis du fournisseur (OpenID Connect Back-Channel Logout 1.0) et déconnexion transmise au
 fournisseur (RP-Initiated Logout 1.0).
 """
+import base64
 import time
+import urllib.error
+import urllib.request
+from urllib.parse import urlsplit
 
 from authlib.common.urls import add_params_to_uri
 from authlib.integrations.flask_client import OAuth
@@ -299,6 +303,49 @@ def parse_export(data):
                          "first_name": texts["first_name"].strip()[:80], "last_name": texts["last_name"].strip()[:80],
                          "email_verified": row.get("email_verified") is True})
     return accounts
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Le secret ne part qu'à l'adresse configurée : une redirection est un échec."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+MAX_DIRECTORY = 16 * 1024 * 1024
+DIRECTORY_ERRORS = {
+    401: "Adhérents refuse l'identifiant ou le secret de l'inventaire (OIDC_CLIENT_ID, OIDC_CLIENT_SECRET).",
+    403: "Dans Adhérents, cochez « Peut récupérer la liste des comptes » sur l'application de l'inventaire.",
+    404: "Cette adresse ne donne pas la liste des comptes : vérifiez OIDC_ACCOUNTS_URL.",
+    429: "Trop d'essais refusés : réessayez dans un quart d'heure.",
+}
+
+
+def directory_enabled():
+    return enabled() and bool(current_app.config["OIDC_ACCOUNTS_URL"])
+
+
+def fetch_directory():
+    """Liste des comptes lue chez Adhérents (/oidc/comptes), vérifiée comme un fichier exporté. Sinon InvalidExport."""
+    config = current_app.config
+    url = config["OIDC_ACCOUNTS_URL"]
+    parts = urlsplit(url)
+    if parts.scheme != "https" and not (parts.scheme == "http" and parts.hostname in ("localhost", "127.0.0.1", "::1")):
+        raise InvalidExport("OIDC_ACCOUNTS_URL doit être en https : le secret de l'inventaire y est envoyé.")
+    credentials = base64.b64encode(f"{config['OIDC_CLIENT_ID']}:{config['OIDC_CLIENT_SECRET']}".encode()).decode()
+    request = urllib.request.Request(url, headers={"Authorization": f"Basic {credentials}",
+                                                   "Accept": "application/json", "User-Agent": "Inventaire"})
+    try:
+        with urllib.request.build_opener(_NoRedirect).open(request, timeout=10) as response:
+            data = response.read(MAX_DIRECTORY + 1)
+    except urllib.error.HTTPError as error:
+        raise InvalidExport(DIRECTORY_ERRORS.get(error.code, f"Adhérents a répondu {error.code}.")) from error
+    except (urllib.error.URLError, OSError, ValueError) as error:
+        current_app.logger.warning("Liste des comptes injoignable : %s", error)
+        raise InvalidExport("Adhérents est injoignable pour le moment.") from error
+    if len(data) > MAX_DIRECTORY:
+        raise InvalidExport("La liste des comptes est trop grande.")
+    return parse_export(data)
 
 
 def _same_name(account, user):

@@ -8,8 +8,19 @@
   <p>Avant de passer la connexion par Adhérents, chaque compte d'Adhérents doit retrouver sa fiche ici. Sans ce
     rattachement, la fiche serait retrouvée par l'email seul : or la fiche d'un enfant porte souvent l'adresse de son
     parent, qui récupérerait alors ses prêts.</p>
-  <p>Dans Adhérents, lancez <code>flask oidc-export-accounts --application "Inventaire" &gt; comptes.json</code>,
-    puis envoyez ce fichier. Rien n'est modifié avant votre confirmation.</p>
+  {% if fetch %}
+  <form method="post">
+    {{ form.hidden_tag() }}
+    <input type="hidden" name="step" value="fetch">
+    <button type="submit">Récupérer les comptes depuis Adhérents</button>
+  </form>
+  <p class="muted small">Rien n'est modifié avant votre confirmation. Ou bien, envoyez un fichier exporté :</p>
+  {% else %}
+  <p>Dans Adhérents, ouvrez <strong>Applications → Inventaire</strong> et cliquez « Exporter les comptes », puis envoyez
+    ce fichier. Rien n'est modifié avant votre confirmation.</p>
+  <p class="muted small">Pour éviter le fichier : cochez « Peut récupérer la liste des comptes » sur l'application dans
+    Adhérents, puis renseignez <code>OIDC_ACCOUNTS_URL</code> dans l'inventaire.</p>
+  {% endif %}
   <form method="post" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     <label for="export">Fichier exporté d'Adhérents</label>

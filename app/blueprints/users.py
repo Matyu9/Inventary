@@ -550,11 +550,12 @@ def oidc_links():
         if request.form.get("step") == "confirm":
             return _confirm_oidc_links()
         upload = request.files.get("export")
-        if upload is None or not upload.filename:
+        fetch = request.form.get("step") == "fetch" and oidc.directory_enabled()
+        if not fetch and (upload is None or not upload.filename):
             flash("Choisissez le fichier exporté d'Adhérents.", "error")
         else:
             try:
-                accounts_ = oidc.parse_export(upload.read())
+                accounts_ = oidc.fetch_directory() if fetch else oidc.parse_export(upload.read())
             except oidc.InvalidExport as error:
                 flash(str(error), "error")
             else:
@@ -562,8 +563,8 @@ def oidc_links():
                 return render_template("users/oidc_links.html", form=form, proposals=proposals,
                                        counts={s: sum(p["status"] == s for p in proposals) for s in
                                                (oidc.PROPOSED, oidc.DOUBTFUL, oidc.LINKED, oidc.TAKEN, oidc.NEW)},
-                                       statuses=oidc)
-    return render_template("users/oidc_links.html", form=form, proposals=None)
+                                       statuses=oidc, fetch=oidc.directory_enabled())
+    return render_template("users/oidc_links.html", form=form, proposals=None, fetch=oidc.directory_enabled())
 
 
 def _confirm_oidc_links():

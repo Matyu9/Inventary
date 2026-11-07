@@ -69,6 +69,7 @@ L'OIDC est activé dès que `OIDC_DISCOVERY_URL` et `OIDC_CLIENT_ID` sont rensei
 | `OIDC_REQUIRE_VERIFIED_EMAIL` | `1` | Ne lier un compte existant par son email que si le fournisseur l'a vérifié (`email_verified`). |
 | `OIDC_ONLY` | `0` | `1` : masque le formulaire email / mot de passe. Ignoré si l'OIDC n'est pas configuré. Un administrateur qui a un mot de passe garde un accès de secours sur `/connexion?local=1`. |
 | `OIDC_LINK_BY_EMAIL` | `1` | `0` : une nouvelle identité n'est jamais rattachée à une fiche par son email. Si l'adresse est déjà prise, la connexion est refusée. À mettre à `0` avec Adhérents, une fois les comptes rattachés. |
+| `OIDC_ACCOUNTS_URL` | (vide) | Adresse de la liste des comptes chez Adhérents (`https://compte.<domaine>/oidc/comptes`). Elle ajoute le bouton « Récupérer les comptes depuis Adhérents » à l'écran de rattachement. En https, sauf sur `localhost` : le secret du client y est envoyé. |
 | `OIDC_PROVIDER_LOGOUT` | `1` | Se déconnecter de l'inventaire déconnecte aussi du fournisseur, s'il annonce un `end_session_endpoint`. `0` : déconnexion locale seulement. |
 
 URL de rappel à déclarer chez le fournisseur : `<BASE_URL>/connexion/oidc/retour`.

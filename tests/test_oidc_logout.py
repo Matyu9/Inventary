@@ -500,7 +500,7 @@ def test_manager_role_with_user_manage_is_still_refused(oidc_app):
 
 def test_screen_explains_and_offers_the_upload(admin_http):
     page = admin_http.get("/utilisateurs/rattachement-oidc").text
-    assert "oidc-export-accounts" in page and 'type="file"' in page
+    assert "Exporter les comptes" in page and 'type="file"' in page and "Récupérer les comptes" not in page
     assert "Rattacher les comptes OIDC" in admin_http.get("/utilisateurs").text
 
 
@@ -725,3 +725,139 @@ def test_linking_keeps_a_deactivated_account_closed(oidc_app, admin_http, idp):
     browser = oidc_app.test_client()
     oidc_login(browser, idp, {"sub": "sub-ancien", "email": "ancien@ohn.test", "email_verified": True})
     assert me(browser).status_code == 302
+
+
+# ---------------------------------------------------------------------------
+# Liste des comptes récupérée directement chez Adhérents (OIDC_ACCOUNTS_URL)
+# ---------------------------------------------------------------------------
+
+class Directory:
+    """Faux /oidc/comptes sur 127.0.0.1 : note l'en-tête Authorization, répond ce qu'on lui demande."""
+
+    def __init__(self):
+        import threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+        self.status, self.body, self.location, self.seen = 200, b"[]", None, []
+        directory = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                directory.seen.append(self.headers.get("Authorization"))
+                self.send_response(directory.status)
+                if directory.location:
+                    self.send_header("Location", directory.location)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(directory.body)))
+                self.end_headers()
+                self.wfile.write(directory.body)
+
+            def log_message(self, *args):
+                pass
+
+        self.server = HTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.server.server_port}/oidc/comptes"
+
+
+@pytest.fixture
+def directory():
+    server = Directory()
+    yield server
+    server.server.shutdown()
+    server.server.server_close()
+
+
+@pytest.fixture
+def fetching(tmp_path, monkeypatch, directory):
+    app, ctx, idp_ = make_oidc_app(tmp_path, monkeypatch, OIDC_ACCOUNTS_URL=directory.url)
+    admin = make_user(Role.ADMIN, email="admin@ohn.test")
+    http = app.test_client()
+    login(http, admin)
+    yield http
+    db.session.remove()
+    db.drop_all()
+    ctx.pop()
+
+
+def fetch_page(http):
+    return http.post("/utilisateurs/rattachement-oidc", data={"step": "fetch"}, follow_redirects=True).text
+
+
+def test_button_appears_with_the_url(fetching):
+    """Sans l'adresse, pas de bouton : voir test_screen_explains_and_offers_the_upload."""
+    assert "Récupérer les comptes depuis Adhérents" in fetching.get("/utilisateurs/rattachement-oidc").text
+
+
+def test_fetch_shows_the_same_proposals_as_the_file(fetching, directory):
+    person("Élise", "Lefèvre", "elise@ohn.test")
+    directory.body = json.dumps({"issuer": ISSUER, "application": "Inventaire", "accounts": json.loads(
+        export(("sub-elise", "elise@ohn.test", "Élise", "Lefèvre")))}).encode()
+    page = fetch_page(fetching)
+    assert [checked for checked, _ in rows_of(page)] == [True]
+    expected = "Basic " + base64.b64encode(f"{CLIENT_ID}:secret".encode()).decode()
+    assert directory.seen == [expected]
+    assert db.session.scalar(db.select(User).filter_by(email="elise@ohn.test")).oidc_sub is None  # rien de fait
+
+
+@pytest.mark.parametrize("status, message", [
+    (401, "refuse l'identifiant ou le secret"), (403, "Peut récupérer la liste des comptes"),
+    (404, "vérifiez OIDC_ACCOUNTS_URL"), (429, "Trop d'essais"), (500, "Adhérents a répondu 500"),
+    (302, "Adhérents a répondu 302"),
+])
+def test_fetch_errors_are_explained(fetching, directory, status, message):
+    directory.status, directory.location = status, ("https://ailleurs.test/" if status == 302 else None)
+    page = html.unescape(fetch_page(fetching))
+    assert message in page and "<table" not in page
+
+
+def test_fetch_with_a_bad_body_is_explained(fetching, directory):
+    directory.body = b"<html>pas du json</html>"
+    assert "pas un export JSON" in html.unescape(fetch_page(fetching))
+
+
+def test_unreachable_adherents(tmp_path, monkeypatch):
+    import socket
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    app, ctx, _ = make_oidc_app(tmp_path, monkeypatch, OIDC_ACCOUNTS_URL=f"http://127.0.0.1:{port}/oidc/comptes")
+    try:
+        http = app.test_client()
+        login(http, make_user(Role.ADMIN, email="admin@ohn.test"))
+        assert "injoignable" in html.unescape(fetch_page(http))
+    finally:
+        db.session.remove()
+        db.drop_all()
+        ctx.pop()
+
+
+@pytest.mark.parametrize("url", ["http://adherents.test/oidc/comptes", "ftp://127.0.0.1/x"])
+def test_secret_is_never_sent_in_clear_text_over_the_network(tmp_path, monkeypatch, url):
+    app, ctx, _ = make_oidc_app(tmp_path, monkeypatch, OIDC_ACCOUNTS_URL=url)
+    try:
+        http = app.test_client()
+        login(http, make_user(Role.ADMIN, email="admin@ohn.test"))
+        assert "doit être en https" in fetch_page(http)
+    finally:
+        db.session.remove()
+        db.drop_all()
+        ctx.pop()
+
+
+def test_fetch_step_without_url_falls_back_to_the_file(admin_http):
+    page = html.unescape(admin_http.post("/utilisateurs/rattachement-oidc", data={"step": "fetch"},
+                                         follow_redirects=True).text)
+    assert "Choisissez le fichier" in page
+
+
+def test_fetch_is_for_admins_only(tmp_path, monkeypatch, directory):
+    app, ctx, _ = make_oidc_app(tmp_path, monkeypatch, OIDC_ACCOUNTS_URL=directory.url)
+    try:
+        http = app.test_client()
+        login(http, make_user(Role.PROF, email="prof@ohn.test"))
+        assert http.post("/utilisateurs/rattachement-oidc", data={"step": "fetch"}).status_code == 403
+        assert directory.seen == []
+    finally:
+        db.session.remove()
+        db.drop_all()
+        ctx.pop()

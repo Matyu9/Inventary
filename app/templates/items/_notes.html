@@ -11,7 +11,7 @@
   {% endif %}
   {% for n in item.notes %}
   <article class="note">
-    <small class="muted">{{ n.author.full_name }} · {{ n.created_at | datetime_fr }}</small>
+    <small class="muted">{{ link_user(n.author) }} · {{ n.created_at | datetime_fr }}</small>
     <p>{{ n.text }}</p>
     {% if can(current_user, "note.delete", n) %}
     <form method="post" action="{{ url_for('items.delete_note', note_id=n.id) }}"

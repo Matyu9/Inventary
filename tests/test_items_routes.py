@@ -641,7 +641,9 @@ def test_detail_shows_info_and_history(client, as_role, ref):
     item = db.session.scalar(db.select(Item))
     r = client.get(f"/objets/{item.id}")
     assert "Buffet" in r.text and "X1" in r.text and "1 500,00 €" in r.text
-    assert "Local &gt; Armoire" in r.text and "Création de OHN-0001" in r.text
+    armoire = item.location
+    assert (f'<a href="/lieux/{armoire.parent.id}">Local</a> &gt; <a href="/lieux/{armoire.id}">Armoire</a>' in r.text
+            and "Création de OHN-0001" in r.text)
 
 
 def test_codes_follow_configured_prefix(app, client, as_role, ref):

@@ -55,6 +55,7 @@ Il n'y a **aucune étape de build** front-end : les bibliothèques JavaScript so
 │   ├── permissions.py       qui peut faire quoi : can(), @require, ensure()
 │   ├── forms.py             formulaires partagés
 │   ├── filters.py           filtres Jinja (dates, montants…)
+│   ├── links.py             liens vers les fiches (link_user, link_item…), seulement si accessibles
 │   ├── cli.py               commandes flask : create-admin, seed, run-reminders
 │   ├── services/            règles métier, sans dépendance aux requêtes HTTP
 │   │   ├── loans.py           disponibilité, conflits, transitions des prêts

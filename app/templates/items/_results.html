@@ -15,8 +15,8 @@
       <td data-label="Désignation"><span>{{ item.name }}{% if item.brand or item.model %}<br><small class="muted">{{ item.brand or "" }} {{ item.model or "" }}</small>{% endif %}
         {% for t in item.tags %}<span class="tag">{{ t.name }}</span>{% endfor %}
         {% if item.documents and can(current_user, "document.view") %}<small class="muted doc-count" title="Documents joints">📎 {{ item.documents | length }}</small>{% endif %}</span></td>
-      <td data-label="Catégorie">{{ item.category.name }}</td>
-      <td data-label="Lieu">{{ item.location.path if item.location else "—" }}</td>
+      <td data-label="Catégorie"><a href="{{ url_for('items.index', category=item.category.id) }}">{{ item.category.name }}</a></td>
+      <td data-label="Lieu">{{ link_location(item.location) if item.location else "—" }}</td>
       <td data-label="État"><span>{% if item.is_quantity %}{{ item.quantity }} {{ item.unit or "" }}{% if item.is_low_stock %} <span class="badge overdue">stock bas</span>{% endif %}{% else %}{{ item.condition }}{% endif %}</span></td>
       <td data-label="Statut"><span class="badge item-status">{{ item.status | capitalize }}</span></td>
     </tr>

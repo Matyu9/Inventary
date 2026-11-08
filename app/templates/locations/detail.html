@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-head">
   <div>
-    <p class="muted crumbs"><a href="{{ url_for('locations.index') }}">Lieux</a> › {{ location.path }}</p>
+    <p class="muted crumbs"><a href="{{ url_for('locations.index') }}">Lieux</a> › {{ link_location(location, segments=true) }}</p>
     <h1>{{ location.name }}</h1>
   </div>
   <div class="actions">
@@ -30,9 +30,9 @@
   <thead><tr><th>Code</th><th>Désignation</th><th>Emplacement</th><th>Statut</th></tr></thead>
   <tbody>{% for i in items %}
     <tr><td><a href="{{ url_for('items.detail', item_id=i.id) }}">{{ i.code }}</a></td><td>{{ i.name }}</td>
-        <td>{{ i.location.path }}</td><td><span class="badge item-status">{{ i.status | capitalize }}</span></td></tr>
+        <td>{{ link_location(i.location) }}</td><td><span class="badge item-status">{{ i.status | capitalize }}</span></td></tr>
   {% endfor %}</tbody>
 </table></div>
 {% else %}<p class="muted">Ce lieu est vide.</p>{% endif %}
-{% if kits %}<h2>Kits</h2><ul>{% for k in kits %}<li>{{ k.name }}</li>{% endfor %}</ul>{% endif %}
+{% if kits %}<h2>Kits</h2><ul>{% for k in kits %}<li>{{ link_kit(k) }}</li>{% endfor %}</ul>{% endif %}
 {% endblock %}

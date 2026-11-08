@@ -94,7 +94,7 @@ def test_loan_detail_layout(client, as_role, users, gear):
     loan = make_loan(users, gear["sax"])
     as_role(A)
     html = client.get(f"/prets/{loan.id}").text
-    assert re.search(r'Test<small class="muted meta">le ', html)
+    assert re.search(r'Test</a><small class="muted meta">le ', html)
     assert html.count('class="loan-admin"') == 1 and "Motif du refus" in html
     as_role(P)
     assert "loan-admin" not in client.get(f"/prets/{loan.id}").text

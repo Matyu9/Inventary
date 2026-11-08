@@ -9,7 +9,7 @@
 {% endif %}
 <div class="page-head">
   <div>
-    <p class="muted crumbs"><a href="{{ url_for('items.index') }}">Inventaire</a> › {{ item.category.name }}</p>
+    <p class="muted crumbs"><a href="{{ url_for('items.index') }}">Inventaire</a> › <a href="{{ url_for('items.index', category=item.category.id) }}">{{ item.category.name }}</a></p>
     <h1>{{ item.name }} <small class="muted">{{ item.code }}</small></h1>
     <span class="badge item-status">{{ item.status | capitalize }}</span>
     {% for t in item.tags %}<a class="tag" href="{{ url_for('items.index', tag=t.id) }}">{{ t.name }}</a>{% endfor %}
@@ -60,7 +60,7 @@
 
   <section>
     <dl class="props">
-      <dt>Catégorie</dt><dd>{{ item.category.name }}</dd>
+      <dt>Catégorie</dt><dd><a href="{{ url_for('items.index', category=item.category.id) }}">{{ item.category.name }}</a></dd>
       {% if item.brand %}<dt>Marque</dt><dd>{{ item.brand }}</dd>{% endif %}
       {% if item.model %}<dt>Modèle</dt><dd>{{ item.model }}</dd>{% endif %}
       {% if item.serial_number %}<dt>N° de série</dt><dd>{{ item.serial_number }}</dd>{% endif %}
@@ -70,8 +70,8 @@
       {% else %}
         <dt>État</dt><dd>{{ item.condition }}</dd>
       {% endif %}
-      <dt>Lieu</dt><dd>{% if item.location %}<a href="{{ url_for('locations.detail', location_id=item.location.id) }}">{{ item.location.path }}</a>{% else %}—{% endif %}</dd>
-      {% if item.kit %}<dt>Kit</dt><dd><a href="{{ url_for('kits.detail', kit_id=item.kit.id) }}">{{ item.kit.name }}</a></dd>{% endif %}
+      <dt>Lieu</dt><dd>{{ link_location(item.location, segments=true) if item.location else "—" }}</dd>
+      {% if item.kit %}<dt>Kit</dt><dd>{{ link_kit(item.kit) }}</dd>{% endif %}
       {% for f, v in custom %}<dt>{{ f.label }}</dt><dd>{{ v }}</dd>{% endfor %}
       {% if item.purchase_date %}<dt>Achat</dt><dd>{{ item.purchase_date | date_fr }}{% if item.purchase_price is not none %} — {{ item.purchase_price | euros }}{% endif %}</dd>{% endif %}
       {% if item.estimated_value is not none %}<dt>Valeur estimée</dt><dd>{{ item.estimated_value | euros }}</dd>{% endif %}
@@ -104,7 +104,7 @@
   {% endif %}
   {% set moves = stock_movements(item) %}
   {% if moves %}
-  <ul class="timeline">{% for m in moves %}<li><small class="muted">{{ m.created_at | datetime_fr }}{% if m.user %} · {{ m.user.full_name }}{% endif %}</small><br>
+  <ul class="timeline">{% for m in moves %}<li><small class="muted">{{ m.created_at | datetime_fr }}{% if m.user %} · {{ link_user(m.user) }}{% endif %}</small><br>
     <strong>{{ "%+d" % m.delta }}</strong> — {{ stock_reasons()[m.reason][0] if m.reason in stock_reasons() else m.reason }}{% if m.comment %} : {{ m.comment }}{% endif %}</li>{% endfor %}</ul>
   {% else %}<p class="muted">Aucun mouvement de stock.</p>{% endif %}
 </section>
@@ -162,7 +162,7 @@
   {% set reminders = item_reminders(item) %}
   {% if reminders %}
   <ul class="timeline">{% for r in reminders %}
-    <li><small class="muted">{{ r.due_date | date_fr }}{{ " · envoyé" if r.sent }}{% if r.recipients %} · {{ r.recipients | map(attribute="full_name") | join(", ") }}{% endif %}</small><br>{{ r.message }}
+    <li><small class="muted">{{ r.due_date | date_fr }}{{ " · envoyé" if r.sent }}{% if r.recipients %} · {% for u in r.recipients %}{{ link_user(u) }}{{ ", " if not loop.last }}{% endfor %}{% endif %}</small><br>{{ r.message }}
       {% if can(current_user, "reminder.edit") %}<form method="post" action="{{ url_for('maintenance.delete_reminder', reminder_id=r.id) }}" class="inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="link-button small">Supprimer</button></form>{% endif %}</li>
   {% endfor %}</ul>
@@ -194,7 +194,7 @@
   {% if activities %}
   <ul class="timeline">
     {% for a in activities %}
-    <li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user %} · {{ a.user.full_name }}{% endif %}</small><br>
+    <li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user %} · {{ link_user(a.user) }}{% endif %}</small><br>
       {{ a.message }}
       {% if a.changes %}<ul class="changes">{% for k, v in a.changes.items() %}<li><strong>{{ k }}</strong> : {{ v[0] if v[0] not in (none, "") else "—" }} → {{ v[1] if v[1] not in (none, "") else "—" }}</li>{% endfor %}</ul>{% endif %}
     </li>

@@ -5,7 +5,7 @@
   <div>
     <p class="muted crumbs"><a href="{{ url_for('loans.detail', loan_id=loan.id) }}">Prêt n°{{ loan.id }}</a> › vérification</p>
     <h1>Rien oublié ?</h1>
-    <small class="muted">{{ loan.title or loan.type_label }} · {{ loan.borrower.full_name }} — scannez tout ce que vous avez en main avant de partir.</small>
+    <small class="muted">{{ loan.title or loan.type_label }} · {{ link_user(loan.borrower) }} — scannez tout ce que vous avez en main avant de partir.</small>
   </div>
   <div class="actions">
     <a href="{{ url_for('loans.checklist', loan_id=loan.id) }}" role="button" class="secondary outline" target="_blank">Liste à imprimer</a>

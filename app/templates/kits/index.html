@@ -20,7 +20,7 @@
     {% if printable %}<td><input type="checkbox" name="kit_ids" value="{{ k.id }}" aria-label="Sélectionner {{ k.name }}"></td>{% endif %}
     <td><a href="{{ url_for('kits.detail', kit_id=k.id) }}">{{ k.name }}</a></td>
     <td>{{ k.items | length }}</td>
-    <td>{{ k.location.path if k.location else "—" }}</td>
+    <td>{{ link_location(k.location) if k.location else "—" }}</td>
     <td><span class="badge item-status">{{ kit_status(k) | capitalize }}</span></td>
   </tr>
   {% endfor %}</tbody>

@@ -142,7 +142,10 @@
 {% if activities %}
 <ul class="timeline">
   {% for a in activities %}
-  <li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user and a.user_id != user.id %} · par {{ a.user.full_name }}{% endif %}</small><br>{{ a.message }}</li>
+  <li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user and a.user_id != user.id %} · par {{ link_user(a.user) }}{% endif %}</small><br>{{ a.message }}
+    {% if a.loan_id %}<a href="{{ url_for('loans.detail', loan_id=a.loan_id) }}" class="small">Prêt n°{{ a.loan_id }}</a>{% endif %}
+    {% if a.item_id %}<a href="{{ url_for('items.detail', item_id=a.item_id) }}" class="small">Objet</a>{% endif %}
+    {% if a.kit_id %}<a href="{{ url_for('kits.detail', kit_id=a.kit_id) }}" class="small">Kit</a>{% endif %}</li>
   {% endfor %}
 </ul>
 {% else %}

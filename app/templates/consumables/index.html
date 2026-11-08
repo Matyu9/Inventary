@@ -37,9 +37,9 @@
 <div class="overflow-auto"><table class="striped responsive">
   <thead><tr><th>Date</th><th>Article</th><th>Mouvement</th><th>Motif</th><th>Par</th></tr></thead>
   <tbody>{% for m in movements %}
-  <tr><td data-label="Date">{{ m.created_at | datetime_fr }}</td><td data-label="Article">{{ m.item.name }}</td><td data-label="Mouvement">{{ "%+d" % m.delta }}</td>
+  <tr><td data-label="Date">{{ m.created_at | datetime_fr }}</td><td data-label="Article">{{ link_item(m.item) }}</td><td data-label="Mouvement">{{ "%+d" % m.delta }}</td>
       <td data-label="Motif"><span>{{ reasons[m.reason][0] if m.reason in reasons else m.reason }}{% if m.comment %}<br><small class="muted">{{ m.comment }}</small>{% endif %}</span></td>
-      <td data-label="Par">{{ m.user.full_name if m.user else "—" }}</td></tr>
+      <td data-label="Par">{{ link_user(m.user) if m.user else "—" }}</td></tr>
   {% endfor %}</tbody>
 </table></div>
 {% endif %}

@@ -5,7 +5,7 @@
   <div>
     <p class="muted crumbs"><a href="{{ url_for('audits.index') }}">Inventaires</a> › en cours</p>
     <h1>{{ audit.name }}</h1>
-    <small class="muted">{{ audit.locations | map(attribute="path") | join(", ") or "Tous lieux" }} · {{ audit.categories | map(attribute="name") | join(", ") or "toutes catégories" }}</small>
+    <small class="muted">{% for l in audit.locations %}{{ link_location(l) }}{{ ", " if not loop.last }}{% else %}Tous lieux{% endfor %} · {{ audit.categories | map(attribute="name") | join(", ") or "toutes catégories" }}</small>
   </div>
   {% if can(current_user, "audit.manage") %}
   <form method="post" action="{{ url_for('audits.delete', audit_id=audit.id) }}" onsubmit="return confirm('Supprimer cet inventaire et tous ses scans ?')">
@@ -42,17 +42,17 @@
   <section>
     <h2>Restent à trouver ({{ progress.remaining | length }})</h2>
     {% if progress.remaining %}
-    <ul class="compact">{% for i in progress.remaining[:200] %}<li>{{ i.code }} {{ i.name }} <small class="muted">{{ i.location.path if i.location else "" }}</small></li>{% endfor %}</ul>
+    <ul class="compact">{% for i in progress.remaining[:200] %}<li>{{ link_item(i, i.code) }} {{ i.name }} <small class="muted">{{ link_location(i.location) }}</small></li>{% endfor %}</ul>
     {% if progress.remaining | length > 200 %}<p class="muted">… et {{ progress.remaining | length - 200 }} autres.</p>{% endif %}
     {% else %}<p class="muted">Tout a été trouvé 🎉</p>{% endif %}
     {% if progress.lent %}<h3>Prêtés (absents normalement)</h3>
-    <ul class="compact">{% for i in progress.lent %}<li>{{ i.code }} {{ i.name }}</li>{% endfor %}</ul>{% endif %}
+    <ul class="compact">{% for i in progress.lent %}<li>{{ link_item(i, i.code) }} {{ i.name }}</li>{% endfor %}</ul>{% endif %}
   </section>
   <section>
     <h2>Scannés ({{ audit.scans | length }})</h2>
     <ul class="compact">{% for s in audit.scans | sort(attribute="scanned_at", reverse=true) %}
       <li><span class="badge {{ 'overdue' if s.result == 'inattendu' else 'status-en_cours' }}">{{ labels[s.result] }}</span>
-        {{ s.item.code }} {{ s.item.name }}
+        {{ link_item(s.item, s.item.code) }} {{ s.item.name }}
         <form method="post" action="{{ url_for('audits.delete_scan', audit_id=audit.id, scan_id=s.id) }}" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="link-button small" aria-label="Annuler ce scan">✕</button>

@@ -12,8 +12,8 @@
   <tbody>{% for a in audits %}
   <tr>
     <td><a href="{{ url_for('audits.detail', audit_id=a.id) }}">{{ a.name }}</a></td>
-    <td><small>{{ a.locations | map(attribute="name") | join(", ") or "Tous lieux" }} · {{ a.categories | map(attribute="name") | join(", ") or "toutes catégories" }}</small></td>
-    <td>{{ a.opened_at | date_fr }}<br><small class="muted">{{ a.opened_by.full_name }}</small></td>
+    <td><small>{% for l in a.locations %}{{ link_location(l, l.name) }}{{ ", " if not loop.last }}{% else %}Tous lieux{% endfor %} · {{ a.categories | map(attribute="name") | join(", ") or "toutes catégories" }}</small></td>
+    <td>{{ a.opened_at | date_fr }}<br><small class="muted">{{ link_user(a.opened_by) }}</small></td>
     <td>{{ a.scans | selectattr("scanned_by_id") | list | length }}</td>
     <td><span class="badge {{ 'status-en_cours' if a.status == 'ouvert' else '' }}">{{ "En cours" if a.status == "ouvert" else "Clôturé le " ~ (a.closed_at | date_fr) }}</span></td>
   </tr>

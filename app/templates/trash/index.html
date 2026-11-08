@@ -14,7 +14,7 @@
   </div>
 {% endmacro %}
 {% macro deleted_cells(obj) %}
-  <td data-label="Supprimé">{{ obj.deleted_at | datetime_fr }}{% if obj.deleted_by %}<br><small class="muted">par {{ obj.deleted_by.full_name }}</small>{% endif %}</td>
+  <td data-label="Supprimé">{{ obj.deleted_at | datetime_fr }}{% if obj.deleted_by %}<br><small class="muted">par {{ link_user(obj.deleted_by) }}</small>{% endif %}</td>
   {% set left = days_left(obj) %}
   <td data-label="Effacé dans">{% if left %}{{ left }} jour{{ "s" if left > 1 }}{% else %}au prochain passage{% endif %}</td>
 {% endmacro %}

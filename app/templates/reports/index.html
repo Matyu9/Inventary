@@ -38,7 +38,7 @@
   {{ bars(value_bars) }}
   <details><summary>Tableau</summary>
   <div class="overflow-auto"><table class="striped"><thead><tr><th>Catégorie</th><th>Objets</th><th>Valeur</th><th>Sans valeur renseignée</th></tr></thead>
-    <tbody>{% for r in values %}<tr><td>{{ r.category.name }}</td><td>{{ r.count }}</td><td>{{ r.value | euros }}</td><td>{{ r.unvalued }}</td></tr>{% endfor %}</tbody></table></div>
+    <tbody>{% for r in values %}<tr><td><a href="{{ url_for('items.index', category=r.category.id) }}">{{ r.category.name }}</a></td><td>{{ r.count }}</td><td>{{ r.value | euros }}</td><td>{{ r.unvalued }}</td></tr>{% endfor %}</tbody></table></div>
   </details>
   {% else %}<p class="muted">Aucun objet.</p>{% endif %}
 </section>
@@ -66,9 +66,9 @@
   {% if custody %}
   <div class="overflow-auto"><table class="striped"><thead><tr><th>Emprunteur</th><th>Matériel</th><th>Depuis</th><th>Garant</th></tr></thead>
     <tbody>{% for borrower, loans in custody %}{% for l in loans %}
-    <tr><td>{% if loop.first %}{{ borrower.full_name }}{% if borrower.section %} <small class="muted">({{ borrower.section }})</small>{% endif %}{% endif %}</td>
+    <tr><td>{% if loop.first %}{{ link_user(borrower) }}{% if borrower.section %} <small class="muted">({{ borrower.section }})</small>{% endif %}{% endif %}</td>
         <td><a href="{{ url_for('loans.detail', loan_id=l.id) }}">{% for line in l.lines %}{{ line.kit.name if line.kit else line.item.code ~ " " ~ line.item.name }}{{ ", " if not loop.last }}{% endfor %}</a></td>
-        <td>{{ l.start | date_fr }}</td><td>{{ l.guarantor.full_name if l.guarantor else "—" }}</td></tr>
+        <td>{{ l.start | date_fr }}</td><td>{{ link_user(l.guarantor) if l.guarantor else "—" }}</td></tr>
     {% endfor %}{% endfor %}</tbody></table></div>
   {% else %}<p class="muted">Aucune garde en cours.</p>{% endif %}
 </section>

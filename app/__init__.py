@@ -65,6 +65,7 @@ def create_app(config_class=Config):
     from .blueprints.users import bp as users_bp
     from .cli import register_cli
     from .filters import register_filters
+    from .links import register_links
     from .models import Document
     from .permissions import can
     from .services import documents, ip_access
@@ -96,6 +97,7 @@ def create_app(config_class=Config):
     app.register_blueprint(api_bp)
     register_cli(app)
     register_filters(app)
+    register_links(app)
 
     @app.url_defaults
     def static_version(endpoint, values):

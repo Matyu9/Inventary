@@ -10,7 +10,7 @@
       <span class="doc-ext">{{ d.extension }}</span>
       <div>
         <a href="{{ url_for('documents.show', document_id=d.id, name=d.original_name) }}" target="_blank" rel="noopener">{{ d.title }}</a>
-        <br><small class="muted">{{ d.kind_label }} · {{ d.size | filesize }} · {{ d.created_at | date_fr }}{% if d.uploaded_by %} · {{ d.uploaded_by.full_name }}{% endif %}</small>
+        <br><small class="muted">{{ d.kind_label }} · {{ d.size | filesize }} · {{ d.created_at | date_fr }}{% if d.uploaded_by %} · {{ link_user(d.uploaded_by) }}{% endif %}</small>
       </div>
       {% if can(current_user, "document.edit") %}
       <form method="post" action="{{ url_for('documents.delete', document_id=d.id) }}" onsubmit="return confirm('Supprimer ce document ?')">

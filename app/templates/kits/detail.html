@@ -29,7 +29,7 @@
 <div class="detail-grid">
   <section>
     <h2>Contenu ({{ kit.items | length }})</h2>
-    {% if locked %}<p class="flash flash-info">Prêt n°{{ locked.id }} en cours : la composition est verrouillée.</p>{% endif %}
+    {% if locked %}<p class="flash flash-info">{{ link_loan(locked, "Prêt n°" ~ locked.id) }} en cours : la composition est verrouillée.</p>{% endif %}
     {% if kit.items %}
     <ul class="loan-lines">
       {% for i in kit.items %}
@@ -54,7 +54,7 @@
   </section>
   <section>
     <dl class="props">
-      <dt>Lieu</dt><dd>{{ kit.location.path if kit.location else "—" }}</dd>
+      <dt>Lieu</dt><dd>{{ link_location(kit.location) if kit.location else "—" }}</dd>
     </dl>
     {% if kit.description %}<p class="description">{{ kit.description }}</p>{% endif %}
     <div class="qr-block">
@@ -79,7 +79,7 @@
 {% if activities %}
 <section>
   <h2>Historique</h2>
-  <ul class="timeline">{% for a in activities %}<li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user %} · {{ a.user.full_name }}{% endif %}</small><br>{{ a.message }}</li>{% endfor %}</ul>
+  <ul class="timeline">{% for a in activities %}<li><small class="muted">{{ a.created_at | datetime_fr }}{% if a.user %} · {{ link_user(a.user) }}{% endif %}</small><br>{{ a.message }}</li>{% endfor %}</ul>
 </section>
 {% endif %}
 {% endblock %}

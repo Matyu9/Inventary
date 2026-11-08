@@ -15,17 +15,17 @@
 <article class="card report-card{{ ' found' if r.kind == 'trouve' }}">
   <div class="report-meta">
     <span class="badge {{ 'health-ok' if r.kind == 'trouve' else 'health-warn' }}">{{ r.kind_label }}</span>
-    {% if r.item %}<a href="{{ url_for('items.detail', item_id=r.item.id) }}">{{ r.target_label }}</a>
-    {% else %}<a href="{{ url_for('kits.detail', kit_id=r.kit.id) }}">{{ r.target_label }}</a>{% endif %}
+    {% if r.item %}{{ link_item(r.item, r.target_label) }}
+    {% else %}{{ link_kit(r.kit, r.target_label) }}{% endif %}
     <small class="muted">· {{ r.created_at | datetime_fr }}</small>
   </div>
   <blockquote>{{ r.message }}</blockquote>
   <p class="small">
-    {% if r.name or r.reported_by %}De <strong>{{ r.name or r.reported_by.full_name }}</strong>{% if r.reported_by %} (compte {{ r.reported_by.role_label | lower }}){% endif %}{% else %}Anonyme{% endif %}
+    {% if r.name or r.reported_by %}De <strong>{{ r.name or link_user(r.reported_by) }}</strong>{% if r.reported_by %} (compte {{ r.reported_by.role_label | lower }}){% endif %}{% else %}Anonyme{% endif %}
     {% if r.contact %} · {{ r.contact | contact_link }}{% endif %}
   </p>
   {% if r.handled_at %}
-  <p class="small muted">Traité le {{ r.handled_at | datetime_fr }}{% if r.handled_by %} par {{ r.handled_by.full_name }}{% endif %}{% if r.handled_note %} : {{ r.handled_note }}{% endif %}</p>
+  <p class="small muted">Traité le {{ r.handled_at | datetime_fr }}{% if r.handled_by %} par {{ link_user(r.handled_by) }}{% endif %}{% if r.handled_note %} : {{ r.handled_note }}{% endif %}</p>
   <form method="post" action="{{ url_for('public_reports.reopen', report_id=r.id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="secondary outline">Rouvrir</button>

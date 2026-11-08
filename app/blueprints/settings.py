@@ -11,7 +11,7 @@ from wtforms.validators import DataRequired, Length
 from ..permissions import require
 from ..extensions import db
 from ..models import EmailTemplate, Item, Loan, Notification, PublicReport
-from ..services import branding, mailer, reminders, sessions
+from ..services import branding, ip_access, mailer, reminders, sessions
 from ..services.activity import log
 from ..services.photos import InvalidImage
 
@@ -29,11 +29,39 @@ def _branding_form():
     return BrandingForm(data={"name": brand.name, "subtitle": brand.subtitle, "palette": brand.palette})
 
 
-def _render_index(branding_form=None):
+class IpAccessForm(FlaskForm):
+    admin = TextAreaField(ip_access.ZONES["admin"][0], validators=[Length(max=4000)])
+    rescue = TextAreaField(ip_access.ZONES["rescue"][0], validators=[Length(max=4000)])
+    backchannel = TextAreaField(ip_access.ZONES["backchannel"][0], validators=[Length(max=4000)])
+
+    def validate(self, extra_validators=None):
+        ok = super().validate(extra_validators)
+        for zone in ip_access.ZONES:
+            field = getattr(self, zone)
+            try:
+                networks = ip_access.parse(field.data)
+            except ip_access.InvalidEntry as error:
+                field.errors.append(str(error))
+                ok = False
+                continue
+            # Sans cette garde, l'enregistrement fermerait aussitôt la page à celui qui la modifie.
+            if zone == "admin" and networks and not ip_access.matches(networks, request.remote_addr):
+                field.errors.append(f"Votre adresse actuelle ({request.remote_addr}) n'est pas dans la liste : "
+                                    "vous perdriez l'accès à l'administration.")
+                ok = False
+        return ok
+
+
+def _ip_form():
+    return IpAccessForm(data=ip_access.lists())
+
+
+def _render_index(branding_form=None, ip_form=None, status=200):
     open_sessions, connected = sessions.stats()
     return render_template("settings/index.html", cfg=current_app.config, smtp=mailer.smtp_enabled(),
                            open_sessions=open_sessions, connected=connected,
-                           branding_form=branding_form or _branding_form())
+                           branding_form=branding_form or _branding_form(), ip_form=ip_form or _ip_form(),
+                           ip_zones=ip_access.ZONES, remote_addr=request.remote_addr), status
 
 
 @bp.route("/parametres")
@@ -97,6 +125,29 @@ def logo_file(name):
     response.cache_control.max_age = 30 * 24 * 3600  # un nouveau logo a un nouveau nom
     response.cache_control.public = True
     return response
+
+
+# ---------------------------------------------------------------------------
+# Accès par adresse IP
+# ---------------------------------------------------------------------------
+
+@bp.route("/parametres/acces-ip", methods=["POST"])
+@require("settings.manage")
+def save_ip_access():
+    form = IpAccessForm()
+    if not form.validate_on_submit():
+        return _render_index(ip_form=form, status=400)
+    before = ip_access.lists().copy()
+    changed = []
+    for zone, (label, _) in ip_access.ZONES.items():
+        value = ip_access.save(zone, getattr(form, zone).data)
+        if value != before[zone]:
+            changed.append(f"{label} : {', '.join(value.splitlines()) or 'ouverte à tous'}")
+    if changed:
+        log("settings.ip_access", "Accès par adresse IP modifié — " + " ; ".join(changed))
+    db.session.commit()
+    flash("Accès par adresse IP enregistré." if changed else "Aucun changement.", "success")
+    return redirect(url_for(".index") + "#acces-ip")
 
 
 @bp.route("/parametres/email-test", methods=["POST"])

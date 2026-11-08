@@ -67,7 +67,7 @@ def create_app(config_class=Config):
     from .filters import register_filters
     from .models import Document
     from .permissions import can
-    from .services import documents
+    from .services import documents, ip_access
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -107,10 +107,18 @@ def create_app(config_class=Config):
             except OSError:
                 pass
 
+    @app.before_request
+    def ip_restricted_zones():
+        """Zones réservées à certaines adresses IP (Paramètres → Accès par adresse IP) : 404 depuis ailleurs."""
+        zone = ip_access.zone_of(request.endpoint)
+        if zone and not ip_access.allowed(zone):
+            ip_access.refuse(zone)
+
     @app.context_processor
     def inject_globals():
         brand = branding.current()
-        return {"can": can, "branding": brand, "asso_name": brand.name, "code_prefix": app.config["ITEM_CODE_PREFIX"],
+        return {"can": can, "admin_zone_open": lambda: ip_access.allowed("admin"), "branding": brand,
+                "asso_name": brand.name, "code_prefix": app.config["ITEM_CODE_PREFIX"],
                 "document_kinds": Document.KINDS, "document_accept": documents.ACCEPT}
 
     @app.after_request

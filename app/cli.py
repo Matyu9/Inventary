@@ -2,7 +2,8 @@ import click
 
 from .extensions import db
 from .models import Category, CategoryType, Location, Role, User
-from .services import sessions
+from .services import ip_access, sessions
+from .services.activity import log
 
 DEFAULT_CATEGORIES = [
     ("Bois", CategoryType.INSTRUMENT),
@@ -37,6 +38,22 @@ def register_cli(app):
             sessions.revoke(user)
         db.session.commit()
         click.echo(f"Administrateur prêt : {user.full_name} <{email}>")
+
+    @app.cli.command("acces-ip")
+    @click.argument("zone", required=False, type=click.Choice(list(ip_access.ZONES)))
+    @click.option("--effacer", is_flag=True, help="Rouvre la zone (ou toutes) à toutes les adresses.")
+    def ip_access_command(zone, effacer):
+        """Affiche les adresses IP autorisées par zone ; --effacer en cas de verrouillage."""
+        zones = [zone] if zone else list(ip_access.ZONES)
+        if effacer:
+            for key in zones:
+                ip_access.save(key, "")
+            log("settings.ip_access", "Accès par adresse IP rouvert depuis le serveur : "
+                + ", ".join(ip_access.ZONES[k][0] for k in zones))
+            db.session.commit()
+        for key in zones:
+            value = ip_access.lists()[key]
+            click.echo(f"{ip_access.ZONES[key][0]} : {', '.join(value.splitlines()) or 'ouverte à tous'}")
 
     @app.cli.command("seed")
     def seed():

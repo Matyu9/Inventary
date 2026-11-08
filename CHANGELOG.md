@@ -6,6 +6,7 @@ Les changements notables du projet sont consignés ici. Le format s'inspire de [
 
 ### Ajouté
 
+- **Accès par adresse IP** (Paramètres → Accès par adresse IP, admin) : réserver à certaines adresses ou plages (`192.168.1.0/24`, IPv6 compris) l'**administration** (personnes, rôles, champs perso, paramètres, journal, état de l'installation), la **connexion de secours** (`/connexion?local=1`) et l'**avis de déconnexion d'Adhérents** (n'accepter que l'adresse du serveur Adhérents, en plus de la signature). Depuis une autre adresse, le menu Administration disparaît ; une personne connectée voit une page « Accès refusé depuis ce réseau » qui indique son adresse, et sa tentative est notée au journal (nouveau filtre « Sécurité ») ; un visiteur non connecté reçoit « Page introuvable ». Impossible d'enregistrer une liste qui exclurait sa propre adresse ; en cas de verrouillage, `flask acces-ip --effacer` rouvre les zones depuis le serveur.
 - **Connexion avec Adhérents** (voir [docs/oidc-adherents.md](docs/oidc-adherents.md)) :
   - **Déconnexion reçue du fournisseur** (Back-Channel Logout, `/connexion/oidc/deconnexion`) : un avis signé ferme la session désignée, quand la personne se déconnecte ailleurs, quand son compte est coupé ou ses groupes changés. Chaque avis est vérifié (signature, émetteur, audience, date, événement, pas de `nonce`).
   - **Déconnexion transmise au fournisseur** : se déconnecter de l'inventaire déconnecte aussi d'Adhérents et des autres applis (`OIDC_PROVIDER_LOGOUT`, activé par défaut).

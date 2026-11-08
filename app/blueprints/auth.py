@@ -9,7 +9,7 @@ from wtforms.validators import DataRequired, EqualTo, Length
 
 from ..extensions import csrf, db
 from ..models import AccountToken, Role, User
-from ..services import accounts, mailer, oidc, preferences, sessions, throttle
+from ..services import accounts, ip_access, mailer, oidc, preferences, sessions, throttle
 from ..services.activity import log
 
 # Limitation des tentatives : au-delà de MAX_FAILURES échecs en WINDOW secondes pour un même
@@ -85,6 +85,8 @@ def _login_page(form, status=200):
 def login():
     if current_user.is_authenticated:
         return redirect(preferences.home_url(current_user))
+    if _rescue() and not ip_access.allowed("rescue"):
+        ip_access.refuse("rescue")
     form = LoginForm()
     if request.method == "POST" and _oidc_only() and not _rescue():
         abort(404)
@@ -184,6 +186,8 @@ def oidc_backchannel():
     """
     if not oidc.enabled():
         abort(404)
+    if not ip_access.allowed("backchannel"):
+        ip_access.refuse("backchannel")
     try:
         claims = oidc.verify_logout_token(request.form.get("logout_token"))
     except oidc.InvalidLogoutToken as error:

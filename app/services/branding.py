@@ -49,14 +49,28 @@ class Branding:
         return url_for("settings.logo_file", name=self.logo.rsplit("/", 1)[-1]) if self.logo else None
 
 
+def settings_values():
+    """Tous les réglages AppSetting {clé: valeur}, lus une fois par requête (partagés avec ip_access).
+    Base illisible : aucun réglage."""
+    if "app_settings" not in g:
+        try:
+            g.app_settings = dict(db.session.execute(db.select(AppSetting.key, AppSetting.value)).all())
+        except SQLAlchemyError:
+            db.session.rollback()
+            g.app_settings = {}
+    return g.app_settings
+
+
+def forget():
+    """À appeler après une modification d'AppSetting : la requête relira les réglages."""
+    for name in ("app_settings", "branding", "ip_access"):
+        g.pop(name, None)
+
+
 def current():
     """Réglages en cours, lus une fois par requête. Base illisible (page d'erreur, migration en attente) : défauts."""
     if "branding" not in g:
-        try:
-            values = dict(db.session.execute(db.select(AppSetting.key, AppSetting.value)).all())
-        except SQLAlchemyError:
-            db.session.rollback()
-            values = {}
+        values = settings_values()
         palette = values.get("palette")
         g.branding = Branding(name=values.get("name") or current_app.config["ASSO_NAME"],
                               subtitle=values.get("subtitle") or DEFAULT_SUBTITLE,
@@ -79,7 +93,7 @@ def _set(key, value):
         setting.value = value
     else:
         db.session.add(AppSetting(key=key, value=value))
-    g.pop("branding", None)
+    forget()
 
 
 def save(name, subtitle, palette):

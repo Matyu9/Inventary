@@ -20,7 +20,7 @@
   <div class="grid">
     <div>
       {{ field(form.borrower_id) }}
-      {% if can(current_user, "borrower.create") %}<small><a href="{{ url_for('users.create', retour='pret') }}">+ Nouvelle fiche emprunteur</a></small>{% endif %}
+      {% if can(current_user, "borrower.create") and admin_zone_open() %}<small><a href="{{ url_for('users.create', retour='pret') }}">+ Nouvelle fiche emprunteur</a></small>{% endif %}
     </div>
     <div>{{ field(form.guarantor_id) }}</div>
   </div>

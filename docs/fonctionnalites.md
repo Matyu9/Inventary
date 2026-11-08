@@ -180,9 +180,13 @@ Inventaire complet de ce que fait l'appli, domaine par domaine. Pour savoir comm
 - **Paramètres** :
   - email de test ;
   - lancer les rappels maintenant ;
-  - déconnecter tout le monde, avec le nombre de sessions ouvertes.
+  - déconnecter tout le monde, avec le nombre de sessions ouvertes ;
+  - accès par adresse IP : réserver l'administration, la connexion de secours et l'avis de déconnexion d'Adhérents
+    à certaines adresses ou plages (ailleurs : « Accès refusé » pour une personne connectée, « Page introuvable »
+    sinon).
 - **État de l'installation** (`/sante`, et `/health` en JSON) : base, migrations, espace disque, planificateur, emails.
-- **Commandes CLI** : `flask create-admin`, `flask seed`, `flask run-reminders`.
+- **Commandes CLI** : `flask create-admin`, `flask seed`, `flask run-reminders`, `flask acces-ip` (voir ou rouvrir
+  les zones réservées par adresse IP).
 
 ## API et assistants
 

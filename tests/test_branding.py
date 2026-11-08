@@ -42,7 +42,7 @@ def settings_rows():
 
 def fresh():
     """Relit les réglages comme le ferait une nouvelle requête."""
-    g.pop("branding", None)
+    branding.forget()
     return branding.current()
 
 
@@ -93,7 +93,7 @@ def test_read_once_per_request(client, users, app):
 
     event.listen(db.engine, "before_cursor_execute", count)
     try:
-        g.pop("branding", None)
+        branding.forget()
         client.get("/")
     finally:
         event.remove(db.engine, "before_cursor_execute", count)

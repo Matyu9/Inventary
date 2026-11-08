@@ -66,6 +66,29 @@
     de connexion, et sert d'icône d'onglet.</small>
 </section>
 
+<section class="card wide settings-block" id="acces-ip">
+  <h2>{{ icon("key", 18) }} Accès par adresse IP</h2>
+  <p class="muted small">Réservez une zone à certaines adresses : une adresse (<code>203.0.113.4</code>) ou une plage
+    (<code>192.168.1.0/24</code>) par ligne, <code>#</code> pour un commentaire. Une zone laissée vide reste ouverte
+    à tous. Depuis une autre adresse, une personne connectée voit « Accès refusé depuis ce réseau » ;
+    un visiteur non connecté, « Page introuvable ».</p>
+  <p class="small">Votre adresse actuelle : <code>{{ remote_addr }}</code>{% if not cfg.TRUST_PROXY %}
+    <span class="muted">— si l'appli est derrière un reverse proxy, mettez <code>TRUST_PROXY=1</code> dans le
+      fichier <code>.env</code> : sans cela, c'est l'adresse du proxy qui est vue pour tout le monde.</span>{% endif %}</p>
+  <form method="post" action="{{ url_for('settings.save_ip_access') }}" novalidate>
+    {{ ip_form.hidden_tag() }}
+    {% for zone, (label, help) in ip_zones.items() %}
+    <div>
+      {{ field(ip_form[zone], rows=3, placeholder="Ouverte à tous", spellcheck="false") }}
+      <small class="muted">{{ help }}</small>
+    </div>
+    {% endfor %}
+    <small class="muted">Verrouillé dehors ? Sur le serveur : <code>flask acces-ip --effacer admin</code>
+      (ou sans nom de zone pour toutes les rouvrir).</small>
+    <button type="submit">Enregistrer</button>
+  </form>
+</section>
+
 <section class="card wide settings-block settings-security">
   <h2>{{ icon("key", 18) }} Sécurité</h2>
   <dl class="props">

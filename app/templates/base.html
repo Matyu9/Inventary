@@ -52,7 +52,7 @@
       {% if can(current_user, "report.view") %}{{ navlink("reports.index", "Rapports", "chart", ["reports"]) }}{% endif %}
       {% if can(current_user, "export") %}{{ navlink("transfer.index", "Import / export", "transfer", ["transfer"]) }}{% endif %}
       {% endif %}
-      {% if can(current_user, "borrower.create") or can(current_user, "settings.manage") or can(current_user, "activity.view") %}
+      {% if (can(current_user, "borrower.create") or can(current_user, "settings.manage") or can(current_user, "activity.view")) and admin_zone_open() %}
       <p class="nav-title">Administration</p>
       {% if can(current_user, "borrower.create") %}{{ navlink("users.index", "Personnes", "users", ["users"]) }}{% endif %}
       {% if current_user.is_admin %}{{ navlink("roles.index", "Rôles", "key", ["roles"]) }}{% endif %}
@@ -85,7 +85,7 @@
         <ul dir="rtl">
           <li><small>{{ current_user.full_name }} · {{ current_user.role_label }}</small></li>
           <li><a href="{{ url_for('account.index') }}">Mon compte</a></li>
-          {% if can(current_user, "settings.manage") %}<li><a href="{{ url_for('settings.index') }}">Paramètres</a></li>{% endif %}
+          {% if can(current_user, "settings.manage") and admin_zone_open() %}<li><a href="{{ url_for('settings.index') }}">Paramètres</a></li>{% endif %}
           <li>
             <form method="post" action="{{ url_for('auth.logout') }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

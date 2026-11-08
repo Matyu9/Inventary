@@ -114,7 +114,7 @@ Dans le proxy, l'hôte cible est `http://10.30.0.2:8000`.
 
 Dans `.env` :
 
-- `TRUST_PROXY=1` : l'appli lit l'adresse réelle des visiteurs et le protocole dans les en-têtes `X-Forwarded-*`. Laissez `0` si l'appli est exposée sans proxy, sinon n'importe qui pourrait falsifier son adresse IP.
+- `TRUST_PROXY=1` : l'appli lit l'adresse réelle des visiteurs et le protocole dans les en-têtes `X-Forwarded-*`. Laissez `0` si l'appli est exposée sans proxy, sinon n'importe qui pourrait falsifier son adresse IP. C'est aussi l'adresse que vérifient les zones réservées par IP (Paramètres → Accès par adresse IP) : avec `TRUST_PROXY=0` derrière un proxy, tout le monde semble venir du proxy.
 - `BASE_URL=https://…` : l'adresse publique. Elle est inscrite dans les QR codes, les emails et les liens iCal, et elle active les cookies sécurisés.
 
 > **Choisissez `BASE_URL` avant d'imprimer les étiquettes** : chaque QR code contient cette adresse. Si elle change plus tard, gardez une redirection de l'ancienne adresse vers la nouvelle sur le reverse proxy.

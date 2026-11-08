@@ -241,6 +241,7 @@ Les tests de propriétés (`tests/test_properties.py`, Hypothesis) génèrent de
 | QR codes et flux iCal fondés sur des jetons aléatoires ; lien iCal révocable | `qr_token`, `ical_token` |
 | API en lecture seule (`GET` uniquement) : jeton porteur dont seule l'empreinte SHA-256 est stockée, droits du propriétaire, cookie de session refusé, 300 appels par minute, `no-store` | [blueprints/api.py](../app/blueprints/api.py), [services/api_tokens.py](../app/services/api_tokens.py) |
 | OIDC : PKCE, `state`, `nonce`, signature de l'`id_token` vérifiée, liaison par email seulement si l'email est vérifié | [services/oidc.py](../app/services/oidc.py) |
+| Zones réservées par adresse IP (administration, connexion de secours, avis de déconnexion OIDC) : 403 expliqué aux personnes connectées, 404 aux anonymes, liste qui exclurait l'adresse de l'admin refusée, `flask acces-ip --effacer` en secours | [services/ip_access.py](../app/services/ip_access.py), `ip_restricted_zones` dans [app/__init__.py](../app/__init__.py) |
 | Refus de démarrer sans `SECRET_KEY` en production | `create_app` |
 | Conteneur exécuté sans droits root, port lié à `127.0.0.1` | `Dockerfile`, `docker-compose.yml` |
 

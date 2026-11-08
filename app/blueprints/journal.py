@@ -19,6 +19,7 @@ FAMILIES = {
     "inventaires": ("Inventaires et signalements", ("audit.", "report.")),
     "comptes": ("Comptes et rôles", ("user.", "account.", "role.", "sessions.")),
     "parametres": ("Paramètres", ("settings.",)),
+    "securite": ("Sécurité", ("security.",)),
 }
 
 
